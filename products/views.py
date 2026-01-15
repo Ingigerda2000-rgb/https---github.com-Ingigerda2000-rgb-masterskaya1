@@ -1,9 +1,13 @@
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, get_object_or_404, redirect
 from django.http import JsonResponse
 from django.db.models import Q
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from django.contrib.auth.decorators import user_passes_test
 from .models import Product, Category
 from materials.models import Material
+from .forms import ProductForm
 
 def product_list(request):
     """Список товаров с поиском и фильтрацией"""
@@ -92,3 +96,27 @@ def product_detail(request, product_id):
     }
     
     return render(request, 'products/product_detail.html', context)
+
+def master_check(user):
+    """Проверка, что пользователь является мастером"""
+    return user.is_authenticated and user.role == 'master'
+
+@login_required
+@user_passes_test(master_check)
+def add_product(request):
+    """Добавление нового товара мастером"""
+    if request.method == 'POST':
+        form = ProductForm(request.POST, request.FILES, master=request.user)
+        if form.is_valid():
+            product = form.save()
+            messages.success(request, f'Товар "{product.name}" успешно добавлен!')
+            return redirect('master_dashboard')
+    else:
+        form = ProductForm(master=request.user)
+
+    context = {
+        'form': form,
+        'title': 'Добавить товар'
+    }
+
+    return render(request, 'products/add_product.html', context)

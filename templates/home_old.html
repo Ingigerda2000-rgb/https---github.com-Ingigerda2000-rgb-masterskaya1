@@ -1,0 +1,680 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Рукодельная мастерская - Магазин ручной работы</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #795548;
+            --secondary-color: #f8f5f2;
+            --accent-color: #d7b19d;
+        }
+        
+        body {
+            background-color: #fefefe;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        }
+        
+        /* Верхняя строка с поиском и кнопкой входа */
+        .top-header {
+            background-color: white;
+            padding: 15px 0;
+            border-bottom: 1px solid #eee;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+        }
+        
+        .logo {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--primary-color);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+        }
+        
+        .logo i {
+            margin-right: 8px;
+        }
+        
+        .search-container {
+            max-width: 500px;
+            margin: 0 auto;
+        }
+        
+        .search-input {
+            border-radius: 25px;
+            border: 1px solid #ddd;
+            padding: 10px 20px;
+            width: 100%;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        
+        .search-input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(121, 85, 72, 0.1);
+        }
+        
+        .btn-brown {
+            background-color: var(--primary-color);
+            color: white;
+            border: 1px solid var(--primary-color);
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-weight: 500;
+            transition: all 0.3s;
+            white-space: nowrap;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .btn-brown:hover {
+            background-color: #6d4c41;
+            border-color: #6d4c41;
+            color: white;
+        }
+        
+        .btn-outline-brown {
+            color: var(--primary-color);
+            border: 1px solid var(--primary-color);
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-weight: 500;
+            transition: all 0.3s;
+            white-space: nowrap;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .btn-outline-brown:hover {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        
+        /* Горизонтальное меню категорий */
+        .categories-menu {
+            background-color: white;
+            padding: 15px 0;
+            border-bottom: 1px solid #eee;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .categories-nav {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        
+        .category-link {
+            color: #555;
+            text-decoration: none;
+            font-weight: 500;
+            padding: 8px 15px;
+            border-radius: 20px;
+            transition: all 0.3s;
+            white-space: nowrap;
+        }
+        
+        .category-link:hover, .category-link.active {
+            background-color: var(--secondary-color);
+            color: var(--primary-color);
+        }
+        
+        /* Основной контент */
+        .main-content {
+            padding: 30px 0;
+        }
+        
+        /* Блок индивидуального заказа */
+        .custom-order-card {
+            background: linear-gradient(135deg, #f9f3f0 0%, #fff 100%);
+            border-radius: 15px;
+            padding: 40px;
+            border: 1px solid #eee;
+            margin-bottom: 40px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.03);
+        }
+        
+        .custom-order-title {
+            color: var(--primary-color);
+            font-weight: 700;
+            margin-bottom: 20px;
+            font-size: 28px;
+        }
+        
+        .custom-order-btn {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 30px;
+            font-weight: 600;
+            font-size: 16px;
+            transition: all 0.3s;
+            margin-top: 20px;
+        }
+        
+        .custom-order-btn:hover {
+            background-color: #6d4c41;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(121, 85, 72, 0.2);
+        }
+        
+        /* Заголовок товаров */
+        .products-title {
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 30px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid var(--secondary-color);
+        }
+        
+        /* Карточки товаров */
+        .product-card {
+            border: none;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.05);
+            transition: all 0.3s;
+            height: 100%;
+            cursor: pointer;
+        }
+        
+        .product-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+        }
+        
+        .product-img {
+            height: 200px;
+            background-color: #f8f5f2;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--accent-color);
+        }
+        
+        .product-category {
+            color: var(--primary-color);
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 5px;
+        }
+        
+        .product-name {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .product-price {
+            color: var(--primary-color);
+            font-weight: 700;
+            font-size: 18px;
+        }
+        
+        /* Подвал */
+        .footer {
+            background-color: #333;
+            color: white;
+            padding: 40px 0;
+            margin-top: 60px;
+        }
+        
+        .footer h5 {
+            color: white;
+            margin-bottom: 20px;
+        }
+        
+        .footer a {
+            color: #ddd;
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+        
+        .footer a:hover {
+            color: white;
+        }
+        
+        /* Адаптивность */
+        @media (max-width: 992px) {
+            .categories-nav {
+                gap: 10px;
+                justify-content: flex-start;
+                overflow-x: auto;
+                padding-bottom: 10px;
+            }
+            
+            .category-link {
+                padding: 6px 12px;
+                font-size: 14px;
+            }
+            
+            .custom-order-card {
+                padding: 25px;
+            }
+            
+            .custom-order-title {
+                font-size: 24px;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .search-container {
+                margin: 15px 0;
+            }
+            
+            .custom-order-card {
+                padding: 20px;
+            }
+            
+            .custom-order-title {
+                font-size: 22px;
+            }
+            
+            .custom-order-btn {
+                padding: 10px 25px;
+                font-size: 15px;
+            }
+        }
+        
+        @media (max-width: 576px) {
+            .categories-nav {
+                gap: 8px;
+            }
+            
+            .category-link {
+                padding: 5px 10px;
+                font-size: 13px;
+            }
+        }
+        
+        /* Сообщения Django */
+        .messages {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            z-index: 1000;
+            max-width: 400px;
+        }
+        
+        .alert {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+    </style>
+</head>
+<body>
+    <!-- Верхняя строка: лого, поиск, вход -->
+    <header class="top-header">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-3 col-6">
+                    <a href="{% url 'home' %}" class="logo">
+                        <i class="bi bi-heart-fill"></i>Рукодельная мастерская
+                    </a>
+                </div>
+                
+                <div class="col-md-6 d-none d-md-block">
+                    <div class="search-container">
+                        <input type="text" class="search-input" placeholder="Поиск товаров...">
+                    </div>
+                </div>
+                
+                <div class="col-md-3 col-6 text-end">
+    {% if user.is_authenticated %}
+        <div class="dropdown">
+            <button class="btn btn-outline-brown dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                <i class="bi bi-person me-1"></i>{{ user.email|truncatechars:15 }}
+            </button>
+            <ul class="dropdown-menu">
+                <li><a class="dropdown-item" href="{% url 'profile' %}">
+                    <i class="bi bi-person me-2"></i>Профиль
+                </a></li>
+                
+                {% if user.is_master %}
+                <li><a class="dropdown-item" href="{% url 'master_dashboard' %}">
+                    <i class="bi bi-tools me-2"></i>Панель мастера
+                </a></li>
+                {% else %}
+                <li><a class="dropdown-item" href="{% url 'become_master' %}">
+                    <i class="bi bi-palette me-2"></i>Стать мастером
+                </a></li>
+                {% endif %}
+                
+                <li><hr class="dropdown-divider"></li>
+                
+                <li>
+                    <form method="post" action="{% url 'logout' %}" class="m-0 p-0">
+                        {% csrf_token %}
+                        <button type="submit" class="dropdown-item border-0 bg-transparent w-100 text-start">
+                            <i class="bi bi-box-arrow-right me-2"></i>Выйти
+                        </button>
+                    </form>
+                </li>
+            </ul>
+        </div>
+    {% else %}
+        <a href="{% url 'login' %}" class="btn btn-brown">
+            <i class="bi bi-person me-1"></i>Войти / Регистрация
+        </a>
+    {% endif %}
+</div>
+                
+                <!-- Мобильный поиск -->
+                <div class="col-12 d-md-none mt-3">
+                    <div class="search-container">
+                        <input type="text" class="search-input" placeholder="Поиск товаров...">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Сообщения Django -->
+    {% if messages %}
+    <div class="messages">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Горизонтальное меню категорий -->
+    <nav class="categories-menu">
+        <div class="container">
+            <div class="categories-nav">
+                <a href="#" class="category-link active">Все товары</a>
+                <a href="#" class="category-link">Шапки/Шарфы</a>
+                <a href="#" class="category-link">Кофты</a>
+                <a href="#" class="category-link">Худи</a>
+                <a href="#" class="category-link">Куклы и игрушки</a>
+                <a href="#" class="category-link">Сумки</a>
+                <a href="#" class="category-link">Украшения и аксессуары</a>
+                <a href="#" class="category-link">Для дома</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Основной контент -->
+    <div class="container main-content">
+        <!-- Блок индивидуального заказа -->
+        <div class="custom-order-card">
+            <h2 class="custom-order-title">Создайте свой уникальный заказ</h2>
+            <p class="lead" style="color: #fa9ae8; line-height: 1.6; max-width: 700px;">
+                Хотите что-то особенное? Мы создадим изделие специально для вас! 
+                Выберите цвет, размер и дизайн по вашему желанию.
+            </p>
+            <button class="custom-order-btn" id="customOrderBtn">
+                <i class="bi bi-stars me-2"></i>Создать индивидуальный заказ
+            </button>
+        </div>
+
+        <!-- Секция "Все товары" -->
+        <h3 class="products-title">Все товары</h3>
+        
+        <div class="row row-cols-1 row-cols-md-3 row-cols-lg-4 g-4">
+            <!-- Товар 1 -->
+            <div class="col">
+                <div class="product-card" data-category="шапки">
+                    <div class="product-img">
+                        <i class="bi bi-scarf" style="font-size: 70px;"></i>
+                    </div>
+                    <div class="card-body p-3">
+                        <div class="product-category">Шапки/Шарфы</div>
+                        <h5 class="product-name">Вязаная шапка с помпоном</h5>
+                        <div class="product-price">2 500 ₽</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Товар 2 -->
+            <div class="col">
+                <div class="product-card" data-category="кофты">
+                    <div class="product-img">
+                        <i class="bi bi-sweater" style="font-size: 70px;"></i>
+                    </div>
+                    <div class="card-body p-3">
+                        <div class="product-category">Кофты</div>
+                        <h5 class="product-name">Уютный вязаный свитер</h5>
+                        <div class="product-price">5 800 ₽</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Товар 3 -->
+            <div class="col">
+                <div class="product-card" data-category="игрушки">
+                    <div class="product-img">
+                        <i class="bi bi-teddy-bear" style="font-size: 70px;"></i>
+                    </div>
+                    <div class="card-body p-3">
+                        <div class="product-category">Куклы и игрушки</div>
+                        <h5 class="product-name">Медвежонок Тедди</h5>
+                        <div class="product-price">3 200 ₽</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Товар 4 -->
+            <div class="col">
+                <div class="product-card" data-category="украшения">
+                    <div class="product-img">
+                        <i class="bi bi-gem" style="font-size: 70px;"></i>
+                    </div>
+                    <div class="card-body p-3">
+                        <div class="product-category">Украшения</div>
+                        <h5 class="product-name">Браслет из бисера</h5>
+                        <div class="product-price">1 500 ₽</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Товар 5 -->
+            <div class="col">
+                <div class="product-card" data-category="варежки">
+                    <div class="product-img">
+                        <i class="bi bi-glove" style="font-size: 70px;"></i>
+                    </div>
+                    <div class="card-body p-3">
+                        <div class="product-category">Сумки/рюкзаки</div>
+                        <h5 class="product-name">Рюкзак из полиэфирного шнура</h5>
+                        <div class="product-price">5 500 ₽</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Товар 6 -->
+            <div class="col">
+                <div class="product-card" data-category="дом">
+                    <div class="product-img">
+                        <i class="bi bi-house-heart" style="font-size: 70px;"></i>
+                    </div>
+                    <div class="card-body p-3">
+                        <div class="product-category">Для дома</div>
+                        <h5 class="product-name">Вязаный плед</h5>
+                        <div class="product-price">4 500 ₽</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Товар 7 -->
+            <div class="col">
+                <div class="product-card" data-category="худи">
+                    <div class="product-img">
+                        <i class="bi bi-hoodie" style="font-size: 70px;"></i>
+                    </div>
+                    <div class="card-body p-3">
+                        <div class="product-category">Худи</div>
+                        <h5 class="product-name">Теплое худи с капюшоном</h5>
+                        <div class="product-price">4 200 ₽</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Товар 8 -->
+            <div class="col">
+                <div class="product-card" data-category="шапки">
+                    <div class="product-img">
+                        <i class="bi bi-scarf" style="font-size: 70px;"></i>
+                    </div>
+                    <div class="card-body p-3">
+                        <div class="product-category">Шапки/Шарфы</div>
+                        <h5 class="product-name">Шарф из мягкой пряжи</h5>
+                        <div class="product-price">2 800 ₽</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Подвал -->
+    <footer class="footer">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-4 mb-4">
+                    <h5>Рукодельная мастерская</h5>
+                    <p>Уникальные изделия ручной работы с душой и вниманием к деталям.</p>
+                </div>
+                
+                <div class="col-md-4 mb-4">
+                    <h5>Контакты</h5>
+                    <p><i class="bi bi-telephone me-2"></i>+7 (XXX) XXX-XX-XX</p>
+                    <p><i class="bi bi-envelope me-2"></i>example@email.com</p>
+                </div>
+                
+                <div class="col-md-4 mb-4">
+                    <h5>Быстрые ссылки</h5>
+                    <p><a href="#"><i class="bi bi-chevron-right me-2"></i>Индивидуальный заказ</a></p>
+                    <p><a href="#"><i class="bi bi-chevron-right me-2"></i>О мастере</a></p>
+                    <p><a href="#"><i class="bi bi-chevron-right me-2"></i>Доставка и оплата</a></p>
+                </div>
+            </div>
+            
+            <div class="text-center pt-3 border-top border-secondary">
+                <p class="mb-0">© 2025 Рукодельная мастерская. Все права защищены.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Активация пунктов меню
+        document.querySelectorAll('.category-link').forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                document.querySelectorAll('.category-link').forEach(item => {
+                    item.classList.remove('active');
+                });
+                this.classList.add('active');
+                
+                // Фильтрация товаров по категории
+                const category = this.textContent.toLowerCase();
+                filterProducts(category);
+            });
+        });
+        
+        // Функция фильтрации товаров
+        function filterProducts(category) {
+            const allProducts = document.querySelectorAll('.product-card');
+            const productsTitle = document.querySelector('.products-title');
+            
+            if (category === 'все товары') {
+                allProducts.forEach(product => {
+                    product.style.display = 'block';
+                });
+                productsTitle.textContent = 'Все товары';
+                return;
+            }
+            
+            let visibleCount = 0;
+            allProducts.forEach(product => {
+                const productCategory = product.getAttribute('data-category');
+                
+                if (category.includes(productCategory) || 
+                    productCategory.includes(category)) {
+                    product.style.display = 'block';
+                    visibleCount++;
+                } else {
+                    product.style.display = 'none';
+                }
+            });
+            
+            // Обновляем заголовок
+            const activeCategory = document.querySelector('.category-link.active').textContent;
+            productsTitle.textContent = activeCategory + ` (${visibleCount} товаров)`;
+        }
+        
+        // Кнопка индивидуального заказа
+        document.getElementById('customOrderBtn').addEventListener('click', function() {
+            alert('Переход к созданию индивидуального заказа');
+            // window.location.href = 'custom-order.html';
+        });
+        
+        // Клик по товару
+        document.querySelectorAll('.product-card').forEach(card => {
+            card.addEventListener('click', function() {
+                const productName = this.querySelector('.product-name').textContent;
+                const productPrice = this.querySelector('.product-price').textContent;
+                alert(`Товар: ${productName}\nЦена: ${productPrice}`);
+                // window.location.href = 'product-details.html';
+            });
+        });
+        
+        // Поиск товаров
+        const searchInput = document.querySelector('.search-input');
+        searchInput.addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            const allProducts = document.querySelectorAll('.product-card');
+            
+            if (searchTerm === '') {
+                // Показываем все товары при пустом поиске
+                filterProducts('все товары');
+                return;
+            }
+            
+            allProducts.forEach(product => {
+                const productName = product.querySelector('.product-name').textContent.toLowerCase();
+                const productCategory = product.querySelector('.product-category').textContent.toLowerCase();
+                
+                if (productName.includes(searchTerm) || productCategory.includes(searchTerm)) {
+                    product.style.display = 'block';
+                } else {
+                    product.style.display = 'none';
+                }
+            });
+        });
+        
+        // Автоматическое скрытие сообщений через 5 секунд
+        setTimeout(function() {
+            const alerts = document.querySelectorAll('.alert');
+            alerts.forEach(alert => {
+                const bsAlert = new bootstrap.Alert(alert);
+                bsAlert.close();
+            });
+        }, 5000);
+    </script>
+    <!-- Кнопка быстрого выхода (скрытая) -->
+<div id="quickLogout" style="display: none;">
+    <form id="logoutForm" method="post" action="{% url 'logout' %}">
+        {% csrf_token %}
+    </form>
+</div>
+</body>
+</html>

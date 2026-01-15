@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Выход из системы{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow-lg">
+                <div class="card-header bg-brown text-white text-center py-4">
+                    <h3 class="mb-0"><i class="fas fa-sign-out-alt me-2"></i>Выход из системы</h3>
+                </div>
+                <div class="card-body p-5 text-center">
+                    <div class="mb-4">
+                        <i class="fas fa-door-open fa-5x text-brown mb-4"></i>
+                        <h4 class="mb-3">Вы уверены, что хотите выйти?</h4>
+                        <p class="text-muted">Вы будете перенаправлены на главную страницу.</p>
+                    </div>
+                    
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-brown btn-lg">
+                                <i class="fas fa-sign-out-alt me-2"></i>Да, выйти
+                            </button>
+                            <a href="{% url 'home' %}" class="btn btn-outline-brown btn-lg">
+                                <i class="fas fa-times me-2"></i>Отмена
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.bg-brown { background-color: #795548 !important; }
+.btn-brown { background-color: #795548; border-color: #795548; color: white; }
+.btn-brown:hover { background-color: #6d4c41; border-color: #6d4c41; color: white; }
+.btn-outline-brown { color: #795548; border-color: #795548; }
+.btn-outline-brown:hover { background-color: #795548; color: white; }
+</style>
+{% endblock %}

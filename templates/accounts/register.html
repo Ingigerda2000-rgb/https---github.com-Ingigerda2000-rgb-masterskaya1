@@ -1,0 +1,334 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow-lg border-0">
+                <div class="card-header bg-brown text-white text-center py-4">
+                    <h3 class="mb-0"><i class="fas fa-user-plus me-2"></i>Регистрация</h3>
+                    <p class="mb-0 mt-2 small">Создайте учетную запись покупателя или мастера</p>
+                </div>
+                <div class="card-body p-4">
+                    <form method="post" novalidate id="registerForm">
+                        {% csrf_token %}
+                        
+                        {% if form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            {% for error in form.non_field_errors %}
+                            <p class="mb-0">{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        
+                        <!-- Email -->
+                        <div class="mb-3">
+                            <label for="{{ form.email.id_for_label }}" class="form-label">
+                                <i class="fas fa-envelope me-1"></i>Email *
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-at"></i></span>
+                                <input type="email" 
+                                       name="email" 
+                                       class="form-control {% if form.email.errors %}is-invalid{% endif %}" 
+                                       id="{{ form.email.id_for_label }}"
+                                       placeholder="example@mail.ru"
+                                       value="{{ form.email.value|default:'' }}"
+                                       required>
+                            </div>
+                            {% if form.email.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.email.errors.0 }}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Телефон -->
+                        <div class="mb-3">
+                            <label for="{{ form.phone.id_for_label }}" class="form-label">
+                                <i class="fas fa-phone me-1"></i>Телефон *
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-mobile-alt"></i></span>
+                                <input type="tel" 
+                                       name="phone" 
+                                       class="form-control {% if form.phone.errors %}is-invalid{% endif %}" 
+                                       id="{{ form.phone.id_for_label }}"
+                                       placeholder="+7 (999) 123-45-67"
+                                       value="{{ form.phone.value|default:'' }}"
+                                       required>
+                            </div>
+                            {% if form.phone.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.phone.errors.0 }}
+                            </div>
+                            {% endif %}
+                            <div class="form-text">Формат: +7 (999) 123-45-67</div>
+                        </div>
+                        
+                        <!-- Имя и Фамилия -->
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.first_name.id_for_label }}" class="form-label">
+                                    <i class="fas fa-user me-1"></i>Имя
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-user-circle"></i></span>
+                                    <input type="text" 
+                                           name="first_name" 
+                                           class="form-control" 
+                                           id="{{ form.first_name.id_for_label }}"
+                                           placeholder="Иван"
+                                           value="{{ form.first_name.value|default:'' }}">
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.last_name.id_for_label }}" class="form-label">
+                                    Фамилия
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-user-circle"></i></span>
+                                    <input type="text" 
+                                           name="last_name" 
+                                           class="form-control" 
+                                           id="{{ form.last_name.id_for_label }}"
+                                           placeholder="Иванов"
+                                           value="{{ form.last_name.value|default:'' }}">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Роль -->
+                        <div class="mb-4">
+                            <label for="{{ form.role.id_for_label }}" class="form-label">
+                                <i class="fas fa-user-tag me-1"></i>Выберите роль *
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-users"></i></span>
+                                <select name="role" 
+                                        class="form-select {% if form.role.errors %}is-invalid{% endif %}" 
+                                        id="{{ form.role.id_for_label }}"
+                                        required>
+                                    <option value="" disabled {% if not form.role.value %}selected{% endif %}>Выберите роль</option>
+                                    <option value="buyer" {% if form.role.value == 'buyer' %}selected{% endif %}>
+                                         Покупатель - хочу покупать изделия
+                                    </option>
+                                    <option value="master" {% if form.role.value == 'master' %}selected{% endif %}>
+                                         Мастер - хочу продавать свои изделия
+                                    </option>
+                                </select>
+                            </div>
+                            {% if form.role.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.role.errors.0 }}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Пароли -->
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="id_password1" class="form-label">
+                                    <i class="fas fa-lock me-1"></i>Пароль *
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-key"></i></span>
+                                    <input type="password" 
+                                           name="password1" 
+                                           class="form-control {% if form.password1.errors %}is-invalid{% endif %}" 
+                                           id="id_password1"
+                                           placeholder="Минимум 8 символов"
+                                           required>
+                                    <button class="btn btn-outline-secondary" type="button" id="togglePassword1">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </div>
+                                {% if form.password1.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.password1.errors.0 }}
+                                </div>
+                                {% endif %}
+                                <div class="form-text">Минимум 8 символов, буквы и цифры</div>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="id_password2" class="form-label">
+                                    Подтверждение пароля *
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-key"></i></span>
+                                    <input type="password" 
+                                           name="password2" 
+                                           class="form-control {% if form.password2.errors %}is-invalid{% endif %}" 
+                                           id="id_password2"
+                                           placeholder="Повторите пароль"
+                                           required>
+                                    <button class="btn btn-outline-secondary" type="button" id="togglePassword2">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </div>
+                                {% if form.password2.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.password2.errors.0 }}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Соглашение -->
+                        <div class="mb-4">
+                            <div class="form-check">
+                                <input type="checkbox" 
+                                       name="terms" 
+                                       class="form-check-input {% if form.terms.errors %}is-invalid{% endif %}" 
+                                       id="id_terms"
+                                       required>
+                                <label class="form-check-label" for="id_terms">
+                                    Я согласен с <a href="#" target="_blank">условиями использования</a> 
+                                    и <a href="#" target="_blank">политикой конфиденциальности</a> *
+                                </label>
+                                {% if form.terms.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.terms.errors.0 }}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Кнопка регистрации -->
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-brown btn-lg py-3">
+                                <i class="fas fa-user-plus me-2"></i>Создать аккаунт
+                            </button>
+                        </div>
+                    </form>
+                    
+                    <div class="text-center mt-4 pt-3 border-top">
+                        <p class="mb-0">Уже есть аккаунт? 
+                            <a href="{% url 'login' %}" class="text-brown fw-bold">
+                                <i class="fas fa-sign-in-alt me-1"></i>Войти
+                            </a>
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Информация о подтверждении email -->
+            <div class="alert alert-info mt-4">
+                <h5><i class="fas fa-info-circle me-2"></i>Важно!</h5>
+                <p class="mb-1">После регистрации вам будет отправлено письмо с подтверждением email.</p>
+                <p class="mb-0">Подтвердите email для активации аккаунта и получения доступа ко всем функциям.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Функция для показа/скрытия пароля
+    function setupPasswordToggle(passwordFieldId, toggleButtonId) {
+        const passwordField = document.getElementById(passwordFieldId);
+        const toggleButton = document.getElementById(toggleButtonId);
+        
+        if (passwordField && toggleButton) {
+            toggleButton.addEventListener('click', function() {
+                const type = passwordField.getAttribute('type') === 'password' ? 'text' : 'password';
+                passwordField.setAttribute('type', type);
+                
+                // Меняем иконку
+                const icon = this.querySelector('i');
+                if (type === 'password') {
+                    icon.classList.remove('fa-eye-slash');
+                    icon.classList.add('fa-eye');
+                } else {
+                    icon.classList.remove('fa-eye');
+                    icon.classList.add('fa-eye-slash');
+                }
+            });
+        }
+    }
+    
+    // Настраиваем кнопки для паролей
+    setupPasswordToggle('id_password1', 'togglePassword1');
+    setupPasswordToggle('id_password2', 'togglePassword2');
+    
+    // Валидация формы
+    const form = document.getElementById('registerForm');
+    form.addEventListener('submit', function(event) {
+        const password1 = document.getElementById('id_password1').value;
+        const password2 = document.getElementById('id_password2').value;
+        
+        if (password1 !== password2) {
+            alert('Пароли не совпадают!');
+            event.preventDefault();
+            return false;
+        }
+        
+        if (password1.length < 8) {
+            alert('Пароль должен содержать минимум 8 символов!');
+            event.preventDefault();
+            return false;
+        }
+        
+        if (!/\d/.test(password1) || !/[a-zA-Z]/.test(password1)) {
+            alert('Пароль должен содержать буквы и цифры!');
+            event.preventDefault();
+            return false;
+        }
+    });
+});
+</script>
+
+<style>
+.bg-brown {
+    background-color: #795548 !important;
+}
+.btn-brown {
+    background-color: #795548;
+    border-color: #795548;
+    color: white;
+    transition: all 0.3s;
+}
+.btn-brown:hover {
+    background-color: #6d4c41;
+    border-color: #6d4c41;
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+.text-brown {
+    color: #795548 !important;
+}
+.text-brown:hover {
+    color: #6d4c41 !important;
+}
+.card {
+    border-radius: 15px;
+    border: none;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+}
+.input-group-text {
+    background-color: #f8f9fa;
+    border-right: none;
+}
+.form-control, .form-select {
+    border-left: none;
+    padding-left: 0;
+}
+.form-control:focus, .form-select:focus {
+    box-shadow: 0 0 0 0.25rem rgba(121, 85, 72, 0.25);
+    border-color: #795548;
+}
+.invalid-feedback {
+    display: block !important;
+}
+.alert-info {
+    background-color: #f8f9fa;
+    border-color: #795548;
+    color: #795548;
+}
+</style>
+{% endblock %}

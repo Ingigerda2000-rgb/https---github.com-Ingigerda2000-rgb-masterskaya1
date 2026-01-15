@@ -1,0 +1,123 @@
+{% extends 'base.html' %}
+
+{% block title %}Отчет по материалам{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1><i class="fas fa-boxes"></i> Отчет по материалам</h1>
+    
+    <!-- Сводка -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Всего материалов</h5>
+                    <h2 class="display-4">{{ report.total_materials }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Низкий запас</h5>
+                    <h2 class="display-4">{{ report.low_stock }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Общая стоимость</h5>
+                    <h2 class="display-4">{{ report.total_value|floatformat:2 }} руб.</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Таблица материалов -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">Список материалов</h5>
+        </div>
+        <div class="card-body">
+            {% if report.materials %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Название</th>
+                            <th>Текущее количество</th>
+                            <th>Минимальный запас</th>
+                            <th>Единица измерения</th>
+                            <th>Стоимость запаса</th>
+                            <th>Статус</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for material in report.materials %}
+                        <tr class="{% if material.is_low_stock %}table-warning{% endif %}">
+                            <td>{{ material.name }}</td>
+                            <td>{{ material.current_quantity|floatformat:2 }}</td>
+                            <td>{{ material.min_quantity|floatformat:2 }}</td>
+                            <td>{{ material.unit }}</td>
+                            <td>{{ material.value|floatformat:2 }} руб.</td>
+                            <td>
+                                {% if material.is_low_stock %}
+                                <span class="badge bg-danger">Низкий запас</span>
+                                {% else %}
+                                <span class="badge bg-success">В норме</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="alert alert-info">
+                У вас пока нет материалов.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Список материалов для мастера -->
+    <div class="card mt-4">
+        <div class="card-header">
+            <h5 class="mb-0">Мои материалы</h5>
+        </div>
+        <div class="card-body">
+            {% if materials %}
+            <div class="row">
+                {% for material in materials %}
+                <div class="col-md-4 mb-3">
+                    <div class="card {% if material.is_low_stock %}border-danger{% else %}border-success{% endif %}">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ material.name }}</h5>
+                            <p class="card-text">
+                                <strong>Количество:</strong> {{ material.current_quantity }} {{ material.get_unit_display }}<br>
+                                <strong>Минимум:</strong> {{ material.min_quantity }} {{ material.get_unit_display }}<br>
+                                <strong>Цена:</strong> {{ material.price_per_unit }} руб./{{ material.get_unit_display }}
+                            </p>
+                            {% if material.is_low_stock %}
+                            <div class="alert alert-warning py-2 mb-2">
+                                <i class="fas fa-exclamation-triangle"></i> Низкий запас!
+                            </div>
+                            {% endif %}
+                            <div class="text-muted small">
+                                <i class="fas fa-palette"></i> {{ material.color|default:"Цвет не указан" }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="alert alert-info">
+                У вас пока нет добавленных материалов.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

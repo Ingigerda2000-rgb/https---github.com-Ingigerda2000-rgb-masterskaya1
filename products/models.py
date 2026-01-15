@@ -128,6 +128,10 @@ class Product(models.Model):
             main_image = ProductImage.objects.filter(product=self, is_main=True).first()
             if main_image:
                 return main_image.image
+            # Если нет основного изображения, вернуть первое изображение
+            first_image = ProductImage.objects.filter(product=self).first()
+            if first_image:
+                return first_image.image
         except:
             pass
         return None

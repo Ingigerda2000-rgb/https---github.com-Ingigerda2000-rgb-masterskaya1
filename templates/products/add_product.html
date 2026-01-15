@@ -1,0 +1,212 @@
+{% extends 'base.html' %}
+
+{% block title %}Добавить товар{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow">
+                <div class="card-header bg-purple text-white">
+                    <h4 class="mb-0">
+                        <i class="bi bi-plus-circle me-2"></i>Добавить новый товар
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.name.id_for_label }}" class="form-label fw-semibold">Название товара *</label>
+                                {{ form.name }}
+                                {% if form.name.errors %}
+                                    <div class="text-danger small">{{ form.name.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.category.id_for_label }}" class="form-label fw-semibold">Категория</label>
+                                {{ form.category }}
+                                {% if form.category.errors %}
+                                    <div class="text-danger small">{{ form.category.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.description.id_for_label }}" class="form-label fw-semibold">Описание товара *</label>
+                            {{ form.description }}
+                            {% if form.description.errors %}
+                                <div class="text-danger small">{{ form.description.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label for="{{ form.price.id_for_label }}" class="form-label fw-semibold">Цена (₽) *</label>
+                                {{ form.price }}
+                                {% if form.price.errors %}
+                                    <div class="text-danger small">{{ form.price.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="col-md-4 mb-3">
+                                <label for="{{ form.stock_quantity.id_for_label }}" class="form-label fw-semibold">Количество на складе</label>
+                                {{ form.stock_quantity }}
+                                {% if form.stock_quantity.errors %}
+                                    <div class="text-danger small">{{ form.stock_quantity.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="col-md-4 mb-3">
+                                <label for="{{ form.status.id_for_label }}" class="form-label fw-semibold">Статус</label>
+                                {{ form.status }}
+                                {% if form.status.errors %}
+                                    <div class="text-danger small">{{ form.status.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.technique.id_for_label }}" class="form-label fw-semibold">Техника изготовления</label>
+                                {{ form.technique }}
+                                {% if form.technique.errors %}
+                                    <div class="text-danger small">{{ form.technique.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.difficulty_level.id_for_label }}" class="form-label fw-semibold">Уровень сложности</label>
+                                {{ form.difficulty_level }}
+                                {% if form.difficulty_level.errors %}
+                                    <div class="text-danger small">{{ form.difficulty_level.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label for="{{ form.production_time_days.id_for_label }}" class="form-label fw-semibold">Срок изготовления (дней)</label>
+                                {{ form.production_time_days }}
+                                {% if form.production_time_days.errors %}
+                                    <div class="text-danger small">{{ form.production_time_days.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="col-md-4 mb-3">
+                                <label for="{{ form.weight.id_for_label }}" class="form-label fw-semibold">Вес (г)</label>
+                                {{ form.weight }}
+                                {% if form.weight.errors %}
+                                    <div class="text-danger small">{{ form.weight.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="col-md-4 mb-3">
+                                <label for="{{ form.color.id_for_label }}" class="form-label fw-semibold">Цвет</label>
+                                {{ form.color }}
+                                {% if form.color.errors %}
+                                    <div class="text-danger small">{{ form.color.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.dimensions.id_for_label }}" class="form-label fw-semibold">Размеры</label>
+                            {{ form.dimensions }}
+                            {% if form.dimensions.errors %}
+                                <div class="text-danger small">{{ form.dimensions.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.can_be_customized.id_for_label }}" class="form-label fw-semibold">
+                                    {{ form.can_be_customized.label }}
+                                </label>
+                                <div class="form-check">
+                                    {{ form.can_be_customized }}
+                                    <label class="form-check-label" for="{{ form.can_be_customized.id_for_label }}">
+                                        Возможна кастомизация
+                                    </label>
+                                </div>
+                                {% if form.can_be_customized.errors %}
+                                    <div class="text-danger small">{{ form.can_be_customized.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.base_cost.id_for_label }}" class="form-label fw-semibold">Базовая стоимость (₽)</label>
+                                {{ form.base_cost }}
+                                {% if form.base_cost.errors %}
+                                    <div class="text-danger small">{{ form.base_cost.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="{{ form.materials.id_for_label }}" class="form-label fw-semibold">Материалы</label>
+                            {{ form.materials }}
+                            {% if form.materials.errors %}
+                                <div class="text-danger small">{{ form.materials.errors.0 }}</div>
+                            {% endif %}
+                            <div class="form-text">Выберите материалы, используемые для изготовления товара</div>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-pink fw-medium">
+                                <i class="bi bi-check-circle me-2"></i>Добавить товар
+                            </button>
+                            <a href="{% url 'master_dashboard' %}" class="btn btn-outline-secondary fw-medium">
+                                <i class="bi bi-arrow-left me-2"></i>Отмена
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.form-label {
+    color: #495057;
+    font-weight: 600;
+}
+
+.form-control, .form-select {
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    padding: 0.75rem;
+    font-size: 15px;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #b31dc4;
+    box-shadow: 0 0 0 0.2rem rgba(179, 29, 196, 0.25);
+}
+
+.btn-pink {
+    background-color: #e83e8c;
+    border-color: #e83e8c;
+    color: white;
+}
+
+.btn-pink:hover {
+    background-color: #d81b60;
+    border-color: #d81b60;
+}
+
+.card {
+    border: none;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border-radius: 12px;
+}
+
+.card-header {
+    background: linear-gradient(135deg, #b31dc4 0%, #8a1896 100%);
+    border-radius: 12px 12px 0 0 !important;
+}
+</style>
+{% endblock %}

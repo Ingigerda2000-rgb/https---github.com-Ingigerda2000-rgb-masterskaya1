@@ -1,0 +1,322 @@
+<!-- templates/orders/checkout.html -->
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Оформление заказа - Рукодельная мастерская{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <h1 class="mb-4"><i class="bi bi-bag-check me-2"></i>Оформление заказа</h1>
+    
+    <div class="row">
+        <!-- Форма оформления -->
+        <div class="col-lg-8">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Данные для доставки</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" id="orderForm">
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Имя и фамилия *</label>
+                                {{ form.customer_name }}
+                                {% if form.customer_name.errors %}
+                                <div class="text-danger small">{{ form.customer_name.errors }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Телефон *</label>
+                                {{ form.customer_phone }}
+                                {% if form.customer_phone.errors %}
+                                <div class="text-danger small">{{ form.customer_phone.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Email *</label>
+                            {{ form.customer_email }}
+                            {% if form.customer_email.errors %}
+                            <div class="text-danger small">{{ form.customer_email.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <h5 class="mb-3">Адрес доставки</h5>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Регион</label>
+                                {{ form.region }}
+                                {% if form.region.errors %}
+                                <div class="text-danger small">{{ form.region.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Город *</label>
+                                {{ form.city }}
+                                {% if form.city.errors %}
+                                <div class="text-danger small">{{ form.city.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Улица *</label>
+                                {{ form.street }}
+                                {% if form.street.errors %}
+                                <div class="text-danger small">{{ form.street.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label class="form-label">Дом *</label>
+                                {{ form.house }}
+                                {% if form.house.errors %}
+                                <div class="text-danger small">{{ form.house.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label class="form-label">Квартира</label>
+                                {{ form.apartment }}
+                                {% if form.apartment.errors %}
+                                <div class="text-danger small">{{ form.apartment.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Способ доставки</label>
+                                {{ form.delivery_method }}
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Способ оплаты</label>
+                                {{ form.payment_method }}
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Промокод</label>
+                            {{ form.promo_code }}
+                            <button type="button" class="btn btn-outline-primary btn-sm mt-2" id="applyPromoBtn">
+                                Применить промокод
+                            </button>
+                            <div id="promoMessage" class="mt-2 small"></div>
+                        </div>
+                        
+                        <div class="form-check mb-4">
+                            <input class="form-check-input" type="checkbox" id="agreeTerms" required>
+                            <label class="form-check-label" for="agreeTerms">
+                                Я согласен с <a href="#" class="text-decoration-none">условиями обработки персональных данных</a> и <a href="#" class="text-decoration-none">правилами возврата</a>
+                            </label>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary btn-lg w-100">
+                            <i class="bi bi-credit-card me-2"></i>Оформить заказ
+                        </button>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Корзина для проверки -->
+            <div class="card shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Ваш заказ</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <tbody>
+                                {% for item in cart.items.all %}
+                                <tr>
+                                    <td width="60">
+                                        {% if item.product.get_main_image %}
+                                        <img src="{{ item.product.get_main_image.url }}" 
+                                             class="img-fluid rounded" 
+                                             style="width: 50px; height: 50px; object-fit: cover;">
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="fw-bold">{{ item.product.name }}</div>
+                                        <small class="text-muted">Количество: {{ item.quantity }} шт.</small>
+                                    </td>
+                                    <td class="text-end">{{ item.calculate_subtotal }} ₽</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Итоговая информация -->
+        <div class="col-lg-4">
+            <div class="card shadow-sm sticky-top" style="top: 20px;">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Ваш заказ</h5>
+                </div>
+                <div class="card-body">
+                    <!-- Список товаров с мини-фото -->
+                    <div class="mb-3">
+                        {% for item in cart.items.all %}
+                        <div class="d-flex align-items-center mb-2">
+                            <div class="me-2" style="width: 40px; height: 40px;">
+                                {% if item.product.get_main_image %}
+                                <img src="{{ item.product.get_main_image.url }}" 
+                                     class="img-fluid rounded" 
+                                     style="width: 40px; height: 40px; object-fit: cover;">
+                                {% endif %}
+                            </div>
+                            <div class="flex-grow-1">
+                                <div class="small fw-bold">{{ item.product.name }}</div>
+                                <div class="small text-muted">{{ item.quantity }} шт.</div>
+                            </div>
+                            <div class="text-end">
+                                <span class="small">{{ item.calculate_subtotal }} ₽</span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    
+                    <hr>
+                    
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Товары ({{ cart.item_count }})</span>
+                        <span id="itemsTotal">{{ items_total }} ₽</span>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Доставка</span>
+                        <span id="deliveryCost">{{ delivery_cost }} ₽</span>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between mb-2" id="discountRow" style="display: none;">
+                        <span class="text-success">Скидка</span>
+                        <span class="text-success" id="discountAmount">0 ₽</span>
+                    </div>
+                    
+                    <hr>
+                    
+                    <div class="d-flex justify-content-between mb-4">
+                        <strong class="fs-5">Итого к оплате:</strong>
+                        <strong class="text-primary fs-4" id="totalAmount">{{ total }} ₽</strong>
+                    </div>
+                    
+                    <div class="alert alert-info small">
+                        <i class="bi bi-info-circle me-2"></i>
+                        После оформления заказа с вами свяжется мастер для уточнения деталей.
+                    </div>
+                    
+                    <div class="small text-muted mt-3">
+                        <p class="mb-1"><i class="bi bi-shield-check me-2"></i>Безопасная оплата</p>
+                        <p class="mb-1"><i class="bi bi-truck me-2"></i>Доставка 3-14 дней</p>
+                        <p class="mb-0"><i class="bi bi-arrow-return-left me-2"></i>Возврат в течение 14 дней</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Подключаем jQuery и библиотеку для маски ввода -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.inputmask/5.0.8/jquery.inputmask.min.js"></script>
+<script>
+// Маска для телефона
+$(document).ready(function() {
+    // Маска для телефона в формате +7(999)999-99-99
+    var phoneInput = $('#id_customer_phone');
+    
+    // Применяем маску
+    phoneInput.inputmask({
+        mask: '+7(999)999-99-99',
+        showMaskOnHover: true,
+        showMaskOnFocus: true,
+        clearMaskOnLostFocus: false,
+        rightAlign: false,
+        onBeforeMask: function(value, opts) {
+            // Преобразуем 8 в начале в +7
+            if (value && value.startsWith('8')) {
+                return '+7' + value.substring(1);
+            }
+            return value;
+        }
+    });
+    
+    // Обработчик ввода для замены 8 на +7
+    phoneInput.on('input', function() {
+        var value = $(this).val();
+        if (value && value.startsWith('8')) {
+            $(this).val('+7' + value.substring(1));
+        }
+    });
+    
+    // Проверка на 11 цифр при отправке формы
+    $('#orderForm').on('submit', function(e) {
+        var phoneValue = phoneInput.inputmask('unmaskedvalue');
+        if (phoneValue.length !== 10) { // 10 цифр после +7
+            alert('Номер телефона должен содержать 11 цифр');
+            e.preventDefault();
+            return false;
+        }
+    });
+});
+// Применение промокода
+document.getElementById('applyPromoBtn').addEventListener('click', function() {
+    const promoCode = document.querySelector('[name="promo_code"]').value;
+    const promoMessage = document.getElementById('promoMessage');
+    
+    if (!promoCode) {
+        promoMessage.innerHTML = '<span class="text-danger">Введите промокод</span>';
+        return;
+    }
+    
+    fetch('{% url "discounts:apply_promo_code" %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        },
+        body: 'promo_code=' + encodeURIComponent(promoCode)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            promoMessage.innerHTML = '<span class="text-success">' + data.message + '</span>';
+            
+            // Обновляем итоговые суммы
+            document.getElementById('discountRow').style.display = 'block';
+            document.getElementById('discountAmount').textContent = data.discount + ' ₽';
+            
+            const deliveryCost = parseFloat('{{ delivery_cost }}');
+            const newTotal = data.new_total + deliveryCost;
+            document.getElementById('totalAmount').textContent = newTotal.toFixed(2) + ' ₽';
+        } else {
+            promoMessage.innerHTML = '<span class="text-danger">' + data.message + '</span>';
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        promoMessage.innerHTML = '<span class="text-danger">Ошибка при обработке промокода</span>';
+    });
+});
+
+// Адрес доставки без подсказок
+
+// Валидация формы
+document.getElementById('orderForm').addEventListener('submit', function(e) {
+    const agreeTerms = document.getElementById('agreeTerms');
+    if (!agreeTerms.checked) {
+        e.preventDefault();
+        alert('Пожалуйста, согласитесь с условиями обработки персональных данных');
+        return false;
+    }
+});
+</script>
+{% endblock %}

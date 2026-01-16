@@ -234,7 +234,7 @@ def cart_summary(request):
     })
 
 def checkout(request):
-    """Переход к оформлению заказа (будет реализовано позже)"""
+    """Переход к оформлению заказа"""
     cart = get_or_create_cart(request)
     
     # Проверяем, есть ли товары в корзине
@@ -252,6 +252,5 @@ def checkout(request):
         messages.error(request, 'Некоторые товары в корзине недоступны. Пожалуйста, проверьте корзину.')
         return redirect('cart_view')
     
-    # Перенаправляем на страницу оформления заказа (пока заглушка)
-    messages.info(request, 'Страница оформления заказа будет реализована в следующем прецеденте')
-    return redirect('cart_view')
+    # Перенаправляем на страницу оформления заказа
+    return redirect('orders:checkout')

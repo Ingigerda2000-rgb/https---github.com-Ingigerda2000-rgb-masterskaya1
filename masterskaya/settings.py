@@ -56,6 +56,7 @@ INSTALLED_APPS = [
     'analytics',
     'reviews',
     'notifications',
+    'discounts.apps.DiscountsConfig',
 ]
 
 MIDDLEWARE = [

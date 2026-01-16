@@ -8,7 +8,7 @@ urlpatterns = [
     path('<int:order_id>/', views.order_detail, name='order_detail'),
     path('checkout/', views.checkout, name='checkout'),
     # Маршрут apply-promo/ перенесен в приложение discounts
+    path('<int:order_id>/cancel/', views.cancel_order, name='cancel_order'),
     # Можно добавить позже:
-    # path('<int:order_id>/cancel/', views.cancel_order, name='cancel_order'),
     # path('<int:order_id>/payment/', views.process_payment, name='process_payment'),
 ]

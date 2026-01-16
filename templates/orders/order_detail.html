@@ -84,8 +84,18 @@
                         </div>
                         <div class="col-md-6">
                             <h6>Доставка:</h6>
-                            <p class="mb-1"><strong>Адрес:</strong> {{ order.delivery_address }}</p>
-                            <p class="mb-1"><strong>Способ:</strong> {{ order.delivery_method|default:"Не указан" }}</p>
+                            <p class="mb-1"><strong>Адрес:</strong> 
+                                {% if order.region or order.city or order.street or order.house or order.apartment %}
+                                    {% if order.region %}{{ order.region }}, {% endif %}
+                                    {% if order.city %}{{ order.city }}, {% endif %}
+                                    {% if order.street %}{{ order.street }}, {% endif %}
+                                    {% if order.house %}д. {{ order.house }}{% endif %}
+                                    {% if order.apartment %}, кв. {{ order.apartment }}{% endif %}
+                                {% else %}
+                                    {{ order.delivery_address|default:"Не указан" }}
+                                {% endif %}
+                            </p>
+                            <p class="mb-1"><strong>Способ:</strong> {{ order.get_delivery_method_display|default:"Не указан" }}</p>
                             {% if order.tracking_number %}
                             <p class="mb-1"><strong>Трек-номер:</strong> {{ order.tracking_number }}</p>
                             {% endif %}
@@ -97,7 +107,7 @@
                     <div class="row">
                         <div class="col-md-6">
                             <h6>Оплата:</h6>
-                            <p class="mb-1"><strong>Способ оплаты:</strong> {{ order.payment_method|default:"Не указан" }}</p>
+                            <p class="mb-1"><strong>Способ оплаты:</strong> {{ order.get_payment_method_display|default:"Не указан" }}</p>
                             <p class="mb-1"><strong>Статус оплаты:</strong> 
                                 {% if order.status == 'paid' %}
                                 <span class="text-success">Оплачено</span>
@@ -127,7 +137,7 @@
                             {% endif %}
                             <div class="d-flex justify-content-between fw-bold fs-5 mt-2">
                                 <span>Итого:</span>
-                                <span class="text-primary">{{ order.calculate_total_with_discount }} ₽</span>
+                                <span class="text-primary">{{ order.total_amount }} ₽</span>
                             </div>
                         </div>
                     </div>

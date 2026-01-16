@@ -132,3 +132,23 @@ def order_detail(request, order_id):
     return render(request, 'orders/order_detail.html', {'order': order})
 
 # Функция apply_promo_code перенесена в приложение discounts
+
+@login_required
+@require_POST
+def cancel_order(request, order_id):
+    """Отмена заказа пользователем"""
+    order = get_object_or_404(Order, id=order_id, user=request.user)
+    
+    # Проверяем, можно ли отменить заказ
+    if not order.can_be_cancelled():
+        messages.error(request, 'Этот заказ нельзя отменить')
+        return redirect('orders:order_detail', order_id=order.id)
+    
+    try:
+        # Обновляем статус заказа на "отменен"
+        order.update_status('cancelled', comment='Отменен пользователем', changed_by=request.user)
+        messages.success(request, f'Заказ #{order.order_number} успешно отменен')
+    except Exception as e:
+        messages.error(request, f'Ошибка при отмене заказа: {str(e)}')
+    
+    return redirect('orders:order_detail', order_id=order.id)

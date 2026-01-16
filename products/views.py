@@ -64,7 +64,7 @@ def product_list(request):
     categories = Category.objects.all()
     techniques = Product.objects.filter(status='active').exclude(
         technique__isnull=True
-    ).exclude(technique='').values_list('technique', flat=True).distinct()
+    ).exclude(technique='').values('technique').distinct().order_by('technique').values_list('technique', flat=True)
     
     context = {
         'products': products_page,

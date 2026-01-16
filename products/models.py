@@ -19,6 +19,28 @@ class Category(models.Model):
     def __str__(self):
         return self.name
 
+class Technique(models.Model):
+    """Модель для техник рукоделия"""
+    name = models.CharField('Название техники', max_length=100, unique=True)
+    slug = models.SlugField('Slug', max_length=100, unique=True)
+    description = models.TextField('Описание', blank=True)
+    icon = models.CharField('Иконка', max_length=50, blank=True, 
+                           help_text='Название иконки Bootstrap, например: bi-scissors')
+    created_at = models.DateTimeField('Дата создания', auto_now_add=True)
+    
+    class Meta:
+        verbose_name = 'Техника'
+        verbose_name_plural = 'Техники'
+        ordering = ['name']
+    
+    def __str__(self):
+        return self.name
+    
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            from django.utils.text import slugify
+            self.slug = slugify(self.name)
+        super().save(*args, **kwargs)
 class Product(models.Model):
     STATUS_CHOICES = [
         ('active', 'Активен'),

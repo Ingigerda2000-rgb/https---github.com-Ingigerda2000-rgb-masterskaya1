@@ -1,6 +1,9 @@
 from django import forms
-from .models import Product, Category
+from .models import Product, Category, ProductImage
 from materials.models import Material
+
+class MultipleFileInput(forms.ClearableFileInput):
+    allow_multiple_selected = True
 
 class ProductForm(forms.ModelForm):
     materials = forms.ModelMultipleChoiceField(

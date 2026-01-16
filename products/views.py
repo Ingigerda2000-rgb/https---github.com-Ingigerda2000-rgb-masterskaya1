@@ -5,7 +5,7 @@ from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.contrib.auth.decorators import user_passes_test
-from .models import Product, Category
+from .models import Product, Category, ProductImage
 from materials.models import Material
 from .forms import ProductForm
 
@@ -106,9 +106,26 @@ def master_check(user):
 def add_product(request):
     """Добавление нового товара мастером"""
     if request.method == 'POST':
-        form = ProductForm(request.POST, request.FILES, master=request.user)
+        print(f"DEBUG: POST request received")
+        print(f"DEBUG: FILES keys: {list(request.FILES.keys())}")
+        print(f"DEBUG: FILES: {request.FILES}")
+
+        form = ProductForm(request.POST, master=request.user)
         if form.is_valid():
             product = form.save()
+
+            # Обработка загруженных изображений
+            images = request.FILES.getlist('images')
+            print(f"DEBUG: Images found: {len(images)}")
+            for i, image_file in enumerate(images):
+                print(f"DEBUG: Processing image {i+1}: {image_file.name}")
+                ProductImage.objects.create(
+                    product=product,
+                    image=image_file,
+                    is_main=(i == 0),  # Первое изображение делаем основным
+                    order=i
+                )
+
             messages.success(request, f'Товар "{product.name}" успешно добавлен!')
             return redirect('master_dashboard')
     else:

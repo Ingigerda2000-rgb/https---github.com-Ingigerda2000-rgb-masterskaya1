@@ -1,9 +1,7 @@
-# TODO: Update Product Image Display
+# TODO: Add Photo Upload to Product Addition
 
 ## Tasks
-- [x] Add Bootstrap modal HTML for image viewing with navigation buttons if multiple images
-- [x] Make main image clickable to open modal
-- [x] Update JavaScript: add openModal(), prevImage(), nextImage() functions, and update changeImage() to track current index
-
-## Followup
-- [x] Test the modal functionality after implementation
+- [x] Modify ProductForm to include multiple image upload field
+- [x] Update add_product view to handle and save uploaded images
+- [x] Update add_product.html template to include image upload interface
+- [x] Test the image upload functionality

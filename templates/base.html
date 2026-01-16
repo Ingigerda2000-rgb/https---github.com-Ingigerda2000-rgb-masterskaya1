@@ -36,23 +36,75 @@
     <header class="top-header" style="background-color: white; padding: 15px 0; border-bottom: 1px solid #eee; box-shadow: 0 2px 10px rgba(0,0,0,0.03);">
         <div class="container">
             <div class="row align-items-center">
+                <!-- Логотип -->
                 <div class="col-md-3 col-6">
-                    <a href="/" class="logo" style="font-size: 24px; font-weight: 700; color: var(--primary-color); text-decoration: none; display: flex; align-items: center;">
-                        <i class="bi bi-heart-fill me-2"></i>Рукодельная мастерская
+                    <a href="{% url 'home' %}" class="text-decoration-none">
+                        <h1 class="h4 mb-0" style="color: var(--primary-color); font-weight: 600;">
+                            <i class="bi bi-gem me-2"></i>Мастерская
+                        </h1>
                     </a>
                 </div>
                 
+                <!-- Поисковая строка -->
                 <div class="col-md-6 d-none d-md-block">
-                    <div class="search-container" style="max-width: 400px;">
-                        <form method="get" action="/">
-                            <input type="text" class="search-input" name="search" placeholder="Поиск товаров..." style="border-radius: 25px; border: 1px solid #ddd; padding: 10px 20px; width: 100%; font-size: 14px;">
-                        </form>
-                    </div>
+                    <form action="{% url 'home' %}" method="get" class="d-flex">
+                        <div class="input-group">
+                            <input type="text" name="search" class="form-control" placeholder="Поиск товаров..." 
+                                   value="{{ search_query|default:'' }}" style="border-radius: 20px 0 0 20px;">
+                            <button class="btn btn-outline-secondary" type="submit" style="border-radius: 0 20px 20px 0;">
+                                <i class="bi bi-search"></i>
+                            </button>
+                        </div>
+                    </form>
                 </div>
                 
-                <div class="col-md-3 col-6 text-end">
+                <!-- Корзина и вход -->
+                <div class="col-md-3 col-6 d-flex justify-content-end align-items-center">
+                    <!-- Корзина с всплывающим окном -->
+                    <div class="dropdown me-3">
+                        <a href="#" class="position-relative text-decoration-none dropdown-toggle" 
+                           style="color: var(--primary-color);" 
+                           id="cartDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-cart" style="font-size: 1.2rem;"></i>
+                            <span id="cart-count" class="badge bg-danger rounded-pill position-absolute top-0 start-100 translate-middle" 
+                                  style="font-size: 0.65rem; padding: 0.25rem 0.4rem;">
+                                0
+                            </span>
+                        </a>
+                        
+                        <!-- Всплывающее окно корзины -->
+                        <div class="dropdown-menu dropdown-menu-end p-0" aria-labelledby="cartDropdown" style="width: 320px; max-height: 500px; overflow-y: auto;">
+                            <div class="card border-0">
+                                <div class="card-header py-2" style="background-color: #8a2be2; color: white;">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span><i class="bi bi-cart me-2"></i>Корзина</span>
+                                        <span id="cart-total-badge" class="badge bg-light" style="color: #8a2be2;">0 ₽</span>
+                                    </div>
+                                </div>
+                                <div class="card-body p-0" id="cart-preview-items">
+                                    <!-- Здесь будут элементы корзины -->
+                                    <div class="text-center py-4 text-muted" id="empty-cart-message">
+                                        <i class="bi bi-cart-x" style="font-size: 2rem;"></i>
+                                        <p class="mt-2">Ваша корзина пуста</p>
+                                    </div>
+                                </div>
+                                <div class="card-footer p-2">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <span class="fw-bold">Итого:</span>
+                                        <span class="fw-bold" id="cart-total">0 ₽</span>
+                                    </div>
+                                    <div class="d-grid">
+                                        <a href="{% url 'cart_view' %}" class="btn" style="background-color: #8a2be2; color: white;">
+                                            <i class="bi bi-cart-check me-2"></i>Перейти в корзину
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
                     {% if user.is_authenticated %}
-                    <div class="dropdown">
+                    <div class="dropdown d-inline-block">
                         <button class="login-btn dropdown-toggle" type="button" data-bs-toggle="dropdown" 
                                 style="background-color: transparent; color: var(--primary-color); border: 1px solid var(--primary-color); padding: 8px 20px; border-radius: 20px; font-weight: 500;">
                             <i class="bi bi-person me-1"></i>{{ user.email|truncatechars:15 }}
@@ -60,6 +112,14 @@
                         <ul class="dropdown-menu dropdown-menu-end">
                             <li><a class="dropdown-item" href="{% url 'profile' %}">
                                 <i class="bi bi-person me-2"></i>Профиль
+                            </a></li>
+                            
+                            <li><a class="dropdown-item" href="{% url 'cart_view' %}">
+                                <i class="bi bi-cart me-2"></i>Корзина
+                            </a></li>
+                            
+                            <li><a class="dropdown-item" href="{% url 'favorites_list' %}">
+                                <i class="bi bi-heart me-2"></i>Избранное
                             </a></li>
                             
                             {% if user.is_master %}
@@ -90,6 +150,21 @@
                         <i class="bi bi-person me-1"></i>Войти / Регистрация
                     </a>
                     {% endif %}
+                </div>
+            </div>
+            
+            <!-- Мобильная поисковая строка -->
+            <div class="row mt-2 d-md-none">
+                <div class="col-12">
+                    <form action="{% url 'home' %}" method="get" class="d-flex">
+                        <div class="input-group">
+                            <input type="text" name="search" class="form-control" placeholder="Поиск товаров..." 
+                                   value="{{ search_query|default:'' }}" style="border-radius: 20px 0 0 20px;">
+                            <button class="btn btn-outline-secondary" type="submit" style="border-radius: 0 20px 20px 0;">
+                                <i class="bi bi-search"></i>
+                            </button>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>
@@ -123,5 +198,11 @@
         }, 5000);
     </script>
     {% block extra_js %}{% endblock %}
+    
+    <!-- CSRF токен для AJAX запросов -->
+    <meta name="csrf-token" content="{{ csrf_token }}">
+    
+    <!-- Скрипт для работы с корзиной -->
+    <script src="{% static 'js/cart.js' %}"></script>
 </body>
 </html>

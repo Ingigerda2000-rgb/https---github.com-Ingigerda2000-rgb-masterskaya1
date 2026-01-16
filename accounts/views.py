@@ -238,11 +238,12 @@ def profile(request):
     
     # Получаем заказы пользователя
     from orders.models import Order
-    orders = Order.objects.filter(user=request.user).order_by('-created_at')[:5]
+    orders = Order.objects.filter(user=request.user).order_by('-created_at')
     
     context = {
         'form': form,
-        'title': 'Мой профиль'
+        'title': 'Мой профиль',
+        'orders': orders
     }
     return render(request, 'accounts/profile.html', context)
 

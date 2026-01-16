@@ -3,7 +3,7 @@ from accounts.models import User
 from products.models import Product
 
 class Cart(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='carts')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='carts', null=True, blank=True)
     created_at = models.DateTimeField('Дата создания', auto_now_add=True)
     updated_at = models.DateTimeField('Дата обновления', auto_now=True)
     session_key = models.CharField('Ключ сессии', max_length=40, null=True, blank=True)
@@ -13,7 +13,10 @@ class Cart(models.Model):
         verbose_name_plural = 'Корзины'
     
     def __str__(self):
-        return f"Корзина пользователя {self.user.email}"
+        if self.user:
+            return f"Корзина пользователя {self.user.email}"
+        else:
+            return f"Корзина анонимного пользователя (сессия: {self.session_key})"
     
     def calculate_total(self):
         """Расчет общей суммы корзины"""

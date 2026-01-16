@@ -137,3 +137,63 @@ def add_product(request):
     }
 
     return render(request, 'products/add_product.html', context)
+
+def toggle_favorite(request, product_id):
+    """Добавление/удаление товара из избранного"""
+    if not request.user.is_authenticated:
+        # Для неавторизованных пользователей возвращаем JSON с ошибкой
+        return JsonResponse({
+            'success': False,
+            'message': 'Необходимо войти в систему',
+            'redirect': '/accounts/login/'
+        })
+    
+    product = get_object_or_404(Product, id=product_id)
+    
+    # Проверяем, есть ли товар в избранном
+    from .models import Favorite
+    favorite, created = Favorite.objects.get_or_create(
+        user=request.user,
+        product=product
+    )
+    
+    # Если товар уже был в избранном, удаляем его
+    if not created:
+        favorite.delete()
+        is_favorite = False
+        message = 'Товар удален из избранного'
+    else:
+        is_favorite = True
+        message = 'Товар добавлен в избранное'
+    
+    # Возвращаем JSON с результатом
+    return JsonResponse({
+        'success': True,
+        'is_favorite': is_favorite,
+        'message': message
+    })
+
+def check_favorite(request, product_id):
+    """Проверка, находится ли товар в избранном у пользователя"""
+    if not request.user.is_authenticated:
+        return JsonResponse({'is_favorite': False})
+    
+    from .models import Favorite
+    is_favorite = Favorite.objects.filter(
+        user=request.user,
+        product_id=product_id
+    ).exists()
+    
+    return JsonResponse({'is_favorite': is_favorite})
+
+@login_required
+def favorites_list(request):
+    """Список избранных товаров пользователя"""
+    from .models import Favorite
+    favorites = Favorite.objects.filter(user=request.user).select_related('product')
+    
+    context = {
+        'favorites': favorites,
+    }
+    
+    return render(request, 'products/favorites.html', context)

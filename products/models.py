@@ -264,3 +264,17 @@ class ProductAttribute(models.Model):
     
     def __str__(self):
         return f"{self.name}: {self.value}"
+
+class Favorite(models.Model):
+    """Модель для избранных товаров пользователя"""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='favorites')
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='favorited_by')
+    added_at = models.DateTimeField('Дата добавления', auto_now_add=True)
+    
+    class Meta:
+        verbose_name = 'Избранное'
+        verbose_name_plural = 'Избранное'
+        unique_together = ['user', 'product']  # Пользователь может добавить товар в избранное только один раз
+    
+    def __str__(self):
+        return f"{self.user.email} - {self.product.name}"

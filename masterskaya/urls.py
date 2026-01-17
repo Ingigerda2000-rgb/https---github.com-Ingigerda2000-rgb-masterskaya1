@@ -13,6 +13,7 @@ urlpatterns = [
     path('materials/', include('materials.urls')),
     path('orders/', include('orders.urls')),
     path('reviews/', include('reviews.urls')),
+    path('custom_orders/', include('custom_orders.urls')),
     path('discounts/', include('discounts.urls')),
 ]
 

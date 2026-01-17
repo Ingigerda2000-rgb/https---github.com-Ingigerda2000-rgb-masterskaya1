@@ -1,0 +1,674 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Конструктор {{ product.name }} - Рукодельная мастерская{% endblock %}
+
+{% block extra_css %}
+<style>
+    .constructor-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 30px 20px;
+    }
+    
+    .constructor-header {
+        background: linear-gradient(135deg, #f8f5f2 0%, #fff 100%);
+        border-radius: 15px;
+        padding: 30px;
+        margin-bottom: 30px;
+        border: 1px solid #eee;
+    }
+    
+    .constructor-title {
+        font-size: 28px;
+        font-weight: 700;
+        color: #333;
+        margin-bottom: 10px;
+    }
+    
+    .constructor-subtitle {
+        color: #666;
+        font-size: 16px;
+        margin-bottom: 20px;
+    }
+    
+    .constructor-body {
+        display: flex;
+        gap: 30px;
+        flex-wrap: wrap;
+    }
+    
+    .constructor-left {
+        flex: 1;
+        min-width: 300px;
+    }
+    
+    .constructor-right {
+        width: 350px;
+    }
+    
+    .constructor-section {
+        background: white;
+        border-radius: 10px;
+        padding: 25px;
+        margin-bottom: 20px;
+        box-shadow: 0 3px 10px rgba(0,0,0,0.05);
+        border: 1px solid #eee;
+    }
+    
+    .section-title {
+        font-size: 18px;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .section-title i {
+        color: var(--primary-color);
+    }
+    
+    .option-group {
+        margin-bottom: 25px;
+    }
+    
+    .option-label {
+        display: block;
+        font-weight: 500;
+        margin-bottom: 8px;
+        color: #555;
+    }
+    
+    .material-options {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+    
+    .material-option {
+        flex: 1;
+        min-width: 120px;
+    }
+    
+    .material-card {
+        border: 2px solid #eee;
+        border-radius: 8px;
+        padding: 15px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s;
+        background: white;
+    }
+    
+    .material-card:hover {
+        border-color: #ddd;
+        transform: translateY(-2px);
+    }
+    
+    .material-card.selected {
+        border-color: var(--primary-color);
+        background-color: rgba(179, 29, 196, 0.05);
+    }
+    
+    .material-name {
+        font-weight: 600;
+        margin-bottom: 5px;
+    }
+    
+    .material-price {
+        color: var(--primary-color);
+        font-weight: 600;
+    }
+    
+    .material-days {
+        color: #666;
+        font-size: 12px;
+    }
+    
+    .size-options {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+    
+    .size-option {
+        flex: 1;
+        min-width: 80px;
+    }
+    
+    .size-btn {
+        width: 100%;
+        padding: 10px;
+        border: 2px solid #eee;
+        border-radius: 8px;
+        background: white;
+        cursor: pointer;
+        transition: all 0.3s;
+        font-weight: 500;
+    }
+    
+    .size-btn:hover {
+        border-color: #ddd;
+    }
+    
+    .size-btn.selected {
+        border-color: var(--primary-color);
+        background-color: rgba(179, 29, 196, 0.05);
+        color: var(--primary-color);
+    }
+    
+    .color-options {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+    
+    .color-option {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        cursor: pointer;
+        border: 2px solid transparent;
+        transition: all 0.3s;
+    }
+    
+    .color-option:hover {
+        transform: scale(1.1);
+    }
+    
+    .color-option.selected {
+        border-color: #333;
+        transform: scale(1.1);
+    }
+    
+    .personalization-input {
+        width: 100%;
+        padding: 12px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        font-size: 14px;
+        resize: vertical;
+        min-height: 80px;
+    }
+    
+    .personalization-input:focus {
+        outline: none;
+        border-color: var(--primary-color);
+    }
+    
+    .preview-card {
+        background: white;
+        border-radius: 10px;
+        padding: 25px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+        border: 1px solid #eee;
+        position: sticky;
+        top: 20px;
+    }
+    
+    .preview-title {
+        font-size: 20px;
+        font-weight: 700;
+        color: #333;
+        margin-bottom: 20px;
+        text-align: center;
+    }
+    
+    .preview-image {
+        width: 100%;
+        height: 200px;
+        background-color: #f8f5f2;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+    }
+    
+    .preview-image img {
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: contain;
+    }
+    
+    .price-breakdown {
+        margin: 20px 0;
+    }
+    
+    .price-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 8px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid #f0f0f0;
+    }
+    
+    .price-row.total {
+        font-weight: 700;
+        font-size: 18px;
+        color: var(--primary-color);
+        border-bottom: none;
+        margin-top: 10px;
+        padding-top: 10px;
+        border-top: 2px solid #eee;
+    }
+    
+    .production-time {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin: 20px 0;
+        padding: 15px;
+        background-color: #f8f9fa;
+        border-radius: 8px;
+    }
+    
+    .production-time i {
+        color: var(--primary-color);
+        font-size: 20px;
+    }
+    
+    .add-to-cart-btn {
+        width: 100%;
+        padding: 15px;
+        background-color: var(--primary-color);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 16px;
+        cursor: pointer;
+        transition: all 0.3s;
+        margin-top: 20px;
+    }
+    
+    .add-to-cart-btn:hover {
+        background-color: #956555;
+    }
+    
+    .add-to-cart-btn:disabled {
+        background-color: #ccc;
+        cursor: not-allowed;
+    }
+    
+    .notes-input {
+        width: 100%;
+        padding: 12px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        font-size: 14px;
+        resize: vertical;
+        min-height: 60px;
+        margin-top: 15px;
+    }
+    
+    .validation-error {
+        color: #dc3545;
+        font-size: 12px;
+        margin-top: 5px;
+    }
+    
+    @media (max-width: 768px) {
+        .constructor-body {
+            flex-direction: column;
+        }
+        
+        .constructor-right {
+            width: 100%;
+        }
+        
+        .preview-card {
+            position: static;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="constructor-container">
+    <div class="constructor-header">
+        <h1 class="constructor-title">Конструктор: {{ product.name }}</h1>
+        <p class="constructor-subtitle">Создайте уникальное изделие по вашему вкусу</p>
+    </div>
+    
+    <div class="constructor-body">
+        <!-- Левая часть - конструктор -->
+        <div class="constructor-left">
+            {% for section in template.configuration.sections %}
+            <div class="constructor-section" id="section-{{ section.id }}">
+                <h3 class="section-title">
+                    {% if section.id == 'materials' %}<i class="bi bi-palette"></i>
+                    {% elif section.id == 'size' %}<i class="bi bi-rulers"></i>
+                    {% elif section.id == 'color' %}<i class="bi bi-droplet"></i>
+                    {% elif section.id == 'personalization' %}<i class="bi bi-pencil"></i>
+                    {% else %}<i class="bi bi-gear"></i>{% endif %}
+                    {{ section.name }}
+                    {% if section.required %}<span class="text-danger">*</span>{% endif %}
+                </h3>
+                
+                <div class="option-group">
+                    {% if section.type == 'multiple_choice' %}
+                        <!-- Выбор материалов -->
+                        <div class="material-options">
+                            {% for option in section.options %}
+                            <div class="material-option">
+                                <div class="material-card" 
+                                     data-section="{{ section.id }}"
+                                     data-option-id="{{ option.id }}"
+                                     onclick="selectOption('{{ section.id }}', '{{ option.id }}', true)">
+                                    <div class="material-name">{{ option.name }}</div>
+                                    <div class="material-price">{{ option.price }} ₽</div>
+                                    <div class="material-days">+{{ option.additional_days }} дн.</div>
+                                </div>
+                            </div>
+                            {% empty %}
+                            <p class="text-muted">Нет доступных вариантов</p>
+                            {% endfor %}
+                        </div>
+                        
+                    {% elif section.type == 'dropdown' %}
+                        <!-- Выбор размера -->
+                        <div class="size-options">
+                            {% for option in section.options %}
+                            <div class="size-option">
+                                <button type="button" 
+                                        class="size-btn"
+                                        data-section="{{ section.id }}"
+                                        data-option-id="{{ option.id }}"
+                                        onclick="selectOption('{{ section.id }}', '{{ option.id }}', false)">
+                                    {{ option.name }}
+                                </button>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        
+                    {% elif section.type == 'color_picker' %}
+                        <!-- Выбор цвета -->
+                        <div class="color-options">
+                            {% for option in section.options %}
+                            <div class="color-option" 
+                                 style="background-color: {{ option.hex }};"
+                                 title="{{ option.name }}"
+                                 data-section="{{ section.id }}"
+                                 data-option-id="{{ option.id }}"
+                                 onclick="selectOption('{{ section.id }}', '{{ option.id }}', false)">
+                            </div>
+                            {% endfor %}
+                        </div>
+                        
+                    {% elif section.type == 'text_input' %}
+                        <!-- Персонализация текстом -->
+                        <textarea class="personalization-input" 
+                                  placeholder="{{ section.placeholder }}"
+                                  data-section="{{ section.id }}"
+                                  oninput="updatePersonalization(this)"></textarea>
+                    {% endif %}
+                    
+                    {% if section.max_selections %}
+                    <div class="text-muted small mt-2">
+                        Можно выбрать до {{ section.max_selections }} вариантов
+                    </div>
+                    {% endif %}
+                    
+                    <div class="validation-error" id="error-{{ section.id }}"></div>
+                </div>
+            </div>
+            {% endfor %}
+            
+            <!-- Примечания покупателя -->
+            <div class="constructor-section">
+                <h3 class="section-title"><i class="bi bi-chat-left-text"></i> Примечания к заказу</h3>
+                <textarea class="notes-input" id="customerNotes" 
+                          placeholder="Дополнительные пожелания, особенности, размеры..."></textarea>
+            </div>
+        </div>
+        
+        <!-- Правая часть - предпросмотр и итог -->
+        <div class="constructor-right">
+            <div class="preview-card">
+                <h3 class="preview-title">Предпросмотр заказа</h3>
+                
+                <div class="preview-image">
+                    {% if product.get_main_image %}
+                    <img src="{{ product.get_main_image.url }}" alt="{{ product.name }}">
+                    {% else %}
+                    <i class="bi bi-image" style="font-size: 80px; color: #ddd;"></i>
+                    {% endif %}
+                </div>
+                
+                <div class="price-breakdown">
+                    <div class="price-row">
+                        <span>Базовая цена:</span>
+                        <span id="basePrice">{{ template.base_price }} ₽</span>
+                    </div>
+                    
+                    <div class="price-row" id="materialsPriceRow" style="display: none;">
+                        <span>Материалы:</span>
+                        <span id="materialsPrice">0 ₽</span>
+                    </div>
+                    
+                    <div class="price-row" id="sizePriceRow" style="display: none;">
+                        <span>Размер:</span>
+                        <span id="sizePrice">0 ₽</span>
+                    </div>
+                    
+                    <div class="price-row" id="personalizationPriceRow" style="display: none;">
+                        <span>Персонализация:</span>
+                        <span id="personalizationPrice">0 ₽</span>
+                    </div>
+                    
+                    <div class="price-row total">
+                        <span>Итого:</span>
+                        <span id="totalPrice">{{ template.base_price }} ₽</span>
+                    </div>
+                </div>
+                
+                <div class="production-time">
+                    <i class="bi bi-clock"></i>
+                    <div>
+                        <div>Срок изготовления:</div>
+                        <div class="fw-bold" id="productionTime">{{ template.base_production_days }} дней</div>
+                    </div>
+                </div>
+                
+                <button class="add-to-cart-btn" id="addToCartBtn" onclick="addToCart()" disabled>
+                    <i class="bi bi-cart-plus me-2"></i>Добавить в корзину
+                </button>
+                
+                <div class="text-center mt-3">
+                    <a href="{% url 'product_detail' product.id %}" class="text-decoration-none">
+                        <i class="bi bi-arrow-left me-1"></i>Вернуться к товару
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Текущие выборы пользователя
+let selections = {
+    materials: [],
+    size: null,
+    color: null,
+    personalization: null
+};
+
+// Максимальное количество выборов материалов
+const maxMaterials = 3;
+
+// Выбор опции
+function selectOption(sectionId, optionId, isMultiple) {
+    const section = document.querySelector(`[data-section="${sectionId}"]`);
+    
+    if (isMultiple) {
+        // Для множественного выбора (материалы)
+        const index = selections[sectionId].findIndex(item => item.id === optionId);
+        
+        if (index === -1) {
+            // Добавляем, если не превышен лимит
+            if (selections[sectionId].length < maxMaterials) {
+                selections[sectionId].push({
+                    id: optionId,
+                    name: section.querySelector(`[data-option-id="${optionId}"] .material-name`).textContent,
+                    price: parseFloat(section.querySelector(`[data-option-id="${optionId}"] .material-price`).textContent),
+                    additional_days: parseInt(section.querySelector(`[data-option-id="${optionId}"] .material-days`).textContent)
+                });
+                section.querySelector(`[data-option-id="${optionId}"]`).classList.add('selected');
+            }
+        } else {
+            // Удаляем, если уже выбран
+            selections[sectionId].splice(index, 1);
+            section.querySelector(`[data-option-id="${optionId}"]`).classList.remove('selected');
+        }
+    } else {
+        // Для одиночного выбора (размер, цвет)
+        if (selections[sectionId] && selections[sectionId].id === optionId) {
+            // Снимаем выбор, если тот же элемент
+            selections[sectionId] = null;
+            section.querySelectorAll('.selected').forEach(el => el.classList.remove('selected'));
+        } else {
+            // Выбираем новый элемент
+            selections[sectionId] = {
+                id: optionId,
+                name: section.querySelector(`[data-option-id="${optionId}"]`).textContent || 
+                      section.querySelector(`[data-option-id="${optionId}"]`).title
+            };
+            
+            // Снимаем выбор со всех элементов секции
+            section.querySelectorAll('.selected').forEach(el => el.classList.remove('selected'));
+            // Выделяем выбранный
+            section.querySelector(`[data-option-id="${optionId}"]`).classList.add('selected');
+        }
+    }
+    
+    // Обновляем расчет
+    updateCalculation();
+}
+
+// Обновление персонализации
+function updatePersonalization(textarea) {
+    const text = textarea.value.trim();
+    if (text) {
+        selections.personalization = {
+            text: text,
+            price: text.length * 10, // 10 руб за символ
+            additional_days: Math.ceil(text.length / 20) // +1 день за каждые 20 символов
+        };
+    } else {
+        selections.personalization = null;
+    }
+    updateCalculation();
+}
+
+// Обновление расчета стоимости и сроков
+function updateCalculation() {
+    // Показываем/скрываем строки цен
+    document.getElementById('materialsPriceRow').style.display = selections.materials.length > 0 ? 'flex' : 'none';
+    document.getElementById('sizePriceRow').style.display = selections.size ? 'flex' : 'none';
+    document.getElementById('personalizationPriceRow').style.display = selections.personalization ? 'flex' : 'none';
+    
+    // Рассчитываем суммы
+    let materialsTotal = selections.materials.reduce((sum, item) => sum + item.price, 0);
+    let sizePrice = selections.size ? 100 : 0; // Примерная цена за размер
+    let personalizationPrice = selections.personalization ? selections.personalization.price : 0;
+    
+    // Обновляем отображение цен
+    document.getElementById('materialsPrice').textContent = materialsTotal + ' ₽';
+    document.getElementById('sizePrice').textContent = sizePrice + ' ₽';
+    document.getElementById('personalizationPrice').textContent = personalizationPrice + ' ₽';
+    
+    // Итоговая цена
+    const basePrice = parseFloat('{{ template.base_price }}');
+    const totalPrice = basePrice + materialsTotal + sizePrice + personalizationPrice;
+    document.getElementById('totalPrice').textContent = totalPrice + ' ₽';
+    
+    // Рассчитываем срок
+    let materialsDays = selections.materials.reduce((sum, item) => sum + item.additional_days, 0);
+    let sizeDays = selections.size ? 1 : 0;
+    let personalizationDays = selections.personalization ? selections.personalization.additional_days : 0;
+    
+    const baseDays = {{ template.base_production_days }};
+    const totalDays = baseDays + materialsDays + sizeDays + personalizationDays;
+    document.getElementById('productionTime').textContent = totalDays + ' дней';
+    
+    // Проверяем обязательные поля
+    const requiredSections = JSON.parse('{{ template.configuration.sections|tojson|safe }}')
+        .filter(section => section.required)
+        .map(section => section.id);
+    
+    const isValid = requiredSections.every(sectionId => {
+        if (sectionId === 'materials') {
+            return selections.materials.length > 0;
+        }
+        return selections[sectionId] !== null;
+    });
+    
+    // Активируем/деактивируем кнопку
+    document.getElementById('addToCartBtn').disabled = !isValid;
+}
+
+// Добавление в корзину
+function addToCart() {
+    const customerNotes = document.getElementById('customerNotes').value;
+    const templateId = {{ template.id }};
+    
+    // Собираем данные
+    const data = {
+        template_id: templateId,
+        selections: selections,
+        customer_notes: customerNotes
+    };
+    
+    // Отправляем запрос
+    fetch('{% url "custom_order_create" product.id %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            // Перенаправляем в корзину
+            window.location.href = '{% url "cart_view" %}';
+        } else {
+            alert('Ошибка: ' + (data.error || data.errors?.join(', ') || 'Неизвестная ошибка'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Произошла ошибка при добавлении в корзину');
+    });
+}
+
+// Вспомогательная функция для получения CSRF токена
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+// Инициализация при загрузке
+document.addEventListener('DOMContentLoaded', function() {
+    updateCalculation();
+});
+</script>
+{% endblock %}

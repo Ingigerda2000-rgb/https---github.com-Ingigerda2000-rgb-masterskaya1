@@ -35,6 +35,7 @@ class CartItem(models.Model):
     cart = models.ForeignKey(Cart, on_delete=models.CASCADE, related_name='items')
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='cart_items')
     quantity = models.IntegerField('Количество', default=1)
+    price = models.DecimalField('Цена', max_digits=10, decimal_places=2, null=True, blank=True)
     added_at = models.DateTimeField('Дата добавления', auto_now_add=True)
     
     class Meta:
@@ -47,7 +48,8 @@ class CartItem(models.Model):
     
     def calculate_subtotal(self):
         """Расчет стоимости позиции"""
-        return self.product.price * self.quantity
+        price = self.price if self.price is not None else self.product.price
+        return price * self.quantity
     
     def is_available(self):
         """Проверка доступности товара"""

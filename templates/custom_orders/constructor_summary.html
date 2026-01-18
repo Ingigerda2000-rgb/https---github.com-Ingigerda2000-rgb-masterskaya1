@@ -3,7 +3,7 @@
 
 {% block title %}Шаг 6: Итоговая информация{% endblock %}
 
-{% block extra_css %}
+{% block content %}
 <style>
     .summary-container {
         max-width: 1200px;
@@ -338,8 +338,6 @@
         }
     }
 </style>
-
-{% block content %}
 <div class="summary-container">
     <!-- Прогресс - теперь 6 шагов -->
     <div class="step-progress">
@@ -369,9 +367,14 @@
                 <h3 class="section-title">
                     <i class="bi bi-box"></i> Изделие
                 </h3>
+                {% if template.product.get_main_image %}
+                <img src="{{ template.product.get_main_image.url }}" alt="{{ template.product.name }}"
+                     class="img-fluid rounded" style="max-height: 150px;">
+                {% else %}
                 <div class="product-image-placeholder">
                     <i class="bi bi-image"></i>
                 </div>
+                {% endif %}
                 <div class="detail-row">
                     <div class="detail-label">Товар:</div>
                     <div class="detail-value">{{ template.product.name }} → {{ template.name }}</div>
@@ -486,15 +489,7 @@
             {% if selected_materials %}
             <div class="calculation-row">
                 <span class="calculation-label">Материалы</span>
-                <span class="calculation-value" id="materialsTotal">
-                    {% with total=0 %}
-                        {% for material in selected_materials %}
-                            {% with total=total|add:material.price %}
-                            {% endwith %}
-                        {% endfor %}
-                        {{ total }} ₽
-                    {% endwith %}
-                </span>
+                <span class="calculation-value" id="materialsTotal">{{ total_materials }} ₽</span>
             </div>
             {% endif %}
             
@@ -502,17 +497,7 @@
             {% if selected_options %}
             <div class="calculation-row">
                 <span class="calculation-label">Дополнительные опции</span>
-                <span class="calculation-value" id="optionsTotal">
-                    {% with total=0 %}
-                        {% for option_id, option in selected_options.items %}
-                            {% if option.selected %}
-                                {% with total=total|add:option.price %}
-                                {% endwith %}
-                            {% endif %}
-                        {% endfor %}
-                        {{ total }} ₽
-                    {% endwith %}
-                </span>
+                <span class="calculation-value" id="optionsTotal">{{ total_options }} ₽</span>
             </div>
             {% endif %}
             
@@ -577,7 +562,7 @@
                     <i class="bi bi-pencil"></i> Редактировать
                 </a>
                 
-                <button class="action-btn btn-confirm" onclick="confirmOrder()">
+                <button class="action-btn btn-confirm" onclick="finalizeOrder()">
                     <i class="bi bi-cart-plus"></i> Добавить в корзину
                 </button>
             </div>
@@ -627,6 +612,13 @@
 <script>
 // Финальное оформление заказа - теперь просто добавление в корзину
 function finalizeOrder() {
+    // Проверяем, авторизован ли пользователь
+    {% if not request.user.is_authenticated %}
+        alert('Для добавления в корзину необходимо авторизоваться');
+        window.location.href = '{% url "login" %}?next={% url "custom_orders:constructor_step" step=6 %}';
+        return;
+    {% endif %}
+
     // Показываем индикатор загрузки
     const confirmBtn = document.querySelector('.btn-confirm');
     const originalText = confirmBtn.innerHTML;
@@ -645,47 +637,8 @@ function finalizeOrder() {
     .then(data => {
         if (data.success) {
             // Показываем успешное сообщение
-            document.getElementById('confirmationModal').querySelector('.modal-body').innerHTML = `
-                <div class="mb-4">
-                    <i class="bi bi-check-circle" style="font-size: 60px; color: #28a745;"></i>
-                </div>
-                <h4 class="mb-3">Успешно добавлено!</h4>
-                <p class="text-muted mb-4">
-                    Индивидуальный заказ добавлен в вашу корзину.
-                </p>
-                
-                <div class="alert alert-success text-start">
-                    <div class="d-flex align-items-center mb-2">
-                        <i class="bi bi-check-circle-fill me-2"></i>
-                        <span>Стоимость: <strong>${data.total_price || {{ total_price }}} ₽</strong></span>
-                    </div>
-                    <div class="d-flex align-items-center mb-2">
-                        <i class="bi bi-check-circle-fill me-2"></i>
-                        <span>Срок изготовления: <strong>${data.production_days || {{ production_days }}} дней</strong></span>
-                    </div>
-                    <div class="d-flex align-items-center">
-                        <i class="bi bi-check-circle-fill me-2"></i>
-                        <span>Материалы зарезервированы</span>
-                    </div>
-                </div>
-            `;
-            
-            // Обновляем кнопки в модальном окне
-            document.getElementById('confirmationModal').querySelector('.modal-footer').innerHTML = `
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                    <i class="bi bi-arrow-left me-2"></i>Вернуться
-                </button>
-                <button type="button" class="btn btn-primary" onclick="window.location.href='${data.redirect_url || '/cart/'}'">
-                    <i class="bi bi-cart me-2"></i>Перейти в корзину
-                </button>
-            `;
-            
-            // Закрываем модальное окно через 3 секунды
-            setTimeout(() => {
-                const modal = bootstrap.Modal.getInstance(document.getElementById('confirmationModal'));
-                modal.hide();
-                window.location.href = data.redirect_url || '/cart/';
-            }, 3000);
+            alert('Индивидуальный заказ добавлен в корзину!');
+            window.location.href = data.redirect_url || '/cart/';
         } else {
             // Показываем ошибку
             alert('Ошибка: ' + data.error);

@@ -2,7 +2,7 @@ from django.db import models
 from django.utils import timezone  # Добавили импорт timezone
 from accounts.models import User
 from products.models import Product, Technique
-from orders.models import OrderItem
+from cart.models import CartItem
 import json
 
 class ProductTemplate(models.Model):
@@ -234,9 +234,9 @@ class ProductTemplate(models.Model):
 
 class CustomOrderSpecification(models.Model):
     """Спецификация кастомного заказа"""
-    order_item = models.OneToOneField(OrderItem, on_delete=models.CASCADE, 
+    order_item = models.OneToOneField('orders.OrderItem', on_delete=models.CASCADE, null=True, blank=True,
                                       related_name='custom_specification')
-    template = models.ForeignKey(ProductTemplate, on_delete=models.PROTECT, 
+    template = models.ForeignKey(ProductTemplate, on_delete=models.PROTECT,
                                 related_name='custom_orders')
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='custom_orders')
     
@@ -265,7 +265,10 @@ class CustomOrderSpecification(models.Model):
         ordering = ['-created_at']
     
     def __str__(self):
-        return f"Кастомный заказ {self.order_item.order.order_number}"
+        if self.order_item:
+            return f"Кастомный заказ {self.order_item.order.order_number}"
+        else:
+            return f"Кастомный заказ {self.template.product.name}"
     
     def save(self, *args, **kwargs):
         """Автоматический расчёт при сохранении"""
@@ -343,20 +346,16 @@ class CustomOrderSpecification(models.Model):
         self.approved_at = timezone.now()  # Теперь timezone определен
         self.approval_notes = notes
         self.save()
-        
-        # Обновляем статус заказа
-        self.order_item.order.update_status('processing', 
-                                           comment='Кастомный заказ согласован мастером')
-    
+
+        # TODO: Notify user that custom order is approved
+
     def reject(self, notes=''):
         """Отклонение заказа мастером"""
         self.is_approved = False
         self.approval_notes = notes
         self.save()
-        
-        # Обновляем статус заказа
-        self.order_item.order.update_status('cancelled', 
-                                           comment=f'Кастомный заказ отклонён: {notes}')
+
+        # TODO: Notify user that custom order is rejected
 
 class DesignElement(models.Model):
     """Элемент дизайна для конструктора"""

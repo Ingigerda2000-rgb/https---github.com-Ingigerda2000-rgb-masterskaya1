@@ -3,7 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
-from django.db import transaction
+from django.db import transaction, IntegrityError
 from django.core.exceptions import ValidationError
 import json
 from products.models import Category
@@ -186,41 +186,38 @@ def constructor_step(request, step, template_id=None):
         template_id = constructor_data.get('template_id')
         if not template_id:
             return redirect('custom_orders:constructor_main')
-        
+
         template = get_object_or_404(ProductTemplate, id=template_id)
-        
-        # Рассчитываем итоговую стоимость БЕЗ доставки
-        total_price = float(template.base_price)
-        
-        # Добавляем стоимость материалов
+
+        # Получаем выбранные материалы и опции
         selected_materials = constructor_data.get('materials', [])
-        for material_data in selected_materials:
-            total_price += float(material_data.get('price', 0))
-        
-        # Добавляем стоимость опций
         selected_options = constructor_data.get('options', {})
-        for option in selected_options.values():
-            if option.get('selected'):
-                total_price += float(option.get('price', 0))
-        
+
+        # Рассчитываем суммы
+        total_materials = sum(float(material.get('price', 0)) for material in selected_materials)
+        total_options = sum(float(option.get('price', 0)) for option in selected_options.values() if option.get('selected'))
+
+        # Рассчитываем итоговую стоимость БЕЗ доставки
+        total_price = float(template.base_price) + total_materials + total_options
+
         # Учет срочности
         urgency = constructor_data.get('urgency', 'standard')
         if urgency == 'fast':
             total_price *= 1.2  # +20%
         elif urgency == 'express':
             total_price *= 1.5  # +50%
-        
+
         # РАССЧИТЫВАЕМ СРОКИ с учетом срочности
         base_days = int(constructor_data.get('base_days', template.base_production_days) or template.base_production_days or 5)
         additional_days = int(constructor_data.get('additional_days', 0))
-        
+
         if urgency == 'fast':
             production_days = int((base_days + additional_days) * 0.7)  # На 30% быстрее
         elif urgency == 'express':
             production_days = int((base_days + additional_days) * 0.5)  # На 50% быстрее
         else:
             production_days = base_days + additional_days
-        
+
         # Calculate surcharge amounts
         surcharge_fast = round(template.base_price * 0.2, 2) if urgency == 'fast' else 0
         surcharge_express = round(template.base_price * 0.5, 2) if urgency == 'express' else 0
@@ -233,6 +230,8 @@ def constructor_step(request, step, template_id=None):
             'selected_color': constructor_data.get('color'),
             'description': constructor_data.get('description', ''),
             'total_price': round(total_price, 2),
+            'total_materials': total_materials,
+            'total_options': total_options,
             'production_days': max(production_days, 1),
             'urgency': urgency,
             'additional_days': additional_days,
@@ -303,7 +302,12 @@ def finalize_custom_order(request):
             return JsonResponse({'success': False, 'error': 'Не выбран товар'}, status=400)
         
         template = get_object_or_404(ProductTemplate, id=constructor_data['template_id'])
+        if not template.is_active:
+            return JsonResponse({'success': False, 'error': 'Шаблон не доступен'}, status=400)
+
         product = template.product
+        if product.status != 'active':
+            return JsonResponse({'success': False, 'error': 'Товар не доступен'}, status=400)
         
         # Рассчитываем итоговую стоимость
         total_price = float(template.base_price)
@@ -343,16 +347,19 @@ def finalize_custom_order(request):
             cart, _ = Cart.objects.get_or_create(user=request.user)
             
             # Создаем элемент корзины
-            cart_item = CartItem.objects.create(
-                cart=cart,
-                product=product,
-                quantity=1,
-                price=total_price  # Устанавливаем кастомную цену
-            )
+            try:
+                cart_item = CartItem.objects.create(
+                    cart=cart,
+                    product=product,
+                    quantity=1,
+                    price=total_price  # Устанавливаем кастомную цену
+                )
+            except IntegrityError:
+                return JsonResponse({'success': False, 'error': 'Этот товар уже в корзине'})
             
             # Создаем спецификацию кастомного заказа
             specification = CustomOrderSpecification.objects.create(
-                order_item=cart_item,
+                order_item=None,
                 template=template,
                 user=request.user,
                 configuration={
@@ -555,11 +562,11 @@ def my_custom_orders(request):
     specifications = CustomOrderSpecification.objects.filter(user=request.user).select_related(
         'template', 'order_item__order'
     ).order_by('-created_at')
-    
+
     context = {
         'specifications': specifications,
     }
-    
+
     return render(request, 'custom_orders/my_orders.html', context)
 
 # Представления для мастера

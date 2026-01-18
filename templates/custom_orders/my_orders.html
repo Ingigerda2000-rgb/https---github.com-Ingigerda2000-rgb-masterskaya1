@@ -49,6 +49,7 @@
                             <div class="mt-3">
                                 <p class="mb-1"><strong>Цена:</strong> {{ spec.total_price }} ₽</p>
                                 <p class="mb-1"><strong>Срок:</strong> {{ spec.production_days }} дней</p>
+                                {% if spec.order_item %}
                                 <p class="mb-1"><strong>Заказ:</strong> #{{ spec.order_item.order.order_number }}</p>
                                 <p class="mb-0">
                                     <strong>Статус заказа:</strong>
@@ -60,6 +61,16 @@
                                         {{ spec.order_item.order.get_status_display }}
                                     </span>
                                 </p>
+                                {% else %}
+                                <p class="mb-1"><strong>Статус согласования:</strong>
+                                    <span class="badge {% if spec.is_approved %}bg-success{% elif spec.approval_notes %}bg-danger{% else %}bg-warning{% endif %}">
+                                        {% if spec.is_approved %}Согласовано{% elif spec.approval_notes %}Отклонено{% else %}Ожидает согласования{% endif %}
+                                    </span>
+                                </p>
+                                <p class="mb-0">
+                                    <strong>Расположение:</strong> В корзине
+                                </p>
+                                {% endif %}
                             </div>
                         </div>
                     </div>
@@ -73,9 +84,15 @@
                             <a href="{% url 'custom_order_preview' spec.id %}" class="btn btn-sm btn-outline-primary me-1">
                                 <i class="bi bi-eye"></i>
                             </a>
-                            <a href="{% url 'order_detail' spec.order_item.order.id %}" class="btn btn-sm btn-outline-secondary">
+                            {% if spec.order_item %}
+                            <a href="{% url 'orders:order_detail' spec.order_item.order.id %}" class="btn btn-sm btn-outline-secondary">
                                 <i class="bi bi-bag"></i>
                             </a>
+                            {% else %}
+                            <a href="{% url 'cart:cart_view' %}" class="btn btn-sm btn-outline-secondary">
+                                <i class="bi bi-bag"></i>
+                            </a>
+                            {% endif %}
                         </div>
                     </div>
                 </div>

@@ -1,0 +1,551 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Шаг 4: Опишите вашу идею{% endblock %}
+
+{% block extra_css %}
+<style>
+    .step-container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 40px 20px;
+    }
+
+    .step-header {
+        margin-bottom: 40px;
+    }
+
+    .step-title {
+        font-size: 28px;
+        font-weight: 700;
+        color: #333;
+        margin-bottom: 10px;
+    }
+
+    .step-subtitle {
+        color: #666;
+        font-size: 16px;
+    }
+
+    .step-navigation {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 40px;
+        padding-top: 20px;
+        border-top: 1px solid #eee;
+    }
+
+    .nav-btn {
+        padding: 12px 30px;
+        border-radius: 50px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .btn-back {
+        background: #f8f5f2;
+        color: #333;
+        border: 1px solid #ddd;
+    }
+
+    .btn-back:hover {
+        background: #eee;
+    }
+
+    .btn-next {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+    }
+
+    .btn-next:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+    }
+
+    .btn-next:disabled {
+        background: #ccc;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+    }
+
+    .step-progress {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        margin-bottom: 30px;
+    }
+
+    .step-progress-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .step-progress-number {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        background: #f5f5f5;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+        font-weight: 600;
+        color: #999;
+    }
+
+    .step-progress-number.active {
+        background: #667eea;
+        color: white;
+    }
+
+    .step-progress-label {
+        font-size: 14px;
+        color: #666;
+        display: none;
+    }
+
+    @media (min-width: 768px) {
+        .step-progress-label {
+            display: block;
+        }
+    }
+
+    .description-container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 40px 20px;
+    }
+    
+    .description-box {
+        background: white;
+        border-radius: 12px;
+        padding: 30px;
+        border: 1px solid #eee;
+        box-shadow: 0 3px 10px rgba(0,0,0,0.05);
+        margin-bottom: 30px;
+    }
+    
+    .description-textarea {
+        width: 100%;
+        min-height: 200px;
+        padding: 20px;
+        border: 2px solid #eee;
+        border-radius: 8px;
+        font-size: 16px;
+        line-height: 1.6;
+        resize: vertical;
+        transition: all 0.3s;
+    }
+    
+    .description-textarea:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+    
+    .char-counter {
+        text-align: right;
+        color: #999;
+        font-size: 14px;
+        margin-top: 10px;
+    }
+    
+    .char-counter.warning {
+        color: #ff9900;
+    }
+    
+    .char-counter.error {
+        color: #ff3333;
+    }
+    
+    .upload-section {
+        margin-top: 30px;
+    }
+    
+    .upload-dropzone {
+        border: 2px dashed #ddd;
+        border-radius: 8px;
+        padding: 40px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s;
+        background: #fafafa;
+    }
+    
+    .upload-dropzone:hover {
+        border-color: #667eea;
+        background: #f0f7ff;
+    }
+    
+    .upload-dropzone.dragover {
+        border-color: #667eea;
+        background: #e6f0ff;
+    }
+    
+    .upload-icon {
+        font-size: 48px;
+        color: #667eea;
+        margin-bottom: 15px;
+    }
+    
+    .upload-text {
+        color: #666;
+        margin-bottom: 10px;
+    }
+    
+    .upload-hint {
+        color: #999;
+        font-size: 14px;
+    }
+    
+    .uploaded-files {
+        margin-top: 20px;
+    }
+    
+    .file-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px;
+        background: #f8f9fa;
+        border-radius: 6px;
+        margin-bottom: 8px;
+    }
+    
+    .file-info {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .file-icon {
+        color: #667eea;
+    }
+    
+    .file-name {
+        font-weight: 500;
+    }
+    
+    .file-remove {
+        color: #ff6b6b;
+        cursor: pointer;
+    }
+    
+    .file-remove:hover {
+        color: #ff3333;
+    }
+    
+    .recommendations {
+        background: #f0f7ff;
+        border-radius: 8px;
+        padding: 20px;
+        margin-top: 30px;
+    }
+    
+    .recommendations-title {
+        font-weight: 600;
+        color: #667eea;
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .recommendations-list {
+        list-style: none;
+        padding-left: 0;
+    }
+    
+    .recommendations-list li {
+        margin-bottom: 8px;
+        color: #555;
+        position: relative;
+        padding-left: 20px;
+    }
+    
+    .recommendations-list li:before {
+        content: '•';
+        color: #667eea;
+        position: absolute;
+        left: 0;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="description-container">
+    <!-- Прогресс (как в предыдущих шагах) -->
+    <div class="step-progress">
+        {% for i in "123456" %}
+        <div class="step-progress-item">
+            <div class="step-progress-number {% if i|add:'0' == current_step %}active{% endif %}">
+                {{ i }}
+            </div>
+            {% if i|add:'0' == current_step %}
+            <div class="step-progress-label">{{ step_display_name }}</div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    
+    <!-- Заголовок -->
+    <div class="step-header">
+        <h1 class="step-title">Опишите вашу идею</h1>
+        <p class="step-subtitle">Расскажите подробнее о том, что вы хотите получить</p>
+    </div>
+    
+    <!-- Описание -->
+    <div class="description-box">
+        <h3>Описание</h3>
+        <div class="char-counter" id="charCounter">
+            <span id="charCount">0</span> / 4000 слов
+        </div>
+        <textarea class="description-textarea" 
+                  id="descriptionInput"
+                  placeholder="Опишите ваши пожелания: стиль, детали, особенности, вдохновение и всё, что может помочь мастеру понять вашу идею...">{{ description }}</textarea>
+        
+        <p class="text-muted mt-2">
+            Подробное описание поможет мастеру точнее понять ваши ожидания
+        </p>
+    </div>
+    
+    <!-- Загрузка файлов -->
+    <div class="description-box">
+        <h3>Референсы и примеры</h3>
+        <div class="char-counter">
+            <span id="fileCount">0</span> / 5 файлов
+        </div>
+        
+        <div class="upload-section">
+            <div class="upload-dropzone" id="dropzone">
+                <div class="upload-icon">
+                    <i class="bi bi-cloud-arrow-up"></i>
+                </div>
+                <div class="upload-text">
+                    Перетащите файлы сюда или кликните для выбора
+                </div>
+                <div class="upload-hint">
+                    Максимум 5 файлов, JPG/PNG до 10 МБ каждый
+                </div>
+            </div>
+            
+            <input type="file" 
+                   id="fileInput" 
+                   multiple 
+                   accept="image/*" 
+                   style="display: none;">
+            
+            <div class="uploaded-files" id="uploadedFiles">
+                <!-- Файлы будут добавляться динамически -->
+            </div>
+        </div>
+    </div>
+    
+    <!-- Рекомендации -->
+    <div class="recommendations">
+        <h4 class="recommendations-title">
+            <i class="bi bi-lightbulb"></i> Рекомендации по фото:
+        </h4>
+        <ul class="recommendations-list">
+            <li>Добавьте примеры похожих работ</li>
+            <li>Загрузите фото желаемых деталей и узоров</li>
+            <li>Покажите цветовые сочетания</li>
+            <li>Прикрепите эскизы или схемы</li>
+            <li>Добавьте фото с разных ракурсов</li>
+        </ul>
+    </div>
+    
+    <!-- Навигация -->
+    <div class="step-navigation">
+        <a href="{% url 'custom_orders:constructor_step' step=current_step|add:'-1' %}" 
+           class="nav-btn btn-back">
+            <i class="bi bi-arrow-left"></i>Назад
+        </a>
+        
+        <button class="nav-btn btn-next" id="nextBtn" onclick="saveDescription()">
+            Далее <i class="bi bi-arrow-right"></i>
+        </button>
+    </div>
+</div>
+
+<script>
+let uploadedFiles = [];
+const maxFiles = 5;
+const maxFileSize = 10 * 1024 * 1024; // 10 МБ
+
+// Счетчик символов
+const descriptionInput = document.getElementById('descriptionInput');
+const charCounter = document.getElementById('charCounter');
+const charCount = document.getElementById('charCount');
+
+descriptionInput.addEventListener('input', function() {
+    const text = this.value;
+    const words = text.trim() ? text.trim().split(/\s+/).length : 0;
+    charCount.textContent = words;
+    
+    // Изменяем цвет при приближении к лимиту
+    if (words > 3500) {
+        charCounter.classList.add('error');
+        charCounter.classList.remove('warning');
+    } else if (words > 3000) {
+        charCounter.classList.add('warning');
+        charCounter.classList.remove('error');
+    } else {
+        charCounter.classList.remove('warning', 'error');
+    }
+});
+
+// Загрузка файлов
+const dropzone = document.getElementById('dropzone');
+const fileInput = document.getElementById('fileInput');
+const uploadedFilesContainer = document.getElementById('uploadedFiles');
+const fileCountElement = document.getElementById('fileCount');
+
+dropzone.addEventListener('click', () => fileInput.click());
+
+dropzone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    dropzone.classList.add('dragover');
+});
+
+dropzone.addEventListener('dragleave', () => {
+    dropzone.classList.remove('dragover');
+});
+
+dropzone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropzone.classList.remove('dragover');
+    handleFiles(e.dataTransfer.files);
+});
+
+fileInput.addEventListener('change', (e) => {
+    handleFiles(e.target.files);
+});
+
+function handleFiles(files) {
+    if (uploadedFiles.length >= maxFiles) {
+        alert(`Максимальное количество файлов: ${maxFiles}`);
+        return;
+    }
+    
+    Array.from(files).slice(0, maxFiles - uploadedFiles.length).forEach(file => {
+        if (file.size > maxFileSize) {
+            alert(`Файл "${file.name}" слишком большой. Максимальный размер: 10 МБ`);
+            return;
+        }
+        
+        if (!file.type.startsWith('image/')) {
+            alert(`Файл "${file.name}" не является изображением`);
+            return;
+        }
+        
+        // Добавляем файл
+        const fileId = Date.now() + Math.random();
+        uploadedFiles.push({
+            id: fileId,
+            name: file.name,
+            size: file.size,
+            type: file.type
+        });
+        
+        // Отображаем файл
+        renderFile(fileId, file.name, file.size);
+    });
+    
+    updateFileCount();
+}
+
+function renderFile(id, name, size) {
+    const fileSize = (size / (1024 * 1024)).toFixed(2);
+    const fileItem = document.createElement('div');
+    fileItem.className = 'file-item';
+    fileItem.innerHTML = `
+        <div class="file-info">
+            <i class="bi bi-file-image file-icon"></i>
+            <div>
+                <div class="file-name">${name}</div>
+                <small class="text-muted">${fileSize} МБ</small>
+            </div>
+        </div>
+        <div class="file-remove" onclick="removeFile('${id}')">
+            <i class="bi bi-trash"></i>
+        </div>
+    `;
+    uploadedFilesContainer.appendChild(fileItem);
+}
+
+function removeFile(id) {
+    uploadedFiles = uploadedFiles.filter(file => file.id !== id);
+    uploadedFilesContainer.innerHTML = '';
+    uploadedFiles.forEach(file => renderFile(file.id, file.name, file.size));
+    updateFileCount();
+}
+
+function updateFileCount() {
+    fileCountElement.textContent = uploadedFiles.length;
+}
+
+// Сохранение описания
+function saveDescription() {
+    const description = descriptionInput.value.trim();
+    
+    // Проверяем минимальную длину
+    if (description.split(/\s+/).length < 10) {
+        alert('Пожалуйста, напишите более подробное описание (минимум 10 слов)');
+        return;
+    }
+    
+    const descriptionData = {
+        description: description,
+        references: uploadedFiles.map(file => ({
+            name: file.name,
+            size: file.size,
+            type: file.type
+        }))
+    };
+    
+    // Сохраняем данные
+    fetch("{% url 'custom_orders:save_constructor_step' %}", {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: JSON.stringify({
+            step: 'description',
+            data: descriptionData
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            window.location.href = "{% url 'custom_orders:constructor_step' step=current_step|add:1 %}";
+        } else {
+            alert('Ошибка сохранения: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Произошла ошибка');
+    });
+}
+
+// Инициализация
+document.addEventListener('DOMContentLoaded', function() {
+    // Восстанавливаем сохраненное описание
+    if ("{{ description }}") {
+        descriptionInput.value = "{{ description }}";
+        descriptionInput.dispatchEvent(new Event('input'));
+    }
+});
+</script>
+{% endblock %}

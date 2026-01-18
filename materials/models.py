@@ -20,12 +20,15 @@ class Material(models.Model):
     unit = models.CharField('Единица измерения', max_length=10, choices=UNIT_CHOICES)
     min_quantity = models.DecimalField('Минимальный запас', max_digits=12, decimal_places=3, default=0)
     price_per_unit = models.DecimalField('Цена за единицу', max_digits=10, decimal_places=2, default=0)
-    
+
     # Дополнительные поля
     color = models.CharField('Цвет', max_length=50, blank=True)
     texture = models.CharField('Текстура', max_length=100, blank=True)
     supplier = models.CharField('Поставщик', max_length=200, blank=True)
-    
+
+    # Статус
+    is_active = models.BooleanField('Активен', default=True)
+
     created_at = models.DateTimeField('Дата создания', auto_now_add=True)
     updated_at = models.DateTimeField('Дата обновления', auto_now=True)
     

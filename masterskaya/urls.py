@@ -5,7 +5,7 @@ from django.conf.urls.static import static
 from accounts.views import home_view
 
 urlpatterns = [
-       path('admin/', admin.site.urls),
+    path('admin/', admin.site.urls),
     path('', home_view, name='home'),  # Главная страница = список товаров
     path('accounts/', include('accounts.urls')),
     path('products/', include('products.urls')),  # Для URL /products/

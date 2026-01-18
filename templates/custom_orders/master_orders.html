@@ -81,11 +81,11 @@
                                     <td>{{ spec.created_at|date:"d.m.Y" }}</td>
                                     <td>
                                         <div class="btn-group btn-group-sm" role="group">
-                                            <button type="button" class="btn btn-outline-primary" 
+                                            <button type="button" class="btn btn-outline-primary"
                                                     data-bs-toggle="modal" data-bs-target="#viewModal{{ spec.id }}">
                                                 <i class="bi bi-eye"></i>
                                             </button>
-                                            <button type="button" class="btn btn-outline-success" 
+                                            <button type="button" class="btn btn-outline-success"
                                                     data-bs-toggle="modal" data-bs-target="#approveModal{{ spec.id }}">
                                                 <i class="bi bi-check-lg"></i>
                                             </button>
@@ -94,6 +94,9 @@
                                                 <i class="bi bi-x-lg"></i>
                                             </button>
                                         </div>
+                                        <a href="{% url 'edit_custom_order' spec.id %}" class="btn btn-outline-warning btn-sm ms-1">
+                                            <i class="bi bi-pencil"></i> Редактировать
+                                        </a>
                                         
                                         <!-- Модальное окно просмотра -->
                                         <div class="modal fade" id="viewModal{{ spec.id }}" tabindex="-1">
@@ -221,6 +224,7 @@
                                     <th>Цена</th>
                                     <th>Дата согласования</th>
                                     <th>Примечания</th>
+                                    <th>Действия</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -233,13 +237,18 @@
                                     <td>{{ spec.approved_at|date:"d.m.Y H:i" }}</td>
                                     <td>
                                         {% if spec.approval_notes %}
-                                        <span class="d-inline-block text-truncate" style="max-width: 200px;" 
+                                        <span class="d-inline-block text-truncate" style="max-width: 200px;"
                                               title="{{ spec.approval_notes }}">
                                             {{ spec.approval_notes }}
                                         </span>
                                         {% else %}
                                         <span class="text-muted">—</span>
                                         {% endif %}
+                                    </td>
+                                    <td>
+                                        <a href="{% url 'edit_custom_order' spec.id %}" class="btn btn-outline-warning btn-sm">
+                                            <i class="bi bi-pencil"></i> Редактировать
+                                        </a>
                                     </td>
                                 </tr>
                                 {% endfor %}

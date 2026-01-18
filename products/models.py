@@ -19,6 +19,13 @@ class Category(models.Model):
     def __str__(self):
         return self.name
 
+    def get_all_descendant_ids(self):
+        """Получение ID всех потомков включая себя"""
+        ids = [self.id]
+        for child in self.children.all():
+            ids.extend(child.get_all_descendant_ids())
+        return ids
+
 class Technique(models.Model):
     """Модель для техник рукоделия"""
     name = models.CharField('Название техники', max_length=100, unique=True)

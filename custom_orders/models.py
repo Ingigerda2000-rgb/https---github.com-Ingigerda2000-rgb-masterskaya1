@@ -1,6 +1,4 @@
 from django.db import models
-from django.contrib.postgres.fields import JSONField
-from django.db.models import JSONField
 from django.utils import timezone  # Добавили импорт timezone
 from accounts.models import User
 from products.models import Product, Technique

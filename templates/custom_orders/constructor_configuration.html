@@ -595,12 +595,8 @@
     <!-- Материалы -->
     <div class="config-section">
         <h3 class="section-title">Материал</h3>
-        
-        <div class="material-required">
-            <strong>Требуется материала:</strong> <span id="requiredAmount">840</span> г
-        </div>
-        
-        <div class="materials-grid" id="materialsGrid">
+
+    <div class="materials-grid" id="materialsGrid">
             {% for material in materials %}
             <div class="material-card"
                  data-material-id="{{ material.id }}"
@@ -608,15 +604,19 @@
                  data-material-price="{{ material.price_per_unit }}"
                  data-material-stock="{{ material.current_quantity }}"
                  data-material-unit="{{ material.unit }}"
+                 data-required-quantity="{{ material.required_quantity }}"
                  onclick="selectMaterial(this)">
                 <div class="material-header">
                     <div class="material-name">{{ material.name }}</div>
                     <div class="material-price" id="price-{{ material.id }}">
-                        {{ material.price_per_unit|floatformat:0 }} ₽/г
+                        {{ material.price_per_unit|floatformat:0 }} ₽/{{ material.get_unit_display }}
                     </div>
                 </div>
                 <div class="material-info">
-                    Доступно: {{ material.current_quantity }} {{ material.unit }}
+                    Доступно: {{ material.current_quantity }} {{ material.get_unit_display }}
+                </div>
+                <div class="material-info">
+                    Требуется: <span id="required-{{ material.id }}">{{ material.required_quantity }}</span> {{ material.get_unit_display }}
                 </div>
                 <div class="material-stock">
                     <span>Стоимость за изделие:</span>
@@ -685,13 +685,21 @@ document.querySelectorAll('input[name="size"]').forEach(radio => {
     radio.addEventListener('change', function() {
         selectedSize = this.value;
         sizeMultiplier = parseFloat(this.dataset.multiplier) || 1.0;
-        
-        // Обновляем требуемое количество
-        const requiredAmount = Math.round(baseMaterialRequired * sizeMultiplier);
-        document.getElementById('requiredAmount').textContent = requiredAmount;
-        
-        // Обновляем стоимость материалов
+
+        // Обновляем требуемое количество для всех материалов
+        document.querySelectorAll('.material-card').forEach(card => {
+            const baseRequired = parseFloat(card.dataset.requiredQuantity) || 1;
+            const requiredAmount = Math.round(baseRequired * sizeMultiplier);
+            const requiredElement = card.querySelector(`#required-${card.dataset.materialId}`);
+            if (requiredElement) {
+                requiredElement.textContent = requiredAmount;
+            }
+        });
+
+        // Обновляем стоимость выбранного материала
         if (selectedMaterial) {
+            const baseRequired = parseFloat(selectedMaterial.dataset.requiredQuantity) || 1;
+            const requiredAmount = Math.round(baseRequired * sizeMultiplier);
             updateMaterialPrice(selectedMaterial, requiredAmount);
         }
     });
@@ -732,17 +740,18 @@ function selectMaterial(materialElement) {
     document.querySelectorAll('.material-card').forEach(m => {
         m.classList.remove('selected');
     });
-    
+
     materialElement.classList.add('selected');
     selectedMaterial = materialElement;
-    
+
     const materialId = materialElement.dataset.materialId;
     const materialName = materialElement.dataset.materialName;
     const materialPrice = parseFloat(materialElement.dataset.materialPrice);
     const materialStock = parseFloat(materialElement.dataset.materialStock);
-    
-    const requiredAmount = Math.round(baseMaterialRequired * sizeMultiplier);
-    
+    const baseRequired = parseFloat(materialElement.dataset.requiredQuantity) || 1;
+
+    const requiredAmount = Math.round(baseRequired * sizeMultiplier);
+
     if (materialStock < requiredAmount) {
         const unit = materialElement.dataset.materialUnit || 'г';
         alert(`Недостаточно материала "${materialName}". Доступно: ${materialStock} ${unit}, требуется: ${requiredAmount} ${unit}`);
@@ -750,7 +759,7 @@ function selectMaterial(materialElement) {
         selectedMaterial = null;
         return;
     }
-    
+
     updateMaterialPrice(materialElement, requiredAmount);
 }
 
@@ -781,7 +790,8 @@ function saveConfiguration() {
     const materialId = selectedMaterial.dataset.materialId;
     const materialName = selectedMaterial.dataset.materialName;
     const materialPrice = parseFloat(selectedMaterial.dataset.materialPrice);
-    const requiredAmount = Math.round(baseMaterialRequired * sizeMultiplier);
+    const baseRequired = parseFloat(selectedMaterial.dataset.requiredQuantity) || 1;
+    const requiredAmount = Math.round(baseRequired * sizeMultiplier);
     const totalMaterialPrice = Math.round(materialPrice * requiredAmount);
 
     const configData = {
@@ -797,7 +807,7 @@ function saveConfiguration() {
         urgency: selectedUrgency,
         urgency_multiplier: urgencyMultiplier
     };
-    
+
     fetch("{% url 'custom_orders:save_constructor_step' %}", {
         method: 'POST',
         headers: {

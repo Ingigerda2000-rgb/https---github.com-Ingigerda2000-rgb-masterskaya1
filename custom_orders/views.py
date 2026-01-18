@@ -106,13 +106,26 @@ def constructor_step(request, step, template_id=None):
     elif step_name == 'configuration' and constructor_data.get('template_id'):
         template = get_object_or_404(ProductTemplate, id=constructor_data['template_id'])
         from materials.models import Material
-        
+
         # Получаем доступные материалы
         materials = Material.objects.filter(is_active=True)
 
-        # Добавляем рассчитанную стоимость для каждого материала (примерно 840г)
+        # Добавляем рассчитанную стоимость и требуемое количество для каждого материала
         for material in materials:
-            material.calculated_price = material.price_per_unit * 840
+            # Определяем базовое требуемое количество в зависимости от единицы измерения
+            if material.unit == 'g':
+                base_required = 840  # граммы
+            elif material.unit == 'm':
+                base_required = 2  # метры
+            elif material.unit == 'kg':
+                base_required = 0.84  # килограммы (840г)
+            elif material.unit == 'cm':
+                base_required = 200  # сантиметры
+            else:
+                base_required = 1  # по умолчанию
+
+            material.required_quantity = base_required
+            material.calculated_price = material.price_per_unit * base_required
 
         # Обновляем конфигурацию шаблона
         template.update_configuration_with_dynamic_options()
@@ -198,8 +211,8 @@ def constructor_step(request, step, template_id=None):
             total_price *= 1.5  # +50%
         
         # РАССЧИТЫВАЕМ СРОКИ с учетом срочности
-        base_days = constructor_data.get('base_days', template.base_production_days)
-        additional_days = constructor_data.get('additional_days', 0)
+        base_days = int(constructor_data.get('base_days', template.base_production_days) or template.base_production_days or 5)
+        additional_days = int(constructor_data.get('additional_days', 0))
         
         if urgency == 'fast':
             production_days = int((base_days + additional_days) * 0.7)  # На 30% быстрее
@@ -208,6 +221,10 @@ def constructor_step(request, step, template_id=None):
         else:
             production_days = base_days + additional_days
         
+        # Calculate surcharge amounts
+        surcharge_fast = round(template.base_price * 0.2, 2) if urgency == 'fast' else 0
+        surcharge_express = round(template.base_price * 0.5, 2) if urgency == 'express' else 0
+
         context.update({
             'template': template,
             'selected_materials': selected_materials,
@@ -219,6 +236,8 @@ def constructor_step(request, step, template_id=None):
             'production_days': max(production_days, 1),
             'urgency': urgency,
             'additional_days': additional_days,
+            'surcharge_fast': surcharge_fast,
+            'surcharge_express': surcharge_express,
         })
     
     return render(request, f'custom_orders/constructor_{step_name}.html', context)

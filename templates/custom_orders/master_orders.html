@@ -1,11 +1,11 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Кастомные заказы - Панель мастера{% endblock %}
+{% block title %}Уникальные заказы - Панель мастера{% endblock %}
 
 {% block content %}
 <div class="container py-5">
-    <h1 class="mb-4"><i class="bi bi-tools me-2"></i>Кастомные заказы</h1>
+    <h1 class="mb-4"><i class="bi bi-tools me-2"></i>Уникальные заказы</h1>
     
     {% if messages %}
     <div class="messages mb-4">
@@ -103,7 +103,7 @@
                                             <div class="modal-dialog modal-lg">
                                                 <div class="modal-content">
                                                     <div class="modal-header">
-                                                        <h5 class="modal-title">Детали кастомного заказа</h5>
+                                                        <h5 class="modal-title">Детали уникального заказа</h5>
                                                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                                                     </div>
                                                     <div class="modal-body">
@@ -146,7 +146,7 @@
                                                             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                                                         </div>
                                                         <div class="modal-body">
-                                                            <p>Вы уверены, что хотите согласовать этот кастомный заказ?</p>
+                                                            <p>Вы уверены, что хотите согласовать этот уникальный заказ?</p>
                                                             <p><strong>Заказ:</strong> #{{ spec.order_item.order.order_number }}</p>
                                                             <p><strong>Товар:</strong> {{ spec.template.product.name }}</p>
                                                             <p><strong>Цена:</strong> {{ spec.total_price }} ₽</p>

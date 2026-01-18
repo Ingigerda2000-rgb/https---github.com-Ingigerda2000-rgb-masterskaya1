@@ -11,14 +11,6 @@
                 <h1 class="h2 mb-0 text-purple fw-bold">
                     <i class="bi bi-tools me-2"></i>Панель мастера
                 </h1>
-                <div class="d-flex gap-2">
-                    <buttonutypo tb=ttln btn-pink fw-medium">
-                        <i class="bi bi-plus-circle me-1"></i>Добавить
-                    </buttonutton>
-                    <button type="button" class="btn btn-light-purple fw-medium">
-                        <i class="bi bi-gear me-1"></i>Настройки
-                    </button>
-                </div>
             </div>
             
             <!-- Статистика в однотонных цветных карточках -->
@@ -95,19 +87,19 @@
                     <div class="card bg-purple-light border-0 shadow-sm">
                         <div class="card-body py-3">
                             <div class="d-flex flex-wrap gap-3">
-                                <a href="#" class="btn btn-pink fw-medium">
+                                <a href="/products/add/" class="btn btn-pink fw-medium">
                                     <i class="bi bi-plus-circle me-2"></i>Добавить товар
                                 </a>
-                                <a href="#" class="btn btn-green fw-medium">
+                                <a href="/custom_orders/constructor/" class="btn btn-green fw-medium">
                                     <i class="bi bi-palette me-2"></i>Шаблон конструктора
                                 </a>
-                                <a href="#" class="btn btn-blue fw-medium">
+                                <a href="/materials/report/" class="btn btn-blue fw-medium">
                                     <i class="bi bi-boxes me-2"></i>Материалы
                                 </a>
-                                <a href="#" class="btn btn-yellow fw-medium">
+                                <a href="/analytics/" class="btn btn-yellow fw-medium">
                                     <i class="bi bi-bar-chart me-2"></i>Аналитика
                                 </a>
-                                <a href="#" class="btn btn-gray fw-medium">
+                                <a href="/orders/" class="btn btn-gray fw-medium">
                                     <i class="bi bi-archive me-2"></i>Архив
                                 </a>
                             </div>
@@ -126,12 +118,7 @@
                                 <h5 class="mb-0 fw-bold">
                                     <i class="bi bi-box me-2"></i>Мои товары
                                     <span class="badge bg-white text-purple ms-2 fw-medium">{{ products|length }}</span>
-                                </h5>
-                                <div>
-                                    <a href="{% url 'add_product' %}" class="btn btn-light btn-pink fw-medium">
-                                        <i class="bi bi-plus me-2"></i>Добавить
-                                    </a>
-                                </div>
+                                </h5> 
                             </div>
                         </div>
                         <div class="card-body p-0">
@@ -254,7 +241,7 @@
                         </div>
                         {% if recent_orders|length > 5 %}
                         <div class="card-footer py-3 text-center bg-green-light">
-                            <a href="#" class="btn btn-green fw-medium">
+                            <a href="/orders/" class="btn btn-green fw-medium">
                                 <i class="bi bi-clock-history me-2"></i>Все заказы
                             </a>
                         </div>

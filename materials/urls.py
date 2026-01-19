@@ -8,13 +8,13 @@ urlpatterns = [
     # Основные страницы материалов
     path('', views.MaterialListView.as_view(), name='material_list'),
     path('create/', views.MaterialCreateView.as_view(), name='material_create'),
-    path('<uuid:pk>/', views.MaterialDetailView.as_view(), name='material_detail'),
-    path('<uuid:pk>/update/', views.MaterialUpdateView.as_view(), name='material_update'),
-    path('<uuid:pk>/delete/', views.MaterialDeleteView.as_view(), name='material_delete'),
-    
+    path('<int:pk>/', views.MaterialDetailView.as_view(), name='material_detail'),
+    path('<int:pk>/update/', views.MaterialUpdateView.as_view(), name='material_update'),
+    path('<int:pk>/delete/', views.MaterialDeleteView.as_view(), name='material_delete'),
+
     # Рецепты материалов
-    path('recipes/add/<uuid:product_id>/', 
-         views.MaterialRecipeCreateView.as_view(), 
+    path('recipes/add/<int:product_id>/',
+         views.MaterialRecipeCreateView.as_view(),
          name='add_recipe'),
     
     # Отчёты и аналитика
@@ -24,7 +24,7 @@ urlpatterns = [
     
     # Быстрые действия (AJAX)
     path('quick-add/', views.quick_add_material, name='quick_add'),
-    path('<uuid:pk>/update-quantity/', views.update_material_quantity, name='update_quantity'),
+    path('<int:pk>/update-quantity/', views.update_material_quantity, name='update_quantity'),
     
     # Экспорт
     path('export-csv/', views.export_materials_csv, name='export_csv'),

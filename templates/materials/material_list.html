@@ -1,0 +1,988 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Мои материалы :: HandMadeShop{% endblock %}
+
+{% block extra_css %}
+<style>
+/* Стили для таблицы материалов */
+.material-row {
+    transition: all 0.2s ease;
+}
+.material-row:hover {
+    background-color: rgba(0, 123, 255, 0.05);
+    transform: translateX(2px);
+}
+
+.status-badge {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+}
+
+.quantity-cell {
+    min-width: 120px;
+}
+
+.actions-cell {
+    min-width: 140px;
+}
+
+/* Прогресс-бар для запаса */
+.stock-progress {
+    height: 6px;
+    border-radius: 3px;
+    margin-top: 0.25rem;
+}
+
+/* Карточки для мобильной версии */
+@media (max-width: 768px) {
+    .mobile-card {
+        border: 1px solid #dee2e6;
+        border-radius: 0.5rem;
+        margin-bottom: 1rem;
+        padding: 1rem;
+    }
+    
+    .mobile-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 0.75rem;
+    }
+    
+    .table-responsive {
+        display: none;
+    }
+    
+    .mobile-view {
+        display: block !important;
+    }
+}
+
+@media (min-width: 769px) {
+    .mobile-view {
+        display: none !important;
+    }
+}
+
+/* Анимация загрузки */
+.spinner-border {
+    width: 1.5rem;
+    height: 1.5rem;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Заголовок и кнопки -->
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4">
+        <div class="mb-3 mb-md-0">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-2">
+                    <li class="breadcrumb-item"><a href="{% url 'home' %}">Главная</a></li>
+                    <li class="breadcrumb-item active">Материалы</li>
+                </ol>
+            </nav>
+            <h1 class="h2 mb-0">
+                <i class="bi bi-box-seam text-primary me-2"></i>Мои материалы
+            </h1>
+            <p class="text-muted mb-0">Управление запасами сырья для производства товаров</p>
+        </div>
+        <div class="d-flex flex-wrap gap-2">
+            <a href="{% url 'materials:material_create' %}" class="btn btn-primary">
+                <i class="bi bi-plus-circle me-1"></i>Добавить материал
+            </a>
+            <a href="{% url 'materials:low_stock' %}" class="btn btn-warning">
+                <i class="bi bi-exclamation-triangle me-1"></i>Низкий запас
+                {% if low_stock_count > 0 %}
+                <span class="badge bg-danger ms-1">{{ low_stock_count }}</span>
+                {% endif %}
+            </a>
+            <div class="dropdown">
+                <button class="btn btn-outline-secondary dropdown-toggle" type="button" 
+                        data-bs-toggle="dropdown">
+                    <i class="bi bi-download me-1"></i>Экспорт
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="#" onclick="exportToCSV()">
+                        <i class="bi bi-file-earmark-spreadsheet me-2"></i>CSV
+                    </a></li>
+                    <li><a class="dropdown-item" href="#">
+                        <i class="bi bi-printer me-2"></i>Печать списка
+                    </a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Статистика -->
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-3">
+            <div class="card border-start border-primary border-4 h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-1">Всего материалов</h6>
+                            <h3 class="mb-0">{{ total_materials }}</h3>
+                        </div>
+                        <div class="avatar avatar-sm bg-primary bg-opacity-10 p-2 rounded">
+                            <i class="bi bi-box-seam fs-4 text-primary"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card border-start border-success border-4 h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-1">Стоимость запасов</h6>
+                            <h3 class="mb-0">{{ total_stock_value|floatformat:2 }} ₽</h3>
+                        </div>
+                        <div class="avatar avatar-sm bg-success bg-opacity-10 p-2 rounded">
+                            <i class="bi bi-currency-ruble fs-4 text-success"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card border-start border-warning border-4 h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-1">Низкий запас</h6>
+                            <h3 class="mb-0">{{ low_stock_count }}</h3>
+                        </div>
+                        <div class="avatar avatar-sm bg-warning bg-opacity-10 p-2 rounded">
+                            <i class="bi bi-exclamation-triangle fs-4 text-warning"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card border-start border-danger border-4 h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-1">Закончились</h6>
+                            <h3 class="mb-0">{{ out_of_stock }}</h3>
+                        </div>
+                        <div class="avatar avatar-sm bg-danger bg-opacity-10 p-2 rounded">
+                            <i class="bi bi-x-circle fs-4 text-danger"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Фильтры и поиск -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" id="filterForm" class="row g-3">
+                <div class="col-md-5">
+                    <label class="form-label">Поиск материалов</label>
+                    <div class="input-group">
+                        <span class="input-group-text">
+                            <i class="bi bi-search"></i>
+                        </span>
+                        <input type="text" name="search" class="form-control" 
+                               placeholder="Название, цвет, поставщик..." 
+                               value="{{ search_query }}">
+                        {% if search_query %}
+                        <button type="button" class="btn btn-outline-secondary" 
+                                onclick="clearSearch()">
+                            <i class="bi bi-x"></i>
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Статус запаса</label>
+                    <select name="stock" class="form-select" onchange="this.form.submit()">
+                        <option value="">Все материалы</option>
+                        <option value="low" {% if stock_filter == 'low' %}selected{% endif %}>
+                            Только низкий запас
+                        </option>
+                        <option value="out" {% if stock_filter == 'out' %}selected{% endif %}>
+                            Закончились
+                        </option>
+                        <option value="warning" {% if stock_filter == 'warning' %}selected{% endif %}>
+                            Скоро закончатся
+                        </option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Сортировка</label>
+                    <select name="sort" class="form-select" onchange="this.form.submit()">
+                        <option value="name" {% if sort_by == 'name' %}selected{% endif %}>
+                            По названию (А-Я)
+                        </option>
+                        <option value="name_desc" {% if sort_by == 'name_desc' %}selected{% endif %}>
+                            По названию (Я-А)
+                        </option>
+                        <option value="quantity_asc" {% if sort_by == 'quantity_asc' %}selected{% endif %}>
+                            Количество (возр.)
+                        </option>
+                        <option value="quantity_desc" {% if sort_by == 'quantity_desc' %}selected{% endif %}>
+                            Количество (убыв.)
+                        </option>
+                        <option value="value_desc" {% if sort_by == 'value_desc' %}selected{% endif %}>
+                            По стоимости
+                        </option>
+                        <option value="updated" {% if sort_by == 'updated' %}selected{% endif %}>
+                            По дате обновления
+                        </option>
+                    </select>
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-funnel me-1"></i>Применить
+                    </button>
+                </div>
+            </form>
+            
+            <!-- Быстрое добавление материала -->
+            <div class="mt-3">
+                <button class="btn btn-sm btn-outline-primary" type="button" 
+                        data-bs-toggle="collapse" data-bs-target="#quickAddForm">
+                    <i class="bi bi-plus-lg me-1"></i>Быстрое добавление
+                </button>
+                
+                <div class="collapse mt-2" id="quickAddForm">
+                    <div class="card card-body">
+                        <form id="quickAddMaterialForm" class="row g-2">
+                            {% csrf_token %}
+                            <div class="col-md-4">
+                                <input type="text" name="name" class="form-control form-control-sm" 
+                                       placeholder="Название материала" required>
+                            </div>
+                            <div class="col-md-3">
+                                <input type="number" name="current_quantity" class="form-control form-control-sm" 
+                                       step="0.001" min="0" placeholder="Количество" required>
+                            </div>
+                            <div class="col-md-3">
+                                <select name="unit" class="form-select form-select-sm" required>
+                                    {% for value, label in quick_form.fields.unit.choices %}
+                                    <option value="{{ value }}">{{ label }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <button type="submit" class="btn btn-primary btn-sm w-100">
+                                    <span id="quickAddSpinner" class="spinner-border spinner-border-sm d-none" 
+                                          role="status"></span>
+                                    <i class="bi bi-check-lg"></i> Добавить
+                                </button>
+                            </div>
+                        </form>
+                        <div id="quickAddResult" class="mt-2"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Десктопная таблица -->
+    <div class="card d-none d-md-block">
+        <div class="card-header">
+            <h5 class="mb-0">Список материалов</h5>
+        </div>
+        <div class="card-body p-0">
+            {% if materials %}
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th width="25%">Материал</th>
+                                <th width="15%" class="text-center">Количество</th>
+                                <th width="10%">Ед. изм.</th>
+                                <th width="15%">Минимум</th>
+                                <th width="15%">Стоимость</th>
+                                <th width="10%" class="text-center">Статус</th>
+                                <th width="10%" class="text-center">Действия</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for material in materials %}
+                            <tr class="material-row align-middle">
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="flex-shrink-0 me-3">
+                                            <div class="avatar avatar-sm bg-light text-primary rounded-circle d-flex align-items-center justify-content-center">
+                                                <i class="bi bi-box"></i>
+                                            </div>
+                                        </div>
+                                        <div class="flex-grow-1">
+                                            <h6 class="mb-0">
+                                                <a href="#" class="text-decoration-none" 
+                                                   data-bs-toggle="modal" 
+                                                   data-bs-target="#materialDetailModal"
+                                                   onclick="loadMaterialDetail('{{ material.id }}')">
+                                                    {{ material.name }}
+                                                </a>
+                                            </h6>
+                                            {% if material.color %}
+                                            <small class="text-muted">
+                                                <i class="bi bi-palette me-1"></i>{{ material.color }}
+                                            </small>
+                                            {% endif %}
+                                            {% if material.supplier %}
+                                            <br>
+                                            <small class="text-muted">
+                                                <i class="bi bi-truck me-1"></i>{{ material.supplier|truncatechars:20 }}
+                                            </small>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="text-center quantity-cell">
+                                    <div class="d-flex flex-column align-items-center">
+                                        <div class="fw-bold {% if material.current_quantity == 0 %}text-danger{% elif material.is_low_stock %}text-warning{% endif %}">
+                                            {{ material.current_quantity|floatformat:3 }}
+                                        </div>
+                                        {% if material.available_quantity != material.current_quantity %}
+                                        <small class="text-muted">
+                                            Доступно: {{ material.available_quantity|floatformat:3 }}
+                                        </small>
+                                        {% endif %}
+                                        {% if material.min_quantity > 0 %}
+                                        <div class="progress stock-progress w-100 mt-1" style="height: 4px;">
+                                            {% with percent=material.current_quantity|floatformat:2|add:"0" min_percent=material.min_quantity|floatformat:2|add:"0" %}
+                                            {% widthratio material.current_quantity material.min_quantity|add:material.current_quantity 100 as progress %}
+                                            <div class="progress-bar {% if progress < 25 %}bg-danger{% elif progress < 50 %}bg-warning{% else %}bg-success{% endif %}" 
+                                                 role="progressbar" 
+                                                 style="width: {{ progress }}%">
+                                            </div>
+                                            {% endwith %}
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                                <td>{{ material.get_unit_display }}</td>
+                                <td>
+                                    {% if material.min_quantity > 0 %}
+                                    <span class="badge bg-light text-dark border">
+                                        {{ material.min_quantity|floatformat:3 }}
+                                    </span>
+                                    {% else %}
+                                    <span class="text-muted">—</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="text-nowrap">
+                                        <div class="fw-bold">{{ material.stock_value|floatformat:2 }} ₽</div>
+                                        <small class="text-muted">
+                                            {{ material.price_per_unit|floatformat:2 }} ₽/{{ material.get_unit_display }}
+                                        </small>
+                                    </div>
+                                </td>
+                                <td class="text-center">
+                                    {% if material.current_quantity == 0 %}
+                                    <span class="badge bg-danger status-badge">
+                                        <i class="bi bi-x-circle me-1"></i>Нет в наличии
+                                    </span>
+                                    {% elif material.is_low_stock %}
+                                    <span class="badge bg-warning status-badge">
+                                        <i class="bi bi-exclamation-triangle me-1"></i>Низкий запас
+                                    </span>
+                                    {% else %}
+                                    <span class="badge bg-success status-badge">
+                                        <i class="bi bi-check-circle me-1"></i>В норме
+                                    </span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center actions-cell">
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        <button type="button" class="btn btn-outline-primary" 
+                                                data-bs-toggle="modal" 
+                                                data-bs-target="#updateQuantityModal"
+                                                data-material-id="{{ material.id }}"
+                                                data-material-name="{{ material.name }}"
+                                                data-current-quantity="{{ material.current_quantity }}"
+                                                title="Изменить количество">
+                                            <i class="bi bi-pencil"></i>
+                                        </button>
+                                        <a href="{% url 'materials:material_update' material.id %}" 
+                                           class="btn btn-outline-secondary" title="Редактировать">
+                                            <i class="bi bi-gear"></i>
+                                        </a>
+                                        <button type="button" class="btn btn-outline-danger" 
+                                                data-bs-toggle="modal" 
+                                                data-bs-target="#confirmDeleteModal"
+                                                data-material-id="{{ material.id }}"
+                                                data-material-name="{{ material.name }}"
+                                                title="Удалить">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Пагинация -->
+                {% if is_paginated %}
+                <div class="card-footer">
+                    <nav aria-label="Навигация по страницам">
+                        <ul class="pagination justify-content-center mb-0">
+                            {% if page_obj.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}{% if stock_filter %}&stock={{ stock_filter }}{% endif %}{% if sort_by != 'name' %}&sort={{ sort_by }}{% endif %}">
+                                    <i class="bi bi-chevron-double-left"></i>
+                                </a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if stock_filter %}&stock={{ stock_filter }}{% endif %}{% if sort_by != 'name' %}&sort={{ sort_by }}{% endif %}">
+                                    <i class="bi bi-chevron-left"></i>
+                                </a>
+                            </li>
+                            {% endif %}
+                            
+                            {% for num in page_obj.paginator.page_range %}
+                            {% if num == page_obj.number %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ num }}</span>
+                            </li>
+                            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}{% if stock_filter %}&stock={{ stock_filter }}{% endif %}{% if sort_by != 'name' %}&sort={{ sort_by }}{% endif %}">{{ num }}</a>
+                            </li>
+                            {% endif %}
+                            {% endfor %}
+                            
+                            {% if page_obj.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if stock_filter %}&stock={{ stock_filter }}{% endif %}{% if sort_by != 'name' %}&sort={{ sort_by }}{% endif %}">
+                                    <i class="bi bi-chevron-right"></i>
+                                </a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}{% if stock_filter %}&stock={{ stock_filter }}{% endif %}{% if sort_by != 'name' %}&sort={{ sort_by }}{% endif %}">
+                                    <i class="bi bi-chevron-double-right"></i>
+                                </a>
+                            </li>
+                            {% endif %}
+                        </ul>
+                        <div class="text-center text-muted small mt-1">
+                            Страница {{ page_obj.number }} из {{ page_obj.paginator.num_pages }}
+                        </div>
+                    </nav>
+                </div>
+                {% endif %}
+                
+            {% else %}
+            <div class="text-center py-5">
+                <div class="avatar avatar-xl bg-light text-muted rounded-circle mb-3 d-inline-flex align-items-center justify-content-center">
+                    <i class="bi bi-box-seam fs-1"></i>
+                </div>
+                <h4 class="mb-3">Материалы не найдены</h4>
+                <p class="text-muted mb-4">
+                    {% if search_query or stock_filter %}
+                    Попробуйте изменить параметры поиска или 
+                    <a href="{% url 'materials:material_list' %}" class="text-decoration-none">
+                        сбросить фильтры
+                    </a>
+                    {% else %}
+                    Добавьте свой первый материал для производства товаров
+                    {% endif %}
+                </p>
+                <a href="{% url 'materials:material_create' %}" class="btn btn-primary">
+                    <i class="bi bi-plus-circle me-1"></i>Добавить материал
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Мобильные карточки -->
+    <div class="mobile-view">
+        {% if materials %}
+            {% for material in materials %}
+            <div class="mobile-card">
+                <div class="mobile-card-header">
+                    <div>
+                        <h6 class="mb-0">{{ material.name }}</h6>
+                        {% if material.color %}
+                        <small class="text-muted">
+                            <i class="bi bi-palette me-1"></i>{{ material.color }}
+                        </small>
+                        {% endif %}
+                    </div>
+                    <div>
+                        {% if material.current_quantity == 0 %}
+                        <span class="badge bg-danger">Нет в наличии</span>
+                        {% elif material.is_low_stock %}
+                        <span class="badge bg-warning">Низкий запас</span>
+                        {% else %}
+                        <span class="badge bg-success">В норме</span>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="row g-2 mb-2">
+                    <div class="col-6">
+                        <small class="text-muted d-block">Количество</small>
+                        <div class="fw-bold {% if material.current_quantity == 0 %}text-danger{% elif material.is_low_stock %}text-warning{% endif %}">
+                            {{ material.current_quantity|floatformat:3 }} {{ material.get_unit_display }}
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <small class="text-muted d-block">Минимум</small>
+                        <div>{{ material.min_quantity|floatformat:3 }}</div>
+                    </div>
+                    <div class="col-6">
+                        <small class="text-muted d-block">Стоимость запаса</small>
+                        <div class="fw-bold">{{ material.stock_value|floatformat:2 }} ₽</div>
+                    </div>
+                    <div class="col-6">
+                        <small class="text-muted d-block">Цена за ед.</small>
+                        <div>{{ material.price_per_unit|floatformat:2 }} ₽</div>
+                    </div>
+                </div>
+                
+                <div class="d-flex justify-content-between pt-2 border-top">
+                    <button type="button" class="btn btn-sm btn-outline-primary" 
+                            data-bs-toggle="modal" 
+                            data-bs-target="#updateQuantityModal"
+                            data-material-id="{{ material.id }}"
+                            data-material-name="{{ material.name }}"
+                            data-current-quantity="{{ material.current_quantity }}">
+                        <i class="bi bi-pencil"></i> Изменить
+                    </button>
+                    <div class="btn-group btn-group-sm">
+                        <a href="{% url 'materials:material_update' material.id %}" 
+                           class="btn btn-outline-secondary">
+                            <i class="bi bi-gear"></i>
+                        </a>
+                        <button type="button" class="btn btn-outline-danger" 
+                                data-bs-toggle="modal" 
+                                data-bs-target="#confirmDeleteModal"
+                                data-material-id="{{ material.id }}"
+                                data-material-name="{{ material.name }}">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+            
+            <!-- Пагинация для мобильной версии -->
+            {% if is_paginated %}
+            <nav aria-label="Навигация по страницам" class="mt-3">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}{% if stock_filter %}&stock={{ stock_filter }}{% endif %}{% if sort_by != 'name' %}&sort={{ sort_by }}{% endif %}">
+                            <i class="bi bi-chevron-double-left"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+                    
+                    <li class="page-item disabled">
+                        <span class="page-link">Страница {{ page_obj.number }} из {{ page_obj.paginator.num_pages }}</span>
+                    </li>
+                    
+                    {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}{% if stock_filter %}&stock={{ stock_filter }}{% endif %}{% if sort_by != 'name' %}&sort={{ sort_by }}{% endif %}">
+                            <i class="bi bi-chevron-double-right"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+            
+        {% else %}
+        <div class="text-center py-5">
+            <div class="avatar avatar-xl bg-light text-muted rounded-circle mb-3 d-inline-flex align-items-center justify-content-center">
+                <i class="bi bi-box-seam fs-1"></i>
+            </div>
+            <h4 class="mb-3">Материалы не найдены</h4>
+            <p class="text-muted mb-4">
+                {% if search_query or stock_filter %}
+                Попробуйте изменить параметры поиска
+                {% else %}
+                Добавьте свой первый материал
+                {% endif %}
+            </p>
+            <a href="{% url 'materials:material_create' %}" class="btn btn-primary">
+                <i class="bi bi-plus-circle me-1"></i>Добавить материал
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Модальное окно изменения количества -->
+<div class="modal fade" id="updateQuantityModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Изменение количества материала</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Материал: <strong id="modalMaterialName"></strong></p>
+                <p>Текущее количество: <strong id="modalCurrentQuantity"></strong></p>
+                
+                <form id="updateQuantityForm">
+                    {% csrf_token %}
+                    <input type="hidden" name="material_id" id="modalMaterialId">
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Действие</label>
+                        <select name="action" class="form-select" required>
+                            <option value="set">Установить точное значение</option>
+                            <option value="add">Добавить к текущему количеству</option>
+                            <option value="subtract">Вычесть из текущего количества</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Количество</label>
+                        <div class="input-group">
+                            <input type="number" name="quantity" class="form-control" 
+                                   step="0.001" min="0" required 
+                                   placeholder="Введите количество">
+                            <span class="input-group-text" id="quantityUnit"></span>
+                        </div>
+                        <div class="form-text">
+                            Используйте точку как десятичный разделитель (например: 1.5)
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Примечание (необязательно)</label>
+                        <textarea name="notes" class="form-control" rows="2" 
+                                  placeholder="Укажите причину изменения количества..."></textarea>
+                    </div>
+                </form>
+                
+                <div id="updateResult" class="alert d-none mt-3"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-primary" onclick="submitQuantityUpdate()">
+                    <span id="updateSpinner" class="spinner-border spinner-border-sm d-none" 
+                          role="status"></span>
+                    Сохранить
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно подтверждения удаления -->
+<div class="modal fade" id="confirmDeleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Подтверждение удаления</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Вы уверены, что хотите деактивировать материал <strong id="deleteMaterialName"></strong>?</p>
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    Материал будет помечен как неактивный и больше не будет отображаться в основном списке.
+                    Его можно будет восстановить через административную панель.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <form id="deleteForm" method="post" style="display: inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-trash me-1"></i>Деактивировать
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно детальной информации -->
+<div class="modal fade" id="materialDetailModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Детальная информация о материале</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="materialDetailContent">
+                <!-- Контент загружается через AJAX -->
+                <div class="text-center py-4">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Загрузка...</span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Инициализация модальных окон
+document.addEventListener('DOMContentLoaded', function() {
+    // Модальное окно изменения количества
+    var updateModal = document.getElementById('updateQuantityModal');
+    if (updateModal) {
+        updateModal.addEventListener('show.bs.modal', function(event) {
+            var button = event.relatedTarget;
+            var materialId = button.getAttribute('data-material-id');
+            var materialName = button.getAttribute('data-material-name');
+            var currentQuantity = button.getAttribute('data-current-quantity');
+            
+            document.getElementById('modalMaterialId').value = materialId;
+            document.getElementById('modalMaterialName').textContent = materialName;
+            document.getElementById('modalCurrentQuantity').textContent = currentQuantity;
+            
+            // Сбрасываем форму
+            var form = document.getElementById('updateQuantityForm');
+            form.reset();
+            document.getElementById('updateResult').classList.add('d-none');
+        });
+    }
+    
+    // Модальное окно подтверждения удаления
+    var deleteModal = document.getElementById('confirmDeleteModal');
+    if (deleteModal) {
+        deleteModal.addEventListener('show.bs.modal', function(event) {
+            var button = event.relatedTarget;
+            var materialId = button.getAttribute('data-material-id');
+            var materialName = button.getAttribute('data-material-name');
+            
+            document.getElementById('deleteMaterialName').textContent = materialName;
+            
+            // Устанавливаем action формы удаления
+            var deleteForm = document.getElementById('deleteForm');
+            deleteForm.action = `/materials/${materialId}/delete/`;
+        });
+    }
+    
+    // Быстрое добавление материала
+    var quickAddForm = document.getElementById('quickAddMaterialForm');
+    if (quickAddForm) {
+        quickAddForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            submitQuickAdd();
+        });
+    }
+});
+
+// Функция очистки поиска
+function clearSearch() {
+    window.location.href = "{% url 'materials:material_list' %}";
+}
+
+// Функция экспорта в CSV
+function exportToCSV() {
+    window.location.href = "{% url 'materials:material_list' %}?export=csv";
+}
+
+// Функция отправки формы быстрого добавления
+function submitQuickAdd() {
+    var form = document.getElementById('quickAddMaterialForm');
+    var formData = new FormData(form);
+    var resultDiv = document.getElementById('quickAddResult');
+    var spinner = document.getElementById('quickAddSpinner');
+    
+    // Показываем спиннер
+    spinner.classList.remove('d-none');
+    
+    fetch('{% url 'materials:quick_add' %}', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        spinner.classList.add('d-none');
+        
+        if (data.success) {
+            // Показываем успешное сообщение
+            resultDiv.innerHTML = `
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    <i class="bi bi-check-circle me-2"></i>
+                    Материал "${data.name}" успешно добавлен!
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `;
+            
+            // Сбрасываем форму
+            form.reset();
+            
+            // Обновляем страницу через 1.5 секунды
+            setTimeout(function() {
+                window.location.reload();
+            }, 1500);
+            
+        } else {
+            // Показываем ошибки
+            var errors = '';
+            if (data.errors) {
+                for (var field in data.errors) {
+                    errors += data.errors[field].join('<br>') + '<br>';
+                }
+            }
+            
+            resultDiv.innerHTML = `
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    ${data.error || 'Ошибка при добавлении материала'}<br>
+                    ${errors}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `;
+        }
+    })
+    .catch(error => {
+        spinner.classList.add('d-none');
+        resultDiv.innerHTML = `
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <i class="bi bi-exclamation-triangle me-2"></i>
+                Ошибка сети. Проверьте подключение к интернету.
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        `;
+        console.error('Error:', error);
+    });
+}
+
+// Функция отправки изменения количества
+function submitQuantityUpdate() {
+    var form = document.getElementById('updateQuantityForm');
+    var formData = new FormData(form);
+    var materialId = formData.get('material_id');
+    var resultDiv = document.getElementById('updateResult');
+    var spinner = document.getElementById('updateSpinner');
+    var submitBtn = document.querySelector('#updateQuantityModal .btn-primary');
+    
+    // Проверяем валидность
+    var quantity = parseFloat(formData.get('quantity'));
+    if (isNaN(quantity) || quantity < 0) {
+        resultDiv.innerHTML = `
+            <div class="alert alert-danger">
+                <i class="bi bi-exclamation-triangle me-2"></i>
+                Введите корректное количество
+            </div>
+        `;
+        resultDiv.classList.remove('d-none');
+        return;
+    }
+    
+    // Показываем спиннер и блокируем кнопку
+    spinner.classList.remove('d-none');
+    submitBtn.disabled = true;
+    
+    fetch(`/materials/${materialId}/update-quantity/`, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        spinner.classList.add('d-none');
+        submitBtn.disabled = false;
+        
+        if (data.success) {
+            resultDiv.innerHTML = `
+                <div class="alert alert-success">
+                    <i class="bi bi-check-circle me-2"></i>
+                    Количество успешно обновлено
+                </div>
+            `;
+            
+            // Обновляем страницу через 1 секунду
+            setTimeout(function() {
+                window.location.reload();
+            }, 1000);
+            
+        } else {
+            resultDiv.innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    ${data.error || 'Ошибка при обновлении количества'}
+                </div>
+            `;
+        }
+        
+        resultDiv.classList.remove('d-none');
+    })
+    .catch(error => {
+        spinner.classList.add('d-none');
+        submitBtn.disabled = false;
+        
+        resultDiv.innerHTML = `
+            <div class="alert alert-danger">
+                <i class="bi bi-exclamation-triangle me-2"></i>
+                Ошибка сети. Проверьте подключение к интернету.
+            </div>
+        `;
+        resultDiv.classList.remove('d-none');
+        console.error('Error:', error);
+    });
+}
+
+// Функция загрузки детальной информации о материале
+function loadMaterialDetail(materialId) {
+    var contentDiv = document.getElementById('materialDetailContent');
+    
+    // Показываем спиннер
+    contentDiv.innerHTML = `
+        <div class="text-center py-4">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Загрузка...</span>
+            </div>
+        </div>
+    `;
+    
+    // Загружаем данные через AJAX
+    fetch(`/materials/${materialId}/detail/`)
+        .then(response => response.text())
+        .then(html => {
+            contentDiv.innerHTML = html;
+        })
+        .catch(error => {
+            contentDiv.innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    Ошибка при загрузке информации
+                </div>
+            `;
+            console.error('Error:', error);
+        });
+}
+
+// Автоматическое обновление статуса каждые 60 секунд
+setInterval(function() {
+    // Обновляем только если пользователь на странице материалов
+    if (window.location.pathname.includes('/materials/')) {
+        fetch('{% url 'materials:material_list' %}?partial=true')
+            .then(response => response.text())
+            .then(html => {
+                // Здесь можно обновить только статистику
+                console.log('Статус материалов обновлён');
+            })
+            .catch(error => console.error('Error updating status:', error));
+    }
+}, 60000);
+</script>
+{% endblock %}

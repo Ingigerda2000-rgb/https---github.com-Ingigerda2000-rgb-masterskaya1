@@ -1,62 +1,134 @@
 # materials/admin.py
 from django.contrib import admin
+from django.utils.html import format_html
 from .models import Material, MaterialRecipe, MaterialReservation
 
 @admin.register(Material)
 class MaterialAdmin(admin.ModelAdmin):
-    list_display = ('name', 'master', 'current_quantity', 'unit', 'min_quantity', 
-                   'price_per_unit', 'is_low_stock', 'created_at')
-    list_filter = ('master', 'unit', 'created_at')
-    search_fields = ('name', 'color', 'texture', 'supplier')
-    readonly_fields = ('created_at', 'updated_at')
+    list_display = ['name', 'master', 'current_quantity_display', 'unit_display', 
+                    'min_quantity_display', 'price_per_unit_display', 'stock_value_display',
+                    'status_indicator', 'is_active']
+    list_filter = ['master', 'is_active', 'unit', 'created_at']
+    search_fields = ['name', 'color', 'supplier', 'master__email', 'master__first_name', 'master__last_name']
+    readonly_fields = ['created_at', 'updated_at', 'stock_value_display']
+    list_per_page = 20
+    
     fieldsets = (
         ('Основная информация', {
-            'fields': ('name', 'master', 'unit', 'color', 'texture')
+            'fields': ('master', 'name', 'is_active')
         }),
-        ('Количественные показатели', {
-            'fields': ('current_quantity', 'min_quantity', 'price_per_unit')
+        ('Количественные характеристики', {
+            'fields': ('current_quantity', 'unit', 'min_quantity')
         }),
-        ('Дополнительно', {
-            'fields': ('supplier', 'created_at', 'updated_at')
+        ('Финансовые характеристики', {
+            'fields': ('price_per_unit', 'stock_value_display')
+        }),
+        ('Технические характеристики', {
+            'fields': ('color', 'texture')
+        }),
+        ('Информация о поставщике', {
+            'fields': ('supplier', 'supplier_contact')
+        }),
+        ('Дополнительная информация', {
+            'fields': ('notes',)
+        }),
+        ('Системная информация', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
         }),
     )
     
-    def is_low_stock(self, obj):
-        return obj.is_low_stock()
-    is_low_stock.boolean = True
-    is_low_stock.short_description = 'Низкий запас'
+    def current_quantity_display(self, obj):
+        return f"{obj.current_quantity}"
+    current_quantity_display.short_description = 'Количество'
+    
+    def unit_display(self, obj):
+        return obj.get_unit_display()
+    unit_display.short_description = 'Ед. изм.'
+    
+    def min_quantity_display(self, obj):
+        return f"{obj.min_quantity}"
+    min_quantity_display.short_description = 'Мин. запас'
+    
+    def price_per_unit_display(self, obj):
+        return f"{obj.price_per_unit} ₽"
+    price_per_unit_display.short_description = 'Цена за ед.'
+    
+    def stock_value_display(self, obj):
+        return f"{obj.stock_value:.2f} ₽"
+    stock_value_display.short_description = 'Стоимость запаса'
+    
+    def status_indicator(self, obj):
+        if obj.current_quantity == 0:
+            color = 'red'
+            text = 'Нет в наличии'
+        elif obj.is_low_stock:
+            color = 'orange'
+            text = 'Низкий запас'
+        else:
+            color = 'green'
+            text = 'В норме'
+        
+        return format_html(
+            '<span style="color: {}; font-weight: bold;">● {}</span>',
+            color, text
+        )
+    status_indicator.short_description = 'Статус'
+
 
 @admin.register(MaterialRecipe)
 class MaterialRecipeAdmin(admin.ModelAdmin):
-    list_display = ('product', 'material', 'consumption_rate', 'waste_factor', 
-                   'get_total_consumption_display')
-    list_filter = ('material',)
-    search_fields = ('product__name', 'material__name')
+    list_display = ['product', 'material', 'consumption_rate_display', 
+                    'waste_factor_percent', 'total_consumption_display', 'auto_consume']
+    list_filter = ['product__master', 'auto_consume', 'material__unit']
+    search_fields = ['product__name', 'material__name']
+    raw_id_fields = ['product', 'material']
+    list_per_page = 20
     
-    def get_total_consumption_display(self, obj):
-        return f"{obj.get_total_consumption():.3f}"
-    get_total_consumption_display.short_description = 'Расход с отходами'
+    def consumption_rate_display(self, obj):
+        return f"{obj.consumption_rate} {obj.material.get_unit_display()}"
+    consumption_rate_display.short_description = 'Норма расхода'
+    
+    def waste_factor_percent(self, obj):
+        return f"{obj.waste_factor * 100:.1f}%"
+    waste_factor_percent.short_description = 'Отходы'
+    
+    def total_consumption_display(self, obj):
+        total = obj.consumption_rate * (1 + obj.waste_factor)
+        return f"{total:.3f} {obj.material.get_unit_display()}"
+    total_consumption_display.short_description = 'Всего с отходами'
+
 
 @admin.register(MaterialReservation)
 class MaterialReservationAdmin(admin.ModelAdmin):
-    list_display = ('material', 'order_id', 'quantity', 'status', 'reserved_at')
-    list_filter = ('status', 'reserved_at', 'material')
-    search_fields = ('material__name', 'order_id')
-    readonly_fields = ('reserved_at',)
-    list_editable = ('status',)
+    list_display = ['material', 'order_item_link', 'quantity_display', 
+                    'status_display', 'reserved_at', 'consumed_at']
+    list_filter = ['status', 'reserved_at', 'material__master']
+    search_fields = ['material__name', 'order_item__order__id']
+    readonly_fields = ['reserved_at', 'consumed_at', 'released_at']
+    list_per_page = 20
     
-    actions = ['consume_reservations', 'release_reservations']
+    def order_item_link(self, obj):
+        if obj.order_item:
+            url = f"/admin/orders/orderitem/{obj.order_item.id}/change/"
+            return format_html('<a href="{}">Заказ #{}</a>', url, obj.order_item.order.id)
+        return "Ручное списание"
+    order_item_link.short_description = 'Заказ'
     
-    def consume_reservations(self, request, queryset):
-        """Действие: списать резервирования"""
-        for reservation in queryset.filter(status='reserved'):
-            reservation.consume()
-        self.message_user(request, f"Списано {queryset.count()} резервирований.")
-    consume_reservations.short_description = "Списать выбранные резервирования"
+    def quantity_display(self, obj):
+        return f"{obj.quantity} {obj.material.get_unit_display()}"
+    quantity_display.short_description = 'Количество'
     
-    def release_reservations(self, request, queryset):
-        """Действие: освободить резервирования"""
-        for reservation in queryset.filter(status='reserved'):
-            reservation.release()
-        self.message_user(request, f"Освобождено {queryset.count()} резервирований.")
-    release_reservations.short_description = "Освободить выбранные резервирования"
+    def status_display(self, obj):
+        colors = {
+            'reserved': 'warning',
+            'consumed': 'success',
+            'released': 'info',
+            'cancelled': 'secondary'
+        }
+        color = colors.get(obj.status, 'secondary')
+        return format_html(
+            '<span class="badge bg-{}">{}</span>',
+            color, obj.get_status_display()
+        )
+    status_display.short_description = 'Статус'

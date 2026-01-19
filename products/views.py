@@ -138,6 +138,43 @@ def add_product(request):
 
     return render(request, 'products/add_product.html', context)
 
+@login_required
+@user_passes_test(master_check)
+def update_product(request, product_id):
+    """Редактирование товара мастером"""
+    product = get_object_or_404(Product, id=product_id, master=request.user)
+
+    if request.method == 'POST':
+        form = ProductForm(request.POST, instance=product, master=request.user)
+        if form.is_valid():
+            product = form.save()
+
+            # Обработка новых загруженных изображений
+            images = request.FILES.getlist('images')
+            if images:
+                # Если загружены новые изображения, удаляем старые и добавляем новые
+                product.images.all().delete()  # Удаляем старые изображения
+                for i, image_file in enumerate(images):
+                    ProductImage.objects.create(
+                        product=product,
+                        image=image_file,
+                        is_main=(i == 0),  # Первое изображение делаем основным
+                        order=i
+                    )
+
+            messages.success(request, f'Товар "{product.name}" успешно обновлен!')
+            return redirect('master_dashboard')
+    else:
+        form = ProductForm(instance=product, master=request.user)
+
+    context = {
+        'form': form,
+        'product': product,
+        'title': 'Редактировать товар'
+    }
+
+    return render(request, 'products/edit_product.html', context)
+
 def toggle_favorite(request, product_id):
     """Добавление/удаление товара из избранного"""
     if not request.user.is_authenticated:

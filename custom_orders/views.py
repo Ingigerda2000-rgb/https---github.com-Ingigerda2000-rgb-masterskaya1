@@ -345,18 +345,15 @@ def finalize_custom_order(request):
         with transaction.atomic():
             # Создаем или получаем корзину пользователя
             cart, _ = Cart.objects.get_or_create(user=request.user)
-            
+
             # Создаем элемент корзины
-            try:
-                cart_item = CartItem.objects.create(
-                    cart=cart,
-                    product=product,
-                    quantity=1,
-                    price=total_price  # Устанавливаем кастомную цену
-                )
-            except IntegrityError:
-                return JsonResponse({'success': False, 'error': 'Этот товар уже в корзине'})
-            
+            cart_item = CartItem.objects.create(
+                cart=cart,
+                product=product,
+                quantity=1,
+                price=total_price  # Устанавливаем кастомную цену
+            )
+
             # Создаем спецификацию кастомного заказа
             specification = CustomOrderSpecification.objects.create(
                 order_item=None,
@@ -462,7 +459,7 @@ def custom_order_create(request, product_id):
                 
                 # Создаем спецификацию кастомного заказа
                 specification = CustomOrderSpecification.objects.create(
-                    order_item=cart_item,
+                    order_item=None,
                     template=template,
                     user=request.user,
                     configuration={'selections': selections},
@@ -635,10 +632,11 @@ def edit_custom_order(request, specification_id):
     else:
         form = CustomOrderForm(instance=specification)
 
+    order_number = specification.order_item.order.order_number if specification.order_item else f"Спец-{specification.id}"
     context = {
         'form': form,
         'specification': specification,
-        'title': f'Редактирование заказа #{specification.order_item.order.order_number}'
+        'title': f'Редактирование заказа #{order_number}'
     }
 
     return render(request, 'custom_orders/edit_order.html', context)

@@ -41,7 +41,6 @@ class CartItem(models.Model):
     class Meta:
         verbose_name = 'Элемент корзины'
         verbose_name_plural = 'Элементы корзины'
-        unique_together = ['cart', 'product']
     
     def __str__(self):
         return f"{self.product.name} x{self.quantity}"

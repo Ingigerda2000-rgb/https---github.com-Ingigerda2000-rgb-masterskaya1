@@ -630,11 +630,21 @@ function finalizeOrder() {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'X-CSRFToken': '{{ csrf_token }}'
+            'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
         }
     })
-    .then(response => response.json())
+    .then(response => {
+        if (response.status === 302 || response.status === 401) {
+            window.location.href = '{% url "login" %}?next={% url "custom_orders:constructor_step" step=6 %}';
+            return null;
+        }
+        if (!response.ok) {
+            throw new Error('HTTP ' + response.status);
+        }
+        return response.json();
+    })
     .then(data => {
+        if (data === null) return; // redirected
         if (data.success) {
             // Показываем успешное сообщение
             alert('Индивидуальный заказ добавлен в корзину!');

@@ -83,15 +83,11 @@ def add_to_cart(request, product_id):
         return redirect('product_detail', product_id=product_id)
     
     cart = get_or_create_cart(request)
-    
+
     # Проверяем, есть ли уже такой товар в корзине
-    cart_item, created = CartItem.objects.get_or_create(
-        cart=cart,
-        product=product,
-        defaults={'quantity': quantity}
-    )
-    
-    if not created:
+    cart_item = CartItem.objects.filter(cart=cart, product=product).first()
+
+    if cart_item:
         # Если товар уже есть в корзине, увеличиваем количество
         new_quantity = cart_item.quantity + quantity
         if new_quantity > product.stock_quantity:
@@ -102,6 +98,19 @@ def add_to_cart(request, product_id):
         else:
             cart_item.quantity = new_quantity
             cart_item.save()
+    else:
+        # Создаем новый элемент корзины
+        if quantity > product.stock_quantity:
+            if is_ajax:
+                return JsonResponse({'success': False, 'message': f'Недостаточно товара в наличии. Доступно: {product.stock_quantity} шт.'})
+            messages.error(request, f'Недостаточно товара в наличии. Доступно: {product.stock_quantity} шт.')
+            return redirect('product_detail', product_id=product_id)
+        else:
+            cart_item = CartItem.objects.create(
+                cart=cart,
+                product=product,
+                quantity=quantity
+            )
     
     # Получаем обновленную информацию о корзине
     item_count = cart.item_count()

@@ -22,6 +22,9 @@
                 </span>
             </div>
             <p class="text-muted">Создан: {{ order.created_at|date:"d.m.Y H:i" }}</p>
+            {% if order.user %}
+            <p class="text-muted">ID пользователя: {{ order.user.id }}</p>
+            {% endif %}
         </div>
     </div>
     
@@ -38,6 +41,7 @@
                             <thead class="table-light">
                                 <tr>
                                     <th width="60"></th>
+                                    <th>ID товара</th>
                                     <th>Товар</th>
                                     <th class="text-center">Количество</th>
                                     <th class="text-end">Цена</th>
@@ -49,11 +53,12 @@
                                 <tr>
                                     <td>
                                         {% if item.product.get_main_image %}
-                                        <img src="{{ item.product.get_main_image.url }}" 
-                                             class="img-fluid rounded" 
+                                        <img src="{{ item.product.get_main_image.url }}"
+                                             class="img-fluid rounded"
                                              style="width: 50px; height: 50px; object-fit: cover;">
                                         {% endif %}
                                     </td>
+                                    <td>{{ item.product.id }}</td>
                                     <td>
                                         <a href="{% url 'product_detail' item.product.id %}" class="text-decoration-none text-dark">
                                             <strong>{{ item.product_name }}</strong>

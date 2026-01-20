@@ -5,6 +5,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.views.decorators.http import require_POST
 from django.db import transaction
+from django.utils import timezone
 from .models import Cart, CartItem
 from products.models import Product
 
@@ -44,6 +45,8 @@ def cart_view(request):
         'items': items,
         'total': total,
         'unavailable_items': unavailable_items,
+        'user_id': cart.user.id if cart.user else None,
+        'cart_created_at': timezone.now(),
     }
     
     return render(request, 'cart/cart.html', context)

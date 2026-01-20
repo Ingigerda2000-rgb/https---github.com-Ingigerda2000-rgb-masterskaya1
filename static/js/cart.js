@@ -76,7 +76,7 @@ function updateCartPreview(data) {
                     </div>`}
                 </div>
                 <div class="flex-grow-1 ms-3">
-                    <h6 class="mb-0 small">${item.name}</h6>
+                    <h6 class="mb-0 small" style="overflow-wrap: break-word; word-break: break-word;">${item.name}</h6>
                     <div class="d-flex justify-content-between align-items-center mt-1">
                         <div class="input-group input-group-sm" style="width: 100px;">
                             <button class="btn btn-decrease-quantity" type="button" data-item-id="${item.id}" style="border: 1px solid #8a2be2; color: #8a2be2;">-</button>

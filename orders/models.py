@@ -3,6 +3,7 @@ from django.utils import timezone
 from django.db import transaction
 from accounts.models import User
 from products.models import Product
+from discounts.models import PromoCode
 
 class Order(models.Model):
     STATUS_CHOICES = [
@@ -142,7 +143,45 @@ class Order(models.Model):
         
         else:
             return 0
-    
+
+    def apply_promo_code(self, promo_code_str):
+        """
+        Применение промокода к заказу
+        Возвращает (success, message)
+        """
+        if not promo_code_str:
+            return False, "Промокод не указан"
+
+        try:
+            promo = PromoCode.objects.get(code=promo_code_str.upper(), is_active=True)
+        except PromoCode.DoesNotExist:
+            return False, "Промокод не найден"
+
+        items_total = self.calculate_items_total()
+
+        if not promo.is_valid(items_total):
+            if promo.min_order_amount > 0 and items_total < promo.min_order_amount:
+                return False, f"Промокод действует при заказе от {promo.min_order_amount} ₽"
+            elif promo.max_uses > 0 and promo.used_count >= promo.max_uses:
+                return False, "Промокод исчерпан"
+            else:
+                return False, "Промокод недействителен"
+
+        # Рассчитываем скидку
+        discount = promo.calculate_discount(items_total)
+
+        # Применяем скидку к заказу
+        self.discount_amount = discount
+        self.promo_code = promo.code
+        self.total_amount = self.calculate_total_amount()
+        self.save()
+
+        # Увеличиваем счетчик использований промокода
+        promo.used_count += 1
+        promo.save()
+
+        return True, f'Промокод применён! Скидка: {discount} ₽'
+
     def calculate_delivery_cost(self, address=None):
         """
         Расчёт стоимости доставки

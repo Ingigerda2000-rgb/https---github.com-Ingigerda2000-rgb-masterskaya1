@@ -5,5 +5,6 @@
 - [x] Update templates/materials/materialrecipe_form.html: change 'product_detail' to 'products:product_detail'
 - [x] Update templates/custom_orders/constructor.html: change 'product_detail' to 'products:product_detail'
 - [x] Update templates/cart/cart.html: change 'product_detail' to 'products:product_detail'
-- [x] Update templates/accounts/master_dashboard.html: change 'product_detail' to 'products:product_detail'
+- [x] Update templates/accounts/master_dashboard.html: change 'product_detail' and 'update_product' and 'master_products_list' to namespaced URLs
+- [x] Add links to become_master for non-master users in profile
 - [x] Test the URLs to ensure they work (server started successfully)

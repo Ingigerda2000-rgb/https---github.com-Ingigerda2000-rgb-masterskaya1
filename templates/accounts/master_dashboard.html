@@ -117,7 +117,7 @@
                             <div class="d-flex justify-content-between align-items-center">
                                 <h5 class="mb-0 fw-bold">
                                     <i class="bi bi-box me-2"></i>Мои товары
-                                    <span class="badge bg-white text-purple ms-2 fw-medium">{{ products|length }}</span>
+                                    <span class="badge bg-white text-purple ms-2 fw-medium">{{ total_products }}</span>
                                 </h5> 
                             </div>
                         </div>
@@ -127,7 +127,8 @@
                                 <table class="table table-hover mb-0">
                                     <thead class="bg-purple-light">
                                         <tr>
-                                            <th width="50" class="ps-4 py-3 fw-semibold">Фото</th>
+                                            <th width="60" class="ps-4 py-3 fw-semibold">№</th>
+                                            <th width="50" class="py-3 fw-semibold">Фото</th>
                                             <th class="py-3 fw-semibold">Название</th>
                                             <th width="100" class="py-3 fw-semibold">Цена</th>
                                             <th width="100" class="py-3 fw-semibold">Остаток</th>
@@ -137,7 +138,8 @@
                                     <tbody>
                                         {% for product in products|slice:":10" %}
                                         <tr class="{% cycle '' 'bg-purple-light' %}">
-                                            <td class="ps-4 py-3">
+                                            <td class="ps-4 py-3 fw-bold text-purple">{{ forloop.counter }}</td>
+                                            <td class="py-3">
                                                 {% if product.get_main_image %}
                                                 <img src="{{ product.get_main_image.url }}" 
                                                      width="44" height="44" 
@@ -193,10 +195,10 @@
                             </div>
                             {% endif %}
                         </div>
-                        {% if products|length > 10 %}
+                        {% if total_products > 10 %}
                         <div class="card-footer py-3 text-center bg-purple-light">
-                            <a href="#" class="btn btn-pink fw-medium">
-                                <i class="bi bi-list-ul me-2"></i>Показать все ({{ products|length }})
+                            <a href="{% url 'master_products_list' %}" class="btn btn-pink fw-medium">
+                                <i class="bi bi-list-ul me-2"></i>Показать все ({{ total_products }})
                             </a>
                         </div>
                         {% endif %}

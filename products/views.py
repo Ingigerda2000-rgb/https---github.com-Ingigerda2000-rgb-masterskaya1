@@ -224,13 +224,37 @@ def check_favorite(request, product_id):
     return JsonResponse({'is_favorite': is_favorite})
 
 @login_required
+@user_passes_test(master_check)
+def master_products_list(request):
+    """Список товаров мастера"""
+    products = Product.objects.filter(master=request.user).order_by('-created_at')
+
+    # Пагинация
+    page = request.GET.get('page', 1)
+    paginator = Paginator(products, 12)  # 12 товаров на странице
+
+    try:
+        products_page = paginator.page(page)
+    except PageNotAnInteger:
+        products_page = paginator.page(1)
+    except EmptyPage:
+        products_page = paginator.page(paginator.num_pages)
+
+    context = {
+        'products': products_page,
+        'title': 'Мои товары'
+    }
+
+    return render(request, 'products/master_products_list.html', context)
+
+@login_required
 def favorites_list(request):
     """Список избранных товаров пользователя"""
     from .models import Favorite
     favorites = Favorite.objects.filter(user=request.user).select_related('product')
-    
+
     context = {
         'favorites': favorites,
     }
-    
+
     return render(request, 'products/favorites.html', context)

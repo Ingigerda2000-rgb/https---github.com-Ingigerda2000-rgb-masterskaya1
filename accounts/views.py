@@ -321,7 +321,7 @@ def master_dashboard(request):
         'total_income': total_income,
         'materials_count': materials_count,
         'reviews_count': reviews_count,
-        'products': products[:5],  # Последние 5 товаров
+        'products': products,  # Все товары мастера
         'materials': materials[:5],  # Последние 5 материалов
         'recent_orders': recent_orders,
     }

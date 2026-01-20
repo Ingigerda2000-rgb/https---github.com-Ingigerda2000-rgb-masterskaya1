@@ -197,6 +197,7 @@
             margin-bottom: 20px;
             border: 1px solid #eee;
             box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            display: none;
         }
         
         .filter-row {
@@ -686,9 +687,9 @@
     <nav class="categories-menu">
         <div class="container">
             <div class="categories-nav">
-                <a href="/" class="category-link {% if not request.GET.category %}active{% endif %}">Все товары</a>
+                <a href="/?{% for key,value in request.GET.items %}{% if key != 'category' %}{{ key }}={{ value }}&{% endif %}{% endfor %}" class="category-link {% if not request.GET.category %}active{% endif %}">Все товары</a>
                 {% for category in categories %}
-                <a href="?category={{ category.id }}" class="category-link {% if request.GET.category == category.id|stringformat:'i' %}active{% endif %}">
+                <a href="?{% for key,value in request.GET.items %}{% if key != 'category' %}{{ key }}={{ value }}&{% endif %}{% endfor %}category={{ category.id }}" class="category-link {% if request.GET.category == category.id|stringformat:'i' %}active{% endif %}">
                     {{ category.name }}
                 </a>
                 {% endfor %}
@@ -917,14 +918,45 @@
         document.getElementById('customOrderBtn').addEventListener('click', function() {
     window.location.href = '/custom_orders/constructor/';
 });
-        
+
+        // Handle search input to show/hide filters
+        const searchInput = document.querySelector('.search-input');
+        const filtersForm = document.querySelector('.filters-form');
+
+        function toggleFilters() {
+            const hasSearch = searchInput.value.trim().length > 0;
+            const hasFilters = Array.from(document.querySelectorAll('.filter-input')).some(input => input.value.trim() !== '');
+            if (hasSearch || hasFilters) {
+                filtersForm.style.display = 'block';
+            } else {
+                filtersForm.style.display = 'none';
+            }
+        }
+
+        searchInput.addEventListener('input', toggleFilters);
+
+        // Check on load
+        document.addEventListener('DOMContentLoaded', toggleFilters);
+
         // Автоотправка формы при изменении некоторых фильтров
         document.querySelectorAll('select.filter-input').forEach(select => {
             select.addEventListener('change', function() {
+                const form = this.form;
+                const searchInput = document.querySelector('.search-input');
+                if (searchInput && searchInput.value.trim()) {
+                    let hidden = form.querySelector('input[name="search"]');
+                    if (!hidden) {
+                        hidden = document.createElement('input');
+                        hidden.type = 'hidden';
+                        hidden.name = 'search';
+                        form.appendChild(hidden);
+                    }
+                    hidden.value = searchInput.value.trim();
+                }
                 this.form.submit();
             });
         });
-        
+
         // Подсветка активной категории в меню
         const categoryLinks = document.querySelectorAll('.category-link');
         categoryLinks.forEach(link => {
@@ -935,13 +967,13 @@
                 this.classList.add('active');
             });
         });
-        
+
         // Анимация карточек товаров при наведении
         document.querySelectorAll('.product-card').forEach(card => {
             card.addEventListener('mouseenter', function() {
                 this.style.transform = 'translateY(-5px)';
             });
-            
+
             card.addEventListener('mouseleave', function() {
                 this.style.transform = 'translateY(0)';
             });

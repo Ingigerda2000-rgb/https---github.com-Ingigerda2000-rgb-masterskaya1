@@ -10,7 +10,7 @@
         <ol class="breadcrumb">
             <li class="breadcrumb-item"><a href="{% url 'home' %}">Главная</a></li>
             <li class="breadcrumb-item"><a href="{% url 'materials:material_list' %}">Материалы</a></li>
-            <li class="breadcrumb-item"><a href="{% url 'products:product_detail' product.id %}">{{ product.name }}</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'product_detail' product.id %}">{{ product.name }}</a></li>
             <li class="breadcrumb-item active">{{ title|default:'Новый рецепт' }}</li>
         </ol>
     </nav>
@@ -26,7 +26,7 @@
                 Товар: <strong>{{ product.name }}</strong>
             </p>
         </div>
-        <a href="{% url 'products:product_detail' product.id %}" class="btn btn-outline-secondary">
+        <a href="{% url 'product_detail' product.id %}" class="btn btn-outline-secondary">
             <i class="bi bi-arrow-left me-1"></i>Назад к товару
         </a>
     </div>
@@ -38,139 +38,119 @@
                 <div class="card-body">
                     <form method="post" id="recipeForm">
                         {% csrf_token %}
-                        
-                        <!-- Выбор материала -->
+                        {{ formset.management_form }}
+
+                        <!-- Материалы -->
                         <div class="mb-4">
-                            <h5 class="border-bottom pb-2 mb-3">Выбор материала</h5>
-                            <div class="mb-3">
-                                <label for="{{ form.material.id_for_label }}" class="form-label required-field">
-                                    Материал
-                                </label>
-                                {{ form.material }}
-                                {% if form.material.errors %}
-                                <div class="invalid-feedback d-block">
-                                    {{ form.material.errors }}
-                                </div>
-                                {% endif %}
-                                <div class="form-text">
-                                    Выберите материал, который используется для производства этого товара
-                                </div>
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="border-bottom pb-2 mb-3">Материалы для производства</h5>
+                                <button type="button" class="btn btn-outline-primary btn-sm" id="addMaterialBtn">
+                                    <i class="bi bi-plus-circle me-1"></i>Добавить материал
+                                </button>
                             </div>
-                            
-                            <div class="row g-3">
-                                <div class="col-md-6">
-                                    <div class="card bg-light">
-                                        <div class="card-body p-3">
-                                            <h6 class="card-title mb-2">Информация о выбранном материале</h6>
-                                            <div id="materialInfo" class="text-muted small">
-                                                Выберите материал, чтобы увидеть информацию
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="card bg-light">
-                                        <div class="card-body p-3">
-                                            <h6 class="card-title mb-2">Доступность</h6>
-                                            <div id="availabilityInfo" class="text-muted small">
-                                                Доступность появится после выбора материала
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Нормы расхода -->
-                        <div class="mb-4">
-                            <h5 class="border-bottom pb-2 mb-3">Нормы расхода</h5>
-                            <div class="row g-3">
-                                <div class="col-md-6">
-                                    <label for="{{ form.consumption_rate.id_for_label }}" class="form-label required-field">
-                                        Норма расхода на 1 единицу товара
-                                    </label>
-                                    <div class="input-group">
-                                        {{ form.consumption_rate }}
-                                        <span class="input-group-text" id="consumptionUnit">ед.</span>
-                                    </div>
-                                    {% if form.consumption_rate.errors %}
-                                    <div class="invalid-feedback d-block">
-                                        {{ form.consumption_rate.errors }}
+
+                            <div id="materialsContainer">
+                                {% for form in formset %}
+                                <div class="material-row border rounded p-3 mb-3" data-form-index="{{ forloop.counter0 }}">
+                                    {% if formset.can_delete %}
+                                    <div class="d-flex justify-content-end mb-2">
+                                        <button type="button" class="btn btn-outline-danger btn-sm remove-material" title="Удалить материал">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
                                     </div>
                                     {% endif %}
-                                    <div class="form-text">
-                                        Сколько материала требуется для производства одной единицы товара
+
+                                    <div class="row g-3">
+                                        <!-- Выбор материала -->
+                                        <div class="col-md-4">
+                                            <label class="form-label required-field">Материал</label>
+                                            {{ form.material }}
+                                            {% if form.material.errors %}
+                                            <div class="invalid-feedback d-block">{{ form.material.errors }}</div>
+                                            {% endif %}
+                                            <div class="form-text">Выберите материал</div>
+                                        </div>
+
+                                        <!-- Норма расхода -->
+                                        <div class="col-md-3">
+                                            <label class="form-label required-field">Норма расхода</label>
+                                            <div class="input-group">
+                                                {{ form.consumption_rate }}
+                                                <span class="input-group-text consumption-unit">ед.</span>
+                                            </div>
+                                            {% if form.consumption_rate.errors %}
+                                            <div class="invalid-feedback d-block">{{ form.consumption_rate.errors }}</div>
+                                            {% endif %}
+                                            <div class="form-text">На 1 единицу товара</div>
+                                        </div>
+
+                                        <!-- Коэффициент отходов -->
+                                        <div class="col-md-3">
+                                            <label class="form-label">Отходы (%)</label>
+                                            <div class="input-group">
+                                                {{ form.waste_factor }}
+                                                <span class="input-group-text">%</span>
+                                            </div>
+                                            {% if form.waste_factor.errors %}
+                                            <div class="invalid-feedback d-block">{{ form.waste_factor.errors }}</div>
+                                            {% endif %}
+                                            <div class="form-text">0.1 = 10%</div>
+                                        </div>
+
+                                        <!-- Автоматическое списание -->
+                                        <div class="col-md-2">
+                                            <label class="form-label">Авто-списание</label>
+                                            <div class="form-check form-switch d-flex justify-content-center">
+                                                {{ form.auto_consume }}
+                                            </div>
+                                            <div class="form-text text-center">Да/Нет</div>
+                                        </div>
                                     </div>
+
+                                    <!-- Информация о материале -->
+                                    <div class="row g-3 mt-2">
+                                        <div class="col-md-6">
+                                            <div class="card bg-light">
+                                                <div class="card-body p-2">
+                                                    <small class="text-muted material-info" id="materialInfo-{{ forloop.counter0 }}">
+                                                        Выберите материал, чтобы увидеть информацию
+                                                    </small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="card bg-light">
+                                                <div class="card-body p-2">
+                                                    <small class="text-muted availability-info" id="availabilityInfo-{{ forloop.counter0 }}">
+                                                        Доступность появится после выбора материала
+                                                    </small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Примечания -->
+                                    <div class="mt-2">
+                                        <label class="form-label">Примечания</label>
+                                        <textarea class="form-control" name="{{ form.notes.name }}" rows="2" placeholder="Дополнительная информация о материале...">{{ form.notes.value|default_if_none:"" }}</textarea>
+                                    </div>
+
+                                    {{ form.DELETE }}
                                 </div>
-                                
-                                <div class="col-md-6">
-                                    <label for="{{ form.waste_factor.id_for_label }}" class="form-label">
-                                        Коэффициент отходов
-                                    </label>
-                                    <div class="input-group">
-                                        {{ form.waste_factor }}
-                                        <span class="input-group-text">%</span>
-                                    </div>
-                                    {% if form.waste_factor.errors %}
-                                    <div class="invalid-feedback d-block">
-                                        {{ form.waste_factor.errors }}
-                                    </div>
-                                    {% endif %}
-                                    <div class="form-text">
-                                        Процент материала, который уходит в отходы при производстве (0.1 = 10%)
-                                    </div>
-                                </div>
+                                {% endfor %}
                             </div>
-                            
-                            <!-- Автоматическое списание -->
-                            <div class="mt-3">
-                                <div class="form-check form-switch">
-                                    {{ form.auto_consume }}
-                                    <label class="form-check-label" for="{{ form.auto_consume.id_for_label }}">
-                                        Автоматически списывать материал при производстве товара
-                                    </label>
-                                </div>
-                                <div class="form-text">
-                                    Если включено, материал будет автоматически списываться при изменении статуса заказа на "в производстве"
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Предпросмотр расчётов -->
-                        <div class="mb-4">
-                            <h5 class="border-bottom pb-2 mb-3">Предпросмотр расчётов</h5>
-                            <div class="card bg-light">
-                                <div class="card-body">
-                                    <div class="row g-3" id="calculationPreview">
-                                        <div class="col-md-4">
-                                            <small class="text-muted d-block">На 1 товар</small>
-                                            <div>
-                                                <span id="forOneProduct" class="fw-bold">—</span>
-                                                <small class="text-muted" id="forOneProductUnit"></small>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-4">
-                                            <small class="text-muted d-block">На 10 товаров</small>
-                                            <div>
-                                                <span id="forTenProducts" class="fw-bold">—</span>
-                                                <small class="text-muted" id="forTenProductsUnit"></small>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-4">
-                                            <small class="text-muted d-block">С учётом отходов</small>
-                                            <div>
-                                                <span id="withWaste" class="fw-bold">—</span>
-                                                <small class="text-muted">% отходов</small>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
+
+                            <!-- Кнопка быстрого добавления материала -->
+                            <div class="text-center mt-3">
+                                <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#quickAddMaterialModal">
+                                    <i class="bi bi-plus-circle me-1"></i>Создать новый материал
+                                </button>
                             </div>
                         </div>
                         
                         <!-- Кнопки формы -->
                         <div class="d-flex justify-content-between pt-3 border-top">
-                            <a href="{% url 'products:product_detail' product.id %}" class="btn btn-outline-secondary">
+                            <a href="{% url 'product_detail' product.id %}" class="btn btn-outline-secondary">
                                 <i class="bi bi-x-circle me-1"></i>Отмена
                             </a>
                             <div class="btn-group">
@@ -248,7 +228,7 @@
                         <hr class="my-3">
                         
                         <div class="d-grid">
-                            <a href="{% url 'products:product_detail' product.id %}" class="btn btn-outline-primary btn-sm">
+                            <a href="{% url 'product_detail' product.id %}" class="btn btn-outline-primary btn-sm">
                                 <i class="bi bi-eye me-1"></i>Просмотреть товар
                             </a>
                         </div>
@@ -287,222 +267,329 @@
         </div>
     </div>
 </div>
+
+<!-- Modal for Quick Add Material -->
+<div class="modal fade" id="quickAddMaterialModal" tabindex="-1" aria-labelledby="quickAddMaterialModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="quickAddMaterialModalLabel">Быстрое добавление материала</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="quickAddMaterialForm">
+                <div class="modal-body">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="quickName" class="form-label">Название материала</label>
+                        <input type="text" class="form-control" id="quickName" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="quickQuantity" class="form-label">Количество</label>
+                        <input type="number" class="form-control" id="quickQuantity" step="0.001" min="0" value="0">
+                    </div>
+                    <div class="mb-3">
+                        <label for="quickUnit" class="form-label">Единица измерения</label>
+                        <select class="form-select" id="quickUnit">
+                            <option value="pcs">Штуки</option>
+                            <option value="m">Метры</option>
+                            <option value="cm">Сантиметры</option>
+                            <option value="g">Граммы</option>
+                            <option value="kg">Килограммы</option>
+                            <option value="ml">Милилитры</option>
+                            <option value="l">Литры</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="submit" class="btn btn-primary">Добавить материал</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 {% endblock %}
 
 {% block extra_js %}
 <script>
-// Данные о материалах (загружаем через AJAX или передаём из представления)
-var materialsData = {};
-
-// Загружаем данные о материалах
-function loadMaterialsData() {
-    // В реальном приложении здесь был бы AJAX запрос
-    // Для демонстрации используем статические данные
-    console.log('Загрузка данных о материалах...');
-}
-
 // Обновление информации о выбранном материале
-function updateMaterialInfo() {
-    var materialSelect = document.getElementById('{{ form.material.id_for_label }}');
+function updateMaterialInfo(materialSelect, formIndex) {
     var materialId = materialSelect.value;
-    var consumptionUnit = document.getElementById('consumptionUnit');
-    
+    var materialInfoDiv = document.getElementById('materialInfo-' + formIndex);
+    var availabilityInfoDiv = document.getElementById('availabilityInfo-' + formIndex);
+    var consumptionUnit = materialSelect.closest('.material-row').querySelector('.consumption-unit');
+
     if (materialId) {
-        // Здесь должен быть AJAX запрос для получения информации о материале
-        // Для демонстрации просто обновляем единицу измерения
+        // Обновляем информацию о материале
         var selectedOption = materialSelect.options[materialSelect.selectedIndex];
         var materialName = selectedOption.text;
-        
-        // Обновляем единицу измерения в поле нормы расхода
-        var unit = 'ед.'; // В реальном приложении это должно быть из данных материала
-        
-        consumptionUnit.textContent = unit;
-        
-        // Обновляем информацию о материале
-        document.getElementById('materialInfo').innerHTML = `
+
+        materialInfoDiv.innerHTML = `
             <div class="mb-1"><strong>Название:</strong> ${materialName}</div>
-            <div class="mb-1"><strong>Ед. изм.:</strong> ${unit}</div>
+            <div class="mb-1"><strong>Ед. изм.:</strong> Загрузка...</div>
             <div><strong>ID:</strong> ${materialId}</div>
         `;
-        
-        // Обновляем информацию о доступности
-        document.getElementById('availabilityInfo').innerHTML = `
-            <div class="mb-1">Загрузка информации...</div>
-        `;
-        
-        // Обновляем предпросмотр расчётов
-        updateCalculationPreview();
-        
+
+        availabilityInfoDiv.innerHTML = 'Загрузка информации...';
+
         // Запрашиваем детальную информацию через AJAX
-        fetch(`/api/materials/${materialId}/info/`)
+        fetch(`/materials/api/${materialId}/info/`, {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
             .then(response => response.json())
             .then(data => {
-                document.getElementById('availabilityInfo').innerHTML = `
-                    <div class="mb-1"><strong>На складе:</strong> ${data.current_quantity} ${data.unit}</div>
-                    <div class="mb-1"><strong>Доступно:</strong> ${data.available_quantity} ${data.unit}</div>
-                    <div><strong>Цена:</strong> ${data.price_per_unit} ₽/${data.unit}</div>
-                `;
-                
-                // Обновляем единицу измерения
-                consumptionUnit.textContent = data.unit;
+                if (data.success) {
+                    materialInfoDiv.innerHTML = `
+                        <div class="mb-1"><strong>Название:</strong> ${data.name}</div>
+                        <div class="mb-1"><strong>Ед. изм.:</strong> ${data.unit}</div>
+                        <div><strong>Цвет:</strong> ${data.color || 'Не указан'}</div>
+                    `;
+
+                    availabilityInfoDiv.innerHTML = `
+                        <div class="mb-1"><strong>На складе:</strong> ${data.current_quantity} ${data.unit}</div>
+                        <div class="mb-1"><strong>Доступно:</strong> ${data.available_quantity} ${data.unit}</div>
+                        <div><strong>Цена:</strong> ${data.price_per_unit} ₽/${data.unit}</div>
+                    `;
+
+                    // Обновляем единицу измерения
+                    consumptionUnit.textContent = data.unit;
+                } else {
+                    materialInfoDiv.innerHTML = 'Ошибка загрузки информации';
+                    availabilityInfoDiv.innerHTML = data.error || 'Ошибка';
+                }
             })
             .catch(error => {
                 console.error('Ошибка загрузки информации о материале:', error);
+                materialInfoDiv.innerHTML = 'Ошибка загрузки информации';
+                availabilityInfoDiv.innerHTML = 'Ошибка загрузки информации';
             });
     } else {
-        document.getElementById('materialInfo').innerHTML = 'Выберите материал, чтобы увидеть информацию';
-        document.getElementById('availabilityInfo').innerHTML = 'Доступность появится после выбора материала';
+        materialInfoDiv.innerHTML = 'Выберите материал, чтобы увидеть информацию';
+        availabilityInfoDiv.innerHTML = 'Доступность появится после выбора материала';
         consumptionUnit.textContent = 'ед.';
-        clearCalculationPreview();
     }
 }
 
-// Обновление предпросмотра расчётов
-function updateCalculationPreview() {
-    var consumptionRate = parseFloat(document.getElementById('{{ form.consumption_rate.id_for_label }}').value) || 0;
-    var wasteFactor = parseFloat(document.getElementById('{{ form.waste_factor.id_for_label }}').value) || 0;
-    var materialSelect = document.getElementById('{{ form.material.id_for_label }}');
-    var unit = materialSelect.value ? 'ед.' : '';
-    
-    if (consumptionRate > 0) {
-        var forOne = consumptionRate;
-        var forTen = consumptionRate * 10;
-        var withWaste = (wasteFactor * 100).toFixed(1);
-        
-        document.getElementById('forOneProduct').textContent = forOne.toFixed(3);
-        document.getElementById('forOneProductUnit').textContent = unit;
-        document.getElementById('forTenProducts').textContent = forTen.toFixed(3);
-        document.getElementById('forTenProductsUnit').textContent = unit;
-        document.getElementById('withWaste').textContent = withWaste + '%';
+// Добавление нового материала
+function addMaterialForm() {
+    var container = document.getElementById('materialsContainer');
+    var formIndex = container.children.length;
+    var newForm = document.createElement('div');
+    newForm.className = 'material-row border rounded p-3 mb-3';
+    newForm.setAttribute('data-form-index', formIndex);
+    newForm.innerHTML = `
+        <div class="d-flex justify-content-end mb-2">
+            <button type="button" class="btn btn-outline-danger btn-sm remove-material" title="Удалить материал">
+                <i class="bi bi-trash"></i>
+            </button>
+        </div>
+        <div class="row g-3">
+            <div class="col-md-4">
+                <label class="form-label required-field">Материал</label>
+                <select class="form-select material-select" name="form-${formIndex}-material" required>
+                    <option value="">Выберите материал</option>
+                    <!-- Options will be populated via JS -->
+                </select>
+                <div class="form-text">Выберите материал</div>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label required-field">Норма расхода</label>
+                <div class="input-group">
+                    <input type="number" class="form-control" name="form-${formIndex}-consumption_rate" step="0.001" min="0.001" required>
+                    <span class="input-group-text consumption-unit">ед.</span>
+                </div>
+                <div class="form-text">На 1 единицу товара</div>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Отходы (%)</label>
+                <div class="input-group">
+                    <input type="number" class="form-control" name="form-${formIndex}-waste_factor" step="0.01" min="0" max="1" value="0.10">
+                    <span class="input-group-text">%</span>
+                </div>
+                <div class="form-text">0.1 = 10%</div>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Авто-списание</label>
+                <div class="form-check form-switch d-flex justify-content-center">
+                    <input class="form-check-input" type="checkbox" name="form-${formIndex}-auto_consume" checked>
+                </div>
+                <div class="form-text text-center">Да/Нет</div>
+            </div>
+        </div>
+        <div class="row g-3 mt-2">
+            <div class="col-md-6">
+                <div class="card bg-light">
+                    <div class="card-body p-2">
+                        <small class="text-muted material-info" id="materialInfo-${formIndex}">
+                            Выберите материал, чтобы увидеть информацию
+                        </small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card bg-light">
+                    <div class="card-body p-2">
+                        <small class="text-muted availability-info" id="availabilityInfo-${formIndex}">
+                            Доступность появится после выбора материала
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="mt-2">
+            <label class="form-label">Примечания</label>
+            <textarea class="form-control" name="form-${formIndex}-notes" rows="2" placeholder="Дополнительная информация о материале..."></textarea>
+        </div>
+        <input type="hidden" name="form-${formIndex}-DELETE" value="false">
+    `;
+    container.appendChild(newForm);
+
+    // Update management form
+    var totalForms = document.querySelector('input[name$="-TOTAL_FORMS"]');
+    totalForms.value = parseInt(totalForms.value) + 1;
+
+    // Add event listeners
+    var materialSelect = newForm.querySelector('.material-select');
+    materialSelect.addEventListener('change', function() {
+        updateMaterialInfo(this, formIndex);
+    });
+
+    var removeBtn = newForm.querySelector('.remove-material');
+    removeBtn.addEventListener('click', function() {
+        removeMaterialForm(newForm);
+    });
+
+    // Populate material options
+    populateMaterialOptions(materialSelect);
+}
+
+// Удаление материала
+function removeMaterialForm(formElement) {
+    var deleteInput = formElement.querySelector('input[name$="-DELETE"]');
+    if (deleteInput) {
+        deleteInput.value = 'true';
+        formElement.style.display = 'none';
     } else {
-        clearCalculationPreview();
+        formElement.remove();
+        // Update management form
+        var totalForms = document.querySelector('input[name$="-TOTAL_FORMS"]');
+        totalForms.value = parseInt(totalForms.value) - 1;
     }
 }
 
-// Очистка предпросмотра расчётов
-function clearCalculationPreview() {
-    document.getElementById('forOneProduct').textContent = '—';
-    document.getElementById('forOneProductUnit').textContent = '';
-    document.getElementById('forTenProducts').textContent = '—';
-    document.getElementById('forTenProductsUnit').textContent = '';
-    document.getElementById('withWaste').textContent = '—';
+// Заполнение опций материалов
+function populateMaterialOptions(selectElement) {
+    // Загружаем материалы через AJAX
+    fetch('/materials/api/materials/list/', {
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            selectElement.innerHTML = '<option value="">Выберите материал</option>';
+            data.materials.forEach(function(material) {
+                var option = document.createElement('option');
+                option.value = material.id;
+                option.textContent = material.name;
+                selectElement.appendChild(option);
+            });
+        } else {
+            selectElement.innerHTML = '<option value="">Ошибка загрузки материалов</option>';
+        }
+    })
+    .catch(error => {
+        console.error('Ошибка загрузки материалов:', error);
+        selectElement.innerHTML = '<option value="">Ошибка загрузки материалов</option>';
+    });
 }
+
+// Быстрое добавление материала
+document.getElementById('quickAddMaterialForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    var name = document.getElementById('quickName').value;
+    var quantity = document.getElementById('quickQuantity').value;
+    var unit = document.getElementById('quickUnit').value;
+
+    fetch('/materials/quick-add/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: JSON.stringify({
+            name: name,
+            current_quantity: quantity,
+            unit: unit
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Закрываем модальное окно
+            var modal = bootstrap.Modal.getInstance(document.getElementById('quickAddMaterialModal'));
+            modal.hide();
+
+            // Очищаем форму
+            document.getElementById('quickAddMaterialForm').reset();
+
+            // Обновляем все селекты материалов
+            document.querySelectorAll('.material-select').forEach(function(select) {
+                var option = document.createElement('option');
+                option.value = data.id;
+                option.text = data.name;
+                select.appendChild(option);
+            });
+
+            // Показываем сообщение
+            alert('Материал успешно добавлен!');
+        } else {
+            alert('Ошибка: ' + (data.errors ? JSON.stringify(data.errors) : 'Неизвестная ошибка'));
+        }
+    })
+    .catch(error => {
+        console.error('Ошибка:', error);
+        alert('Произошла ошибка при добавлении материала');
+    });
+});
 
 // Инициализация
 document.addEventListener('DOMContentLoaded', function() {
-    // Загружаем данные о материалах
-    loadMaterialsData();
-    
-    // Слушаем изменения в выборе материала
-    var materialSelect = document.getElementById('{{ form.material.id_for_label }}');
-    if (materialSelect) {
-        materialSelect.addEventListener('change', updateMaterialInfo);
-        updateMaterialInfo(); // Первоначальное обновление
-    }
-    
-    // Слушаем изменения в полях нормы расхода и отходов
-    var consumptionRateInput = document.getElementById('{{ form.consumption_rate.id_for_label }}');
-    var wasteFactorInput = document.getElementById('{{ form.waste_factor.id_for_label }}');
-    
-    if (consumptionRateInput) {
-        consumptionRateInput.addEventListener('input', updateCalculationPreview);
-    }
-    
-    if (wasteFactorInput) {
-        wasteFactorInput.addEventListener('input', updateCalculationPreview);
-    }
-    
-    // Первоначальный предпросмотр расчётов
-    updateCalculationPreview();
-    
-    // Валидация формы
-    var form = document.getElementById('recipeForm');
-    form.addEventListener('submit', function(event) {
-        var isValid = true;
-        
-        // Проверка обязательных полей
-        var requiredFields = form.querySelectorAll('[required]');
-        requiredFields.forEach(function(field) {
-            if (!field.value.trim()) {
-                isValid = false;
-                field.classList.add('is-invalid');
-                
-                var errorDiv = document.createElement('div');
-                errorDiv.className = 'invalid-feedback d-block';
-                errorDiv.textContent = 'Это поле обязательно для заполнения';
-                
-                var parent = field.parentElement;
-                if (!parent.querySelector('.invalid-feedback')) {
-                    parent.appendChild(errorDiv);
-                }
-            } else {
-                field.classList.remove('is-invalid');
-                var errorDiv = field.parentElement.querySelector('.invalid-feedback');
-                if (errorDiv) {
-                    errorDiv.remove();
-                }
-            }
-        });
-        
-        // Проверка числовых полей
-        var numericFields = [
-            { element: consumptionRateInput, min: 0.001, name: 'Норма расхода' },
-            { element: wasteFactorInput, min: 0, max: 1, name: 'Коэффициент отходов' }
-        ];
-        
-        numericFields.forEach(function(field) {
-            if (field.element && field.element.value) {
-                var value = parseFloat(field.element.value);
-                
-                if (isNaN(value)) {
-                    isValid = false;
-                    field.element.classList.add('is-invalid');
-                    
-                    var errorDiv = document.createElement('div');
-                    errorDiv.className = 'invalid-feedback d-block';
-                    errorDiv.textContent = 'Введите числовое значение';
-                    
-                    var parent = field.element.parentElement;
-                    if (!parent.querySelector('.invalid-feedback')) {
-                        parent.appendChild(errorDiv);
-                    }
-                } else if (field.min !== undefined && value < field.min) {
-                    isValid = false;
-                    field.element.classList.add('is-invalid');
-                    
-                    var errorDiv = document.createElement('div');
-                    errorDiv.className = 'invalid-feedback d-block';
-                    errorDiv.textContent = `${field.name} должна быть не менее ${field.min}`;
-                    
-                    var parent = field.element.parentElement;
-                    if (!parent.querySelector('.invalid-feedback')) {
-                        parent.appendChild(errorDiv);
-                    }
-                } else if (field.max !== undefined && value > field.max) {
-                    isValid = false;
-                    field.element.classList.add('is-invalid');
-                    
-                    var errorDiv = document.createElement('div');
-                    errorDiv.className = 'invalid-feedback d-block';
-                    errorDiv.textContent = `${field.name} должна быть не более ${field.max}`;
-                    
-                    var parent = field.element.parentElement;
-                    if (!parent.querySelector('.invalid-feedback')) {
-                        parent.appendChild(errorDiv);
-                    }
-                }
-            }
-        });
-        
-        if (!isValid) {
-            event.preventDefault();
-            
-            // Прокручиваем к первой ошибке
-            var firstError = form.querySelector('.is-invalid');
-            if (firstError) {
-                firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                firstError.focus();
-            }
+    // Добавление материала
+    document.getElementById('addMaterialBtn').addEventListener('click', addMaterialForm);
+
+    // Удаление материалов
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('remove-material') || e.target.closest('.remove-material')) {
+            var formElement = e.target.closest('.material-row');
+            removeMaterialForm(formElement);
+        }
+    });
+
+    // Обновление информации о материалах
+    document.addEventListener('change', function(e) {
+        if (e.target.classList.contains('material-select')) {
+            var formIndex = e.target.closest('.material-row').getAttribute('data-form-index');
+            updateMaterialInfo(e.target, formIndex);
+        }
+    });
+
+    // Заполняем все селекты материалов
+    document.querySelectorAll('.material-select').forEach(function(select) {
+        populateMaterialOptions(select);
+    });
+
+    // Инициализация существующих форм
+    document.querySelectorAll('.material-row').forEach(function(row, index) {
+        var materialSelect = row.querySelector('.material-select');
+        if (materialSelect && materialSelect.value) {
+            updateMaterialInfo(materialSelect, index);
         }
     });
 });

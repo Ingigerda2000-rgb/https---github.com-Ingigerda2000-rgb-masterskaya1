@@ -213,37 +213,58 @@ class MaterialDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
         return redirect(self.success_url)
 
 
-class MaterialRecipeCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
-    """Добавление рецепта к товару"""
-    model = MaterialRecipe
-    form_class = MaterialRecipeForm
-    template_name = 'materials/materialrecipe_form.html'
-    
-    def test_func(self):
-        product_id = self.kwargs.get('product_id')
-        product = get_object_or_404(Product, pk=product_id)
-        return product.master == self.request.user
-    
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        product = get_object_or_404(Product, pk=self.kwargs['product_id'])
-        context['product'] = product
-        context['title'] = f'Добавление рецепта для товара: {product.name}'
-        context['existing_recipes'] = product.material_recipes.select_related('material')
-        return context
-    
-    def get_form_kwargs(self):
-        kwargs = super().get_form_kwargs()
-        product = get_object_or_404(Product, pk=self.kwargs['product_id'])
-        kwargs['product'] = product
-        return kwargs
-    
-    def form_valid(self, form):
-        messages.success(self.request, '✅ Рецепт материала успешно добавлен')
-        return super().form_valid(form)
-    
-    def get_success_url(self):
-        return reverse_lazy('products:product_detail', kwargs={'pk': self.kwargs['product_id']})
+@login_required
+def material_recipe_create(request, product_id):
+    """Добавление рецептов к товару (несколько материалов)"""
+    product = get_object_or_404(Product, pk=product_id)
+    if product.master != request.user:
+        messages.error(request, '❌ У вас нет доступа к этому товару')
+        return redirect('home')
+
+    from django.forms import modelformset_factory
+    RecipeFormSet = modelformset_factory(
+        MaterialRecipe,
+        form=MaterialRecipeForm,
+        extra=1,
+        can_delete=True,
+        fields=['material', 'consumption_rate', 'waste_factor', 'auto_consume', 'notes']
+    )
+
+    if request.method == 'POST':
+        formset = RecipeFormSet(request.POST, queryset=MaterialRecipe.objects.none())
+        if formset.is_valid():
+            recipes = []
+            for form in formset:
+                if form.cleaned_data and not form.cleaned_data.get('DELETE', False):
+                    recipe = form.save(commit=False)
+                    recipe.product = product
+                    recipe.save()
+                    recipes.append(recipe)
+            if recipes:
+                messages.success(request, f'✅ Добавлено {len(recipes)} рецептов материала')
+            return redirect('product_detail', pk=product_id)
+        else:
+            messages.error(request, '❌ Проверьте правильность заполнения формы')
+    else:
+        formset = RecipeFormSet(queryset=MaterialRecipe.objects.none())
+
+    # Set product for each form and update material queryset
+    for form in formset:
+        form.product = product
+        if product and product.master:
+            form.fields['material'].queryset = Material.objects.filter(
+                master=product.master,
+                is_active=True
+            ).order_by('name')
+
+    context = {
+        'product': product,
+        'formset': formset,
+        'title': f'Добавление рецептов для товара: {product.name}',
+        'existing_recipes': product.material_recipes.select_related('material'),
+        'submit_text': 'Сохранить рецепты',
+    }
+    return render(request, 'materials/materialrecipe_form.html', context)
 
 
 class MaterialRecipeUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
@@ -404,37 +425,42 @@ def material_report(request):
 def quick_add_material(request):
     """Быстрое добавление материала (AJAX)"""
     if request.method == 'POST' and request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-        form = QuickMaterialForm(request.POST)
-        
-        if form.is_valid():
-            name = form.cleaned_data['name']
-            current_quantity = form.cleaned_data['current_quantity']
-            unit = form.cleaned_data['unit']
+        try:
+            import json
+            data = json.loads(request.body)
+            form = QuickMaterialForm(data)
             
-            # Создаём материал
-            material = Material.objects.create(
-                master=request.user,
-                name=name,
-                current_quantity=current_quantity,
-                unit=unit,
-                min_quantity=Decimal('0'),
-                price_per_unit=Decimal('0')
-            )
-            
-            return JsonResponse({
-                'success': True,
-                'id': str(material.id),
-                'name': material.name,
-                'quantity': str(material.current_quantity),
-                'unit': material.get_unit_display(),
-                'is_low_stock': material.is_low_stock,
-                'status_class': 'danger' if material.current_quantity == 0 else 'warning' if material.is_low_stock else 'success'
-            })
-        else:
-            return JsonResponse({
-                'success': False,
-                'errors': form.errors
-            })
+            if form.is_valid():
+                name = form.cleaned_data['name']
+                current_quantity = form.cleaned_data['current_quantity']
+                unit = form.cleaned_data['unit']
+                
+                # Создаём материал
+                material = Material.objects.create(
+                    master=request.user,
+                    name=name,
+                    current_quantity=current_quantity,
+                    unit=unit,
+                    min_quantity=Decimal('0'),
+                    price_per_unit=Decimal('0')
+                )
+                
+                return JsonResponse({
+                    'success': True,
+                    'id': str(material.id),
+                    'name': material.name,
+                    'quantity': str(material.current_quantity),
+                    'unit': material.get_unit_display(),
+                    'is_low_stock': material.is_low_stock,
+                    'status_class': 'danger' if material.current_quantity == 0 else 'warning' if material.is_low_stock else 'success'
+                })
+            else:
+                return JsonResponse({
+                    'success': False,
+                    'errors': form.errors
+                })
+        except json.JSONDecodeError:
+            return JsonResponse({'success': False, 'error': 'Invalid JSON'})
     
     return JsonResponse({'success': False, 'error': 'Invalid request method'})
 
@@ -541,23 +567,23 @@ def export_materials_csv(request):
     """Экспорт материалов в CSV"""
     from django.http import HttpResponse
     import csv
-    
+
     if request.user.role != 'master':
         return redirect('home')
-    
+
     materials = Material.objects.filter(master=request.user, is_active=True)
-    
+
     response = HttpResponse(content_type='text/csv')
     response['Content-Disposition'] = 'attachment; filename="materials_export.csv"'
-    
+
     writer = csv.writer(response)
-    writer.writerow(['Название', 'Количество', 'Ед. изм.', 'Мин. запас', 'Цена за ед.', 
+    writer.writerow(['Название', 'Количество', 'Ед. изм.', 'Мин. запас', 'Цена за ед.',
                      'Стоимость запаса', 'Цвет', 'Поставщик', 'Статус'])
-    
+
     for material in materials:
         status = 'Нет в наличии' if material.current_quantity == 0 else \
                  'Низкий запас' if material.is_low_stock else 'В норме'
-        
+
         writer.writerow([
             material.name,
             str(material.current_quantity),
@@ -569,8 +595,59 @@ def export_materials_csv(request):
             material.supplier or '',
             status
         ])
-    
+
     return response
+
+
+@login_required
+def material_info_api(request, pk):
+    """API для получения информации о материале (AJAX)"""
+    if request.headers.get('X-Requested-With') != 'XMLHttpRequest':
+        return JsonResponse({'success': False, 'error': 'Invalid request'})
+
+    try:
+        material = Material.objects.get(pk=pk, master=request.user, is_active=True)
+        data = {
+            'success': True,
+            'id': material.id,
+            'name': material.name,
+            'current_quantity': str(material.current_quantity),
+            'available_quantity': str(material.available_quantity),
+            'unit': material.get_unit_display(),
+            'unit_code': material.unit,
+            'price_per_unit': str(material.price_per_unit),
+            'color': material.color,
+            'texture': material.texture,
+            'supplier': material.supplier,
+            'is_low_stock': material.is_low_stock,
+            'stock_value': str(material.stock_value),
+        }
+        return JsonResponse(data)
+    except Material.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Material not found'})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
+
+@login_required
+def materials_list_api(request):
+    """API для получения списка материалов мастера (AJAX)"""
+    if request.headers.get('X-Requested-With') != 'XMLHttpRequest':
+        return JsonResponse({'success': False, 'error': 'Invalid request'})
+
+    try:
+        materials = Material.objects.filter(
+            master=request.user,
+            is_active=True
+        ).order_by('name').values('id', 'name')
+
+        data = {
+            'success': True,
+            'materials': list(materials)
+        }
+        return JsonResponse(data)
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
 class MaterialDetailView(LoginRequiredMixin, UserPassesTestMixin, DetailView):
     """Детальная информация о материале"""
     model = Material

@@ -14,8 +14,14 @@ urlpatterns = [
 
     # Рецепты материалов
     path('recipes/add/<int:product_id>/',
-         views.MaterialRecipeCreateView.as_view(),
+         views.material_recipe_create,
          name='add_recipe'),
+    path('recipes/<int:pk>/update/',
+         views.MaterialRecipeUpdateView.as_view(),
+         name='materialrecipe_update'),
+    path('recipes/<int:pk>/delete/',
+         views.MaterialRecipeDeleteView.as_view(),
+         name='materialrecipe_delete'),
     
     # Отчёты и аналитика
     path('report/', views.material_report, name='report'),
@@ -25,6 +31,8 @@ urlpatterns = [
     # Быстрые действия (AJAX)
     path('quick-add/', views.quick_add_material, name='quick_add'),
     path('<int:pk>/update-quantity/', views.update_material_quantity, name='update_quantity'),
+    path('api/<int:pk>/info/', views.material_info_api, name='material_info_api'),
+    path('api/materials/list/', views.materials_list_api, name='materials_list_api'),
     
     # Экспорт
     path('export-csv/', views.export_materials_csv, name='export_csv'),

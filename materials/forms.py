@@ -119,13 +119,16 @@ class MaterialRecipeForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         self.product = kwargs.pop('product', None)
         super().__init__(*args, **kwargs)
-        
+
         # Фильтруем материалы только текущего мастера
         if self.product and self.product.master:
             self.fields['material'].queryset = Material.objects.filter(
                 master=self.product.master,
                 is_active=True
             ).order_by('name')
+
+        # Добавляем класс для JS
+        self.fields['material'].widget.attrs['class'] = 'form-select material-select'
         
         # Добавляем валидаторы
         self.fields['consumption_rate'].validators.append(MinValueValidator(0.001))

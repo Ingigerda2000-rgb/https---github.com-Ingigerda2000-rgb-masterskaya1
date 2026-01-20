@@ -10,7 +10,7 @@
         <ol class="breadcrumb">
             <li class="breadcrumb-item"><a href="{% url 'home' %}">Главная</a></li>
             <li class="breadcrumb-item"><a href="{% url 'materials:material_list' %}">Материалы</a></li>
-            <li class="breadcrumb-item"><a href="{% url 'product_detail' product.id %}">{{ product.name }}</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'products:product_detail' product.id %}">{{ product.name }}</a></li>
             <li class="breadcrumb-item active">{{ title|default:'Новый рецепт' }}</li>
         </ol>
     </nav>
@@ -26,7 +26,7 @@
                 Товар: <strong>{{ product.name }}</strong>
             </p>
         </div>
-        <a href="{% url 'product_detail' product.id %}" class="btn btn-outline-secondary">
+        <a href="{% url 'products:product_detail' product.id %}" class="btn btn-outline-secondary">
             <i class="bi bi-arrow-left me-1"></i>Назад к товару
         </a>
     </div>
@@ -150,7 +150,7 @@
                         
                         <!-- Кнопки формы -->
                         <div class="d-flex justify-content-between pt-3 border-top">
-                            <a href="{% url 'product_detail' product.id %}" class="btn btn-outline-secondary">
+                            <a href="{% url 'products:product_detail' product.id %}" class="btn btn-outline-secondary">
                                 <i class="bi bi-x-circle me-1"></i>Отмена
                             </a>
                             <div class="btn-group">
@@ -228,7 +228,7 @@
                         <hr class="my-3">
                         
                         <div class="d-grid">
-                            <a href="{% url 'product_detail' product.id %}" class="btn btn-outline-primary btn-sm">
+                            <a href="{% url 'products:product_detail' product.id %}" class="btn btn-outline-primary btn-sm">
                                 <i class="bi bi-eye me-1"></i>Просмотреть товар
                             </a>
                         </div>

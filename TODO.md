@@ -1,8 +1,9 @@
-# Задача: Добавить отображение ID пользователя, ID товаров, даты создания заказа на странице корзины
-
-## Шаги:
-- [x] Изменить cart_view в cart/views.py для передачи user.id и cart.created_at в контекст
-- [x] Изменить templates/cart/cart.html для отображения ID пользователя, ID товаров, даты создания корзины
-- [x] Добавить аналогично в templates/orders/order_detail.html ID пользователя и ID товаров
-- [x] Добавить уведомление при попытке увеличить количество товара сверх доступного в корзине
-- [x] Добавить отображение остатка товаров в таблице корзины
+- [x] Update templates/products/product_list.html: change 'product_detail' to 'products:product_detail'
+- [x] Update templates/products/product_detail.html: change 'product_detail' to 'products:product_detail'
+- [x] Update templates/products/favorites.html: change 'product_detail' to 'products:product_detail'
+- [x] Update templates/orders/order_detail.html: change 'product_detail' to 'products:product_detail'
+- [x] Update templates/materials/materialrecipe_form.html: change 'product_detail' to 'products:product_detail'
+- [x] Update templates/custom_orders/constructor.html: change 'product_detail' to 'products:product_detail'
+- [x] Update templates/cart/cart.html: change 'product_detail' to 'products:product_detail'
+- [x] Update templates/accounts/master_dashboard.html: change 'product_detail' to 'products:product_detail'
+- [x] Test the URLs to ensure they work (server started successfully)

@@ -63,7 +63,7 @@
                                     </td>
                                     <td>{{ item.product.id }}</td>
                                     <td>
-                                        <a href="{% url 'product_detail' item.product.id %}" class="text-decoration-none text-dark">
+                                        <a href="{% url 'products:product_detail' item.product.id %}" class="text-decoration-none text-dark">
                                             <strong>{{ item.product.name }}</strong>
                                         </a>
                                         <div class="text-muted small">

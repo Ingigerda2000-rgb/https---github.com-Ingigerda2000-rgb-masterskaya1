@@ -680,7 +680,7 @@
             <div class="row row-cols-1 row-cols-md-2 row-cols-lg-4 g-4">
                 {% for similar in similar_products %}
                 <div class="col">
-                    <a href="{% url 'product_detail' similar.id %}" class="text-decoration-none">
+                    <a href="{% url 'products:product_detail' similar.id %}" class="text-decoration-none">
                         <div class="similar-item">
                             <div class="similar-image">
                                 {% if similar.get_main_image %}

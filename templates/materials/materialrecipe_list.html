@@ -1,0 +1,424 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Управление рецептами товаров :: HandMadeShop{% endblock %}
+
+{% block extra_css %}
+<style>
+/* Стили для таблицы рецептов */
+.recipe-row {
+    transition: all 0.2s ease;
+}
+.recipe-row:hover {
+    background-color: rgba(0, 123, 255, 0.05);
+    transform: translateX(2px);
+}
+
+.consumption-cell {
+    min-width: 120px;
+}
+
+.waste-cell {
+    min-width: 100px;
+}
+
+.actions-cell {
+    min-width: 140px;
+}
+
+/* Карточки для мобильной версии */
+@media (max-width: 768px) {
+    .mobile-card {
+        border: 1px solid #dee2e6;
+        border-radius: 0.5rem;
+        margin-bottom: 1rem;
+        padding: 1rem;
+    }
+
+    .mobile-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 0.75rem;
+    }
+
+    .table-responsive {
+        display: none;
+    }
+
+    .mobile-view {
+        display: block !important;
+    }
+}
+
+@media (min-width: 769px) {
+    .mobile-view {
+        display: none !important;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Заголовок и кнопки -->
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4">
+        <div class="mb-3 mb-md-0">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-2">
+                    <li class="breadcrumb-item"><a href="{% url 'home' %}">Главная</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'materials:material_list' %}">Материалы</a></li>
+                    <li class="breadcrumb-item active">Рецепты товаров</li>
+                </ol>
+            </nav>
+            <h1 class="h2 mb-0">
+                <i class="bi bi-file-earmark-text text-primary me-2"></i>Управление рецептами товаров
+            </h1>
+            <p class="text-muted mb-0">Управление рецептами расхода материалов для производства товаров</p>
+        </div>
+        <div class="d-flex flex-wrap gap-2">
+            <a href="{% url 'materials:material_list' %}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-1"></i>К материалам
+            </a>
+        </div>
+    </div>
+
+    <!-- Статистика -->
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-3">
+            <div class="card border-start border-primary border-4 h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-1">Всего рецептов</h6>
+                            <h3 class="mb-0">{{ recipes|length }}</h3>
+                        </div>
+                        <div class="avatar avatar-sm bg-primary bg-opacity-10 p-2 rounded">
+                            <i class="bi bi-file-earmark-text fs-4 text-primary"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card border-start border-success border-4 h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-1">Товаров с рецептами</h6>
+                            <h3 class="mb-0">{{ recipes|length|default:0 }}</h3>
+                        </div>
+                        <div class="avatar avatar-sm bg-success bg-opacity-10 p-2 rounded">
+                            <i class="bi bi-box-seam fs-4 text-success"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card border-start border-info border-4 h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-1">Материалов использовано</h6>
+                            <h3 class="mb-0">{{ recipes|length|default:0 }}</h3>
+                        </div>
+                        <div class="avatar avatar-sm bg-info bg-opacity-10 p-2 rounded">
+                            <i class="bi bi-box fs-4 text-info"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card border-start border-warning border-4 h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-1">Авто-списание</h6>
+                            <h3 class="mb-0">{{ recipes|length|default:0 }}</h3>
+                        </div>
+                        <div class="avatar avatar-sm bg-warning bg-opacity-10 p-2 rounded">
+                            <i class="bi bi-robot fs-4 text-warning"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Десктопная таблица -->
+    <div class="card d-none d-md-block">
+        <div class="card-header">
+            <h5 class="mb-0">Список рецептов</h5>
+        </div>
+        <div class="card-body p-0">
+            {% if recipes %}
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th width="20%">Товар</th>
+                                <th width="20%">Материал</th>
+                                <th width="15%" class="text-center">Норма расхода</th>
+                                <th width="10%" class="text-center">Отходы</th>
+                                <th width="10%" class="text-center">Авто-списание</th>
+                                <th width="15%" class="text-center">Действия</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for recipe in recipes %}
+                            <tr class="recipe-row align-middle">
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="flex-shrink-0 me-3">
+                                            <div class="avatar avatar-sm bg-light text-primary rounded-circle d-flex align-items-center justify-content-center">
+                                                <i class="bi bi-box"></i>
+                                            </div>
+                                        </div>
+                                        <div class="flex-grow-1">
+                                            <h6 class="mb-0">
+                                                <a href="{% url 'products:product_detail' recipe.product.id %}" class="text-decoration-none">
+                                                    {{ recipe.product.name }}
+                                                </a>
+                                            </h6>
+                                            {% if recipe.product.category %}
+                                            <small class="text-muted">
+                                                <i class="bi bi-tag me-1"></i>{{ recipe.product.category.name }}
+                                            </small>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="flex-shrink-0 me-3">
+                                            <div class="avatar avatar-sm bg-light text-secondary rounded-circle d-flex align-items-center justify-content-center">
+                                                <i class="bi bi-circle-fill" style="color: {{ recipe.material.color|default:'#6c757d' }}"></i>
+                                            </div>
+                                        </div>
+                                        <div class="flex-grow-1">
+                                            <h6 class="mb-0">{{ recipe.material.name }}</h6>
+                                            <small class="text-muted">
+                                                {{ recipe.material.get_unit_display }}
+                                            </small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="text-center consumption-cell">
+                                    <div class="fw-bold">
+                                        {{ recipe.consumption_rate|floatformat:3 }}
+                                    </div>
+                                    <small class="text-muted">
+                                        {{ recipe.material.get_unit_display }}/шт.
+                                    </small>
+                                </td>
+                                <td class="text-center waste-cell">
+                                    {% if recipe.waste_factor > 0 %}
+                                    <span class="badge bg-warning">
+                                        {{ recipe.waste_factor|floatformat:2 }}
+                                    </span>
+                                    {% else %}
+                                    <span class="text-muted">—</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center">
+                                    {% if recipe.auto_consume %}
+                                    <span class="badge bg-success">
+                                        <i class="bi bi-check-circle me-1"></i>Включено
+                                    </span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">
+                                        <i class="bi bi-x-circle me-1"></i>Отключено
+                                    </span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center actions-cell">
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        <a href="{% url 'materials:materialrecipe_update' recipe.id %}"
+                                           class="btn btn-outline-primary" title="Редактировать">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        <a href="{% url 'materials:materialrecipe_delete' recipe.id %}"
+                                           class="btn btn-outline-danger" title="Удалить">
+                                            <i class="bi bi-trash"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Пагинация -->
+                {% if is_paginated %}
+                <div class="card-footer">
+                    <nav aria-label="Навигация по страницам">
+                        <ul class="pagination justify-content-center mb-0">
+                            {% if page_obj.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page=1">
+                                    <i class="bi bi-chevron-double-left"></i>
+                                </a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.previous_page_number }}">
+                                    <i class="bi bi-chevron-left"></i>
+                                </a>
+                            </li>
+                            {% endif %}
+
+                            {% for num in page_obj.paginator.page_range %}
+                            {% if num == page_obj.number %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ num }}</span>
+                            </li>
+                            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                            </li>
+                            {% endif %}
+                            {% endfor %}
+
+                            {% if page_obj.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.next_page_number }}">
+                                    <i class="bi bi-chevron-right"></i>
+                                </a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">
+                                    <i class="bi bi-chevron-double-right"></i>
+                                </a>
+                            </li>
+                            {% endif %}
+                        </ul>
+                        <div class="text-center text-muted small mt-1">
+                            Страница {{ page_obj.number }} из {{ page_obj.paginator.num_pages }}
+                        </div>
+                    </nav>
+                </div>
+                {% endif %}
+
+            {% else %}
+            <div class="text-center py-5">
+                <div class="avatar avatar-xl bg-light text-muted rounded-circle mb-3 d-inline-flex align-items-center justify-content-center">
+                    <i class="bi bi-file-earmark-text fs-1"></i>
+                </div>
+                <h4 class="mb-3">Рецепты не найдены</h4>
+                <p class="text-muted mb-4">
+                    У вас пока нет рецептов материалов для товаров.
+                    Добавьте рецепты через страницу товара.
+                </p>
+                <a href="{% url 'products:master_products_list' %}" class="btn btn-primary">
+                    <i class="bi bi-box-seam me-1"></i>Перейти к товарам
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Мобильные карточки -->
+    <div class="mobile-view">
+        {% if recipes %}
+            {% for recipe in recipes %}
+            <div class="mobile-card">
+                <div class="mobile-card-header">
+                    <div>
+                        <h6 class="mb-0">{{ recipe.product.name }}</h6>
+                        <small class="text-muted">
+                            <i class="bi bi-box me-1"></i>{{ recipe.material.name }}
+                        </small>
+                    </div>
+                    <div>
+                        {% if recipe.auto_consume %}
+                        <span class="badge bg-success">Авто-списание</span>
+                        {% else %}
+                        <span class="badge bg-secondary">Ручное</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="row g-2 mb-2">
+                    <div class="col-6">
+                        <small class="text-muted d-block">Норма расхода</small>
+                        <div class="fw-bold">
+                            {{ recipe.consumption_rate|floatformat:3 }} {{ recipe.material.get_unit_display }}
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <small class="text-muted d-block">Отходы</small>
+                        <div>
+                            {% if recipe.waste_factor > 0 %}
+                            {{ recipe.waste_factor|floatformat:2 }}
+                            {% else %}
+                            —
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-between pt-2 border-top">
+                    <a href="{% url 'products:product_detail' recipe.product.id %}"
+                       class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-eye"></i> К товару
+                    </a>
+                    <div class="btn-group btn-group-sm">
+                        <a href="{% url 'materials:materialrecipe_update' recipe.id %}"
+                           class="btn btn-outline-secondary">
+                            <i class="bi bi-pencil"></i>
+                        </a>
+                        <a href="{% url 'materials:materialrecipe_delete' recipe.id %}"
+                           class="btn btn-outline-danger">
+                            <i class="bi bi-trash"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+
+            <!-- Пагинация для мобильной версии -->
+            {% if is_paginated %}
+            <nav aria-label="Навигация по страницам" class="mt-3">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1">
+                            <i class="bi bi-chevron-double-left"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+
+                    <li class="page-item disabled">
+                        <span class="page-link">Страница {{ page_obj.number }} из {{ page_obj.paginator.num_pages }}</span>
+                    </li>
+
+                    {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">
+                            <i class="bi bi-chevron-double-right"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+
+        {% else %}
+        <div class="text-center py-5">
+            <div class="avatar avatar-xl bg-light text-muted rounded-circle mb-3 d-inline-flex align-items-center justify-content-center">
+                <i class="bi bi-file-earmark-text fs-1"></i>
+            </div>
+            <h4 class="mb-3">Рецепты не найдены</h4>
+            <p class="text-muted mb-4">
+                У вас пока нет рецептов материалов для товаров
+            </p>
+            <a href="{% url 'products:master_products_list' %}" class="btn btn-primary">
+                <i class="bi bi-box-seam me-1"></i>Перейти к товарам
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

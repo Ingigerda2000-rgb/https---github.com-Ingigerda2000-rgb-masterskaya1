@@ -93,6 +93,9 @@
             <a href="{% url 'materials:material_create' %}" class="btn btn-primary">
                 <i class="bi bi-plus-circle me-1"></i>Добавить материал
             </a>
+            <a href="{% url 'materials:materialrecipe_list' %}" class="btn btn-info">
+                <i class="bi bi-file-earmark-text me-1"></i>Управление рецептами товаров
+            </a>
             <a href="{% url 'materials:low_stock' %}" class="btn btn-warning">
                 <i class="bi bi-exclamation-triangle me-1"></i>Низкий запас
                 {% if low_stock_count > 0 %}
@@ -100,7 +103,7 @@
                 {% endif %}
             </a>
             <div class="dropdown">
-                <button class="btn btn-outline-secondary dropdown-toggle" type="button" 
+                <button class="btn btn-outline-secondary dropdown-toggle" type="button"
                         data-bs-toggle="dropdown">
                     <i class="bi bi-download me-1"></i>Экспорт
                 </button>

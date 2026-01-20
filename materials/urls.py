@@ -13,6 +13,9 @@ urlpatterns = [
     path('<int:pk>/delete/', views.MaterialDeleteView.as_view(), name='material_delete'),
 
     # Рецепты материалов
+    path('recipes/',
+         views.MaterialRecipeListView.as_view(),
+         name='materialrecipe_list'),
     path('recipes/add/<int:product_id>/',
          views.material_recipe_create,
          name='add_recipe'),

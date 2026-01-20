@@ -213,6 +213,19 @@ class MaterialDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
         return redirect(self.success_url)
 
 
+class MaterialRecipeListView(LoginRequiredMixin, ListView):
+    """Список всех рецептов материалов мастера"""
+    model = MaterialRecipe
+    template_name = 'materials/materialrecipe_list.html'
+    context_object_name = 'recipes'
+    paginate_by = 20
+
+    def get_queryset(self):
+        return MaterialRecipe.objects.filter(
+            product__master=self.request.user
+        ).select_related('product', 'material').order_by('product__name', 'material__name')
+
+
 @login_required
 def material_recipe_create(request, product_id):
     """Добавление рецептов к товару (несколько материалов)"""

@@ -291,8 +291,9 @@ def master_dashboard(request):
         total_income = sum(order.total_amount for order in completed_orders)
         
         # Материалы мастера
-        materials = Material.objects.filter(master=request.user, is_active=True)
+        materials = Material.objects.filter(master=request.user, is_active=True).order_by('-created_at')
         materials_count = materials.count()
+        materials_display = materials[:5]
 
         # Отзывы на товары мастера
         reviews_count = Review.objects.filter(product__master=request.user).count()
@@ -322,7 +323,7 @@ def master_dashboard(request):
         'materials_count': materials_count,
         'reviews_count': reviews_count,
         'products': products,  # Все товары мастера
-        'materials': materials[:5],  # Последние 5 материалов
+        'materials': materials_display,  # Последние 5 материалов
         'recent_orders': recent_orders,
     }
     return render(request, 'accounts/master_dashboard.html', context)

@@ -210,7 +210,7 @@
                             <div class="d-flex justify-content-between align-items-center">
                                 <h5 class="mb-0 fw-bold">
                                     <i class="bi bi-boxes me-2"></i>Мои материалы
-                                    <span class="badge bg-white text-blue ms-2 fw-medium">{{ materials|length }}</span>
+                                    <span class="badge bg-white text-blue ms-2 fw-medium">{{ materials_count }}</span>
                                 </h5>
                             </div>
                         </div>
@@ -293,10 +293,10 @@
                             </div>
                             {% endif %}
                         </div>
-                        {% if materials|length > 5 %}
+                        {% if materials_count > 5 %}
                         <div class="card-footer py-3 text-center bg-blue-light">
                             <a href="{% url 'materials:material_list' %}" class="btn btn-blue fw-medium">
-                                <i class="bi bi-list-ul me-2"></i>Показать все ({{ materials|length }})
+                                <i class="bi bi-list-ul me-2"></i>Показать все ({{ materials_count }})
                             </a>
                         </div>
                         {% endif %}

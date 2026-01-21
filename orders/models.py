@@ -1,578 +1,605 @@
 from django.db import models
-from django.utils import timezone
-from django.db import transaction
-from accounts.models import User
+from django.contrib.auth import get_user_model
+from django.utils.translation import gettext_lazy as _
 from products.models import Product
-from discounts.models import PromoCode
+
+User = get_user_model()
+
+# Полный список статусов согласно ТЗ и требованиям интернет-магазина
+ORDER_STATUS_CHOICES = [
+    ('pending', 'Ожидает оплаты'),           # Создан, но не оплачен
+    ('paid', 'Оплачен'),                     # Оплачен, но еще не подтвержден мастером
+    ('processing', 'В обработке'),           # Оплачен и подтвержден мастером
+    ('in_work', 'В РАБОТЕ'),                 # Начато изготовление
+    ('preparing_for_shipment', 'ГОТОВИТСЯ К ОТПРАВКЕ'),  # Изделие готово, упаковывается
+    ('shipped', 'Отправлен'),                # Передан в службу доставки
+    ('delivered', 'Доставлен'),              # Получен покупателем
+    ('cancelled', 'Отменен'),                # Отменен
+]
+
+# Конечные состояния (завершенные заказы)
+FINAL_STATUSES = ['delivered', 'cancelled']
+
+# Статусы, после которых нельзя отменить заказ
+IRREVERSIBLE_STATUSES = ['in_work', 'preparing_for_shipment', 'shipped', 'delivered']
+
+# Порядок статусов для таймлайна
+STATUS_FLOW = [
+    'pending',      # 1. Ожидает оплаты
+    'paid',         # 2. Оплачен
+    'processing',   # 3. В обработке (подтвержден мастером)
+    'in_work',      # 4. В РАБОТЕ
+    'preparing_for_shipment',  # 5. ГОТОВИТСЯ К ОТПРАВКЕ
+    'shipped',      # 6. Отправлен
+    'delivered',    # 7. Доставлен
+]
+
+# Матрица допустимых переходов статусов (ДКА - детерминированный конечный автомат)
+STATUS_TRANSITIONS = {
+    'pending': ['paid', 'cancelled'],                    # Можно оплатить или отменить
+    'paid': ['processing', 'cancelled'],                 # Мастер подтверждает или отменяет
+    'processing': ['in_work', 'cancelled'],              # Начинаем работу или отменяем
+    'in_work': ['preparing_for_shipment', 'cancelled'],  # Готовим к отправке или отменяем
+    'preparing_for_shipment': ['shipped', 'cancelled'],  # Отправляем или отменяем
+    'shipped': ['delivered'],                            # Только доставка
+    'delivered': [],                                     # Конечное состояние
+    'cancelled': [],                                     # Конечное состояние
+}
+
+# Описания этапов для покупателя
+STATUS_DESCRIPTIONS = {
+    'pending': 'Заказ создан, ожидает оплаты',
+    'paid': 'Заказ оплачен, ожидает подтверждения мастера',
+    'processing': 'Мастер подтвердил заказ, готовится к работе',
+    'in_work': 'Мастер начал изготовление вашего изделия',
+    'preparing_for_shipment': 'Изделие готово, упаковывается для отправки',
+    'shipped': 'Заказ передан в службу доставки',
+    'delivered': 'Заказ доставлен и получен',
+    'cancelled': 'Заказ отменен',
+}
+
+# Цвета для отображения статусов (CSS классы)
+STATUS_COLORS = {
+    'pending': 'secondary',
+    'paid': 'info',
+    'processing': 'primary',
+    'in_work': 'warning',
+    'preparing_for_shipment': 'warning',
+    'shipped': 'success',
+    'delivered': 'success',
+    'cancelled': 'danger',
+}
+
+# Иконки для статусов
+STATUS_ICONS = {
+    'pending': 'bi-clock',
+    'paid': 'bi-credit-card',
+    'processing': 'bi-gear',
+    'in_work': 'bi-hammer',
+    'preparing_for_shipment': 'bi-box-seam',
+    'shipped': 'bi-truck',
+    'delivered': 'bi-check-circle',
+    'cancelled': 'bi-x-circle',
+}
+
 
 class Order(models.Model):
-    STATUS_CHOICES = [
-        ('pending', 'Ожидает оплаты'),
-        ('paid', 'Оплачен'),
-        ('processing', 'В обработке'),
-        ('shipped', 'Отправлен'),
-        ('delivered', 'Доставлен'),
-        ('cancelled', 'Отменен'),
-    ]
+    """Модель заказа с полным циклом статусов hand-made производства"""
+    user = models.ForeignKey(
+        User, 
+        on_delete=models.CASCADE, 
+        related_name='orders',
+        null=True,
+        blank=True
+    )
+    total_amount = models.DecimalField(
+        max_digits=10, 
+        decimal_places=2,
+        verbose_name='Общая сумма'
+    )
+    status = models.CharField(
+        max_length=50, 
+        choices=ORDER_STATUS_CHOICES, 
+        default='pending',
+        verbose_name='Статус заказа'
+    )
     
-    DELIVERY_METHODS = [
-        ('courier', 'Курьерская доставка'),
-        ('post', 'Почта России'),
-        ('pickup', 'Самовывоз'),
-        ('sdek', 'СДЭК'),
-        ('boxberry', 'Boxberry'),
-    ]
+    # Данные для доставки
+    delivery_address = models.TextField(verbose_name='Адрес доставки')
+    customer_name = models.CharField(
+        max_length=255,
+        verbose_name='Имя получателя'
+    )
+    customer_phone = models.CharField(
+        max_length=20,
+        verbose_name='Телефон'
+    )
+    customer_email = models.EmailField(verbose_name='Email')
     
-    PAYMENT_METHODS = [
-        ('card_online', 'Картой онлайн'),
-        ('sbp', 'СБП (Система быстрых платежей)'),
-        ('cash_on_delivery', 'Наложенный платеж'),
-    ]
+    # Дополнительные поля адреса
+    postal_code = models.CharField(
+        max_length=20,
+        blank=True,
+        null=True,
+        verbose_name='Почтовый индекс'
+    )
+    city = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        verbose_name='Город'
+    )
+    region = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        verbose_name='Область/Регион'
+    )
+    country = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        verbose_name='Страна'
+    )
     
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='orders', null=True, blank=True)
-    order_number = models.CharField('Номер заказа', max_length=20, unique=True)
-    total_amount = models.DecimalField('Общая сумма', max_digits=10, decimal_places=2)
-    status = models.CharField('Статус', max_length=20, choices=STATUS_CHOICES, default='pending')
+    # Даты
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Дата создания'
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name='Дата обновления'
+    )
     
-    # Данные доставки
-    region = models.CharField('Регион', max_length=100, blank=True)
-    city = models.CharField('Город', max_length=100, blank=True)
-    street = models.CharField('Улица', max_length=200, blank=True)
-    house = models.CharField('Дом', max_length=20, blank=True)
-    apartment = models.CharField('Квартира', max_length=20, blank=True)
-    delivery_address = models.TextField('Полный адрес доставки')
-    customer_name = models.CharField('Имя получателя', max_length=100)
-    customer_phone = models.CharField('Телефон', max_length=20)
-    customer_email = models.EmailField('Email')
+    # Поля для отслеживания
+    tracking_number = models.CharField(
+        max_length=100, 
+        blank=True, 
+        null=True,
+        verbose_name='Трек-номер'
+    )
+    estimated_delivery_date = models.DateField(
+        blank=True, 
+        null=True,
+        verbose_name='Предполагаемая дата доставки'
+    )
     
-    # Доставка
-    delivery_cost = models.DecimalField('Стоимость доставки', max_digits=10, decimal_places=2, default=0)
-    delivery_method = models.CharField('Способ доставки', max_length=50, choices=DELIVERY_METHODS, blank=True)
-    tracking_number = models.CharField('Трек-номер', max_length=100, blank=True)
-    
-    # Оплата
-    payment_method = models.CharField('Способ оплаты', max_length=50, choices=PAYMENT_METHODS, blank=True)
-    payment_id = models.CharField('ID платежа', max_length=100, blank=True)
-    paid_at = models.DateTimeField('Дата оплаты', null=True, blank=True)
-    
-    # Скидки
-    discount_amount = models.DecimalField('Сумма скидки', max_digits=10, decimal_places=2, default=0)
-    promo_code = models.CharField('Промокод', max_length=50, blank=True)
-    
-    # Комментарий к заказу
-    customer_notes = models.TextField('Комментарий покупателя', blank=True)
-    
-    created_at = models.DateTimeField('Дата создания', auto_now_add=True)
-    updated_at = models.DateTimeField('Дата обновления', auto_now=True)
+    # Системные поля
+    payment_id = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        verbose_name='ID платежа'
+    )
+    payment_method = models.CharField(
+        max_length=50,
+        blank=True,
+        null=True,
+        verbose_name='Способ оплаты'
+    )
     
     class Meta:
+        ordering = ['-created_at']
         verbose_name = 'Заказ'
         verbose_name_plural = 'Заказы'
-        ordering = ['-created_at']
-        indexes = [
-            models.Index(fields=['order_number']),
-            models.Index(fields=['status']),
-            models.Index(fields=['user', 'created_at']),
+        permissions = [
+            ('can_change_order_status', 'Может изменять статус заказа'),
+            ('can_view_all_orders', 'Может просматривать все заказы'),
+            ('can_cancel_order', 'Может отменять заказы'),
         ]
     
     def __str__(self):
-        return f"Заказ #{self.order_number}"
+        return f"Заказ #{self.id} - {self.get_status_display()}"
     
-    def save(self, *args, **kwargs):
-        if not self.order_number:
-            # Генерация номера заказа: ГОДМЕС-ПОСЛЕДОВАТЕЛЬНЫЙ НОМЕР
-            year_month = timezone.now().strftime('%Y%m')
-            last_order = Order.objects.filter(
-                order_number__startswith=year_month
-            ).order_by('-order_number').first()
-            
-            if last_order:
-                try:
-                    last_num = int(last_order.order_number.split('-')[1])
-                    new_num = last_num + 1
-                except (IndexError, ValueError):
-                    new_num = 1
-            else:
-                new_num = 1
-            
-            self.order_number = f"{year_month}-{new_num:04d}"
-        
-        # При сохранении пересчитываем сумму
-        if not self.total_amount:
-            self.total_amount = self.calculate_total_amount()
-        
-        super().save(*args, **kwargs)
+    def get_absolute_url(self):
+        from django.urls import reverse
+        return reverse('orders:order_detail', kwargs={'pk': self.id})
     
-    # ============ МАТЕМАТИЧЕСКИЕ РАСЧЁТЫ ============
+    def can_change_status(self, new_status, user=None):
+        """Проверяет, возможен ли переход в новый статус"""
+        # Проверяем, является ли статус конечным
+        if self.status in FINAL_STATUSES:
+            return False, "Заказ уже завершен"
+        
+        # Проверяем права пользователя
+        if user and not self._has_permission_to_change_status(user):
+            return False, "Недостаточно прав для изменения статуса"
+        
+        # Проверяем допустимость перехода
+        allowed_transitions = STATUS_TRANSITIONS.get(self.status, [])
+        if new_status not in allowed_transitions:
+            current = self.get_status_display()
+            new = dict(ORDER_STATUS_CHOICES)[new_status]
+            return False, f"Недопустимый переход: {current} → {new}"
+        
+        # Дополнительные проверки для конкретных статусов
+        if new_status == 'cancelled' and self.status in IRREVERSIBLE_STATUSES:
+            return False, "Нельзя отменить заказ на этом этапе"
+        
+        return True, ""
     
-    def calculate_items_total(self):
-        """Расчёт суммы товаров в заказе"""
-        items_total = sum(item.calculate_subtotal() for item in self.items.all())
-        return items_total
+    def _has_permission_to_change_status(self, user):
+        """Проверяет права пользователя на изменение статуса"""
+        # Администраторы могут всё
+        if user.is_staff:
+            return True
+        
+        # Мастера могут менять статусы своих заказов
+        if user.is_master and self._is_master_order(user):
+            return True
+        
+        # Покупатели могут отменять только свои заказы в статусе pending или paid
+        if user == self.user:
+            return self.status in ['pending', 'paid']
+            
+        return False
     
-    def calculate_total_amount(self):
-        """Расчёт общей суммы заказа с учётом доставки и скидки"""
-        items_total = self.calculate_items_total()
-        total = items_total + self.delivery_cost - self.discount_amount
-        
-        # Гарантируем, что сумма не будет отрицательной
-        return max(total, 0)
+    def _is_master_order(self, user):
+        """Проверяет, является ли пользователь мастером для этого заказа"""
+        # Проверяем, есть ли товары от этого мастера в заказе
+        return self.items.filter(product__master=user).exists()
     
-    def calculate_discount(self, promo_code_str=None):
-        """
-        Расчёт скидки по промокоду согласно математической постановке из ТЗ:
-        C = {
-            0.1 × T_base, если T_base ≥ 5000 ∧ promo = 'SUMMER10'
-            0.05 × T_base, если T_base ≥ 3000
-            0, иначе
-        }
-        """
-        items_total = self.calculate_items_total()
+    def update_status(self, new_status, user=None, comment="", photo=None):
+        """Изменяет статус заказа с созданием записи в истории"""
+        can_change, message = self.can_change_status(new_status, user)
+        if not can_change:
+            raise ValueError(message)
         
-        if promo_code_str and promo_code_str.upper() == 'SUMMER10' and items_total >= 5000:
-            # Скидка 10% для промокода SUMMER10 при заказе от 5000
-            return items_total * 0.1
+        # Для статуса 'processing' проверяем, что заказ оплачен
+        if new_status == 'processing' and self.status != 'paid':
+            raise ValueError("Только оплаченные заказы можно переводить в обработку")
         
-        elif items_total >= 5000:
-            # Скидка 10% для заказов от 5000
-            return items_total * 0.1
+        # Для статуса 'in_work' проверяем, что заказ подтвержден
+        if new_status == 'in_work' and self.status != 'processing':
+            raise ValueError("Только подтвержденные заказы можно переводить в работу")
         
-        elif items_total >= 3000:
-            # Скидка 5% для заказов от 3000
-            return items_total * 0.05
-        
-        else:
-            return 0
-
-    def apply_promo_code(self, promo_code_str):
-        """
-        Применение промокода к заказу
-        Возвращает (success, message)
-        """
-        if not promo_code_str:
-            return False, "Промокод не указан"
-
-        try:
-            promo = PromoCode.objects.get(code=promo_code_str.upper(), is_active=True)
-        except PromoCode.DoesNotExist:
-            return False, "Промокод не найден"
-
-        items_total = self.calculate_items_total()
-
-        if not promo.is_valid(items_total):
-            if promo.min_order_amount > 0 and items_total < promo.min_order_amount:
-                return False, f"Промокод действует при заказе от {promo.min_order_amount} ₽"
-            elif promo.max_uses > 0 and promo.used_count >= promo.max_uses:
-                return False, "Промокод исчерпан"
-            else:
-                return False, "Промокод недействителен"
-
-        # Рассчитываем скидку
-        discount = promo.calculate_discount(items_total)
-
-        # Применяем скидку к заказу
-        self.discount_amount = discount
-        self.promo_code = promo.code
-        self.total_amount = self.calculate_total_amount()
-        self.save()
-
-        # Увеличиваем счетчик использований промокода
-        promo.used_count += 1
-        promo.save()
-
-        return True, f'Промокод применён! Скидка: {discount} ₽'
-
-    def calculate_delivery_cost(self, address=None):
-        """
-        Расчёт стоимости доставки
-        В реальной системе здесь была бы интеграция с API служб доставки
-        """
-        items_total = self.calculate_items_total()
-        
-        # Бесплатная доставка от 5000 руб
-        if items_total >= 5000:
-            return 0
-        
-        # Базовая стоимость доставки
-        base_cost = 300
-        
-        # Учитываем метод доставки
-        if self.delivery_method == 'courier':
-            return base_cost + 100  # +100 за курьерскую доставку
-        elif self.delivery_method == 'sdek' or self.delivery_method == 'boxberry':
-            return base_cost + 150  # +150 за СДЭК/Boxberry
-        elif self.delivery_method == 'post':
-            return base_cost + 50   # +50 за Почту России
-        elif self.delivery_method == 'pickup':
-            return 0  # Самовывоз бесплатно
-        else:
-            return base_cost
-    
-    # ============ МЕТОДЫ ДЛЯ РАБОТЫ С ЗАКАЗОМ ============
-    
-    @classmethod
-    def create_from_cart(cls, cart, delivery_data, promo_code=None):
-        """
-        Создание заказа из корзины
-        cart - объект корзины
-        delivery_data - словарь с данными доставки
-        promo_code - промокод (опционально)
-        """
-        with transaction.atomic():
-            # Создаем заказ
-            order = cls(
-                user=cart.user,
-                customer_name=delivery_data.get('customer_name', cart.user.get_full_name()),
-                customer_phone=delivery_data.get('customer_phone', cart.user.phone),
-                customer_email=delivery_data.get('customer_email', cart.user.email),
-                delivery_address=delivery_data.get('delivery_address', ''),
-                delivery_method=delivery_data.get('delivery_method', 'courier'),
-                payment_method=delivery_data.get('payment_method', 'card_online'),
-                customer_notes=delivery_data.get('customer_notes', ''),
-                promo_code=promo_code or '',
-            )
-            
-            # Сохраняем, чтобы получить order_number
-            order.save()
-            
-            # Рассчитываем стоимость доставки
-            order.delivery_cost = order.calculate_delivery_cost()
-            
-            # Рассчитываем скидку
-            order.discount_amount = order.calculate_discount(promo_code)
-            
-            # Рассчитываем итоговую сумму
-            order.total_amount = order.calculate_total_amount()
-            
-            # Переносим товары из корзины в заказ
-            for cart_item in cart.items.all():
-                OrderItem.objects.create(
-                    order=order,
-                    product=cart_item.product,
-                    quantity=cart_item.quantity,
-                    price=cart_item.product.price,
-                    product_name=cart_item.product.name
-                )
-                
-                # Обновляем остатки товаров
-                product = cart_item.product
-                product.stock_quantity -= cart_item.quantity
-                product.save()
-                
-                # Резервируем материалы для товара (если есть рецепты)
-                if hasattr(product, 'reserve_materials_for_order'):
-                    product.reserve_materials_for_order(cart_item.quantity, order.id)
-            
-            # Очищаем корзину
-            cart.clear()
-            
-            # Создаем запись в истории статусов
-            OrderStatusHistory.objects.create(
-                order=order,
-                status='accepted',
-                stage_detail='Заказ принят в обработку',
-                comment='Заказ создан из корзины пользователя',
-                changed_by=cart.user if cart.user else None,
-                notify_customer=True
-            )
-            
-            order.save()
-            return order
-    
-    def process_payment(self, payment_data):
-        """
-        Обработка оплаты заказа
-        В реальной системе здесь была бы интеграция с платёжным шлюзом
-        """
-        # В реальной системе здесь:
-        # 1. Создание платежа в платёжной системе (ЮKassa и т.д.)
-        # 2. Получение ссылки для оплаты
-        # 3. Ожидание вебхука о подтверждении платежа
-        
-        # Для демо просто меняем статус
-        self.status = 'paid'
-        self.paid_at = timezone.now()
-        self.payment_id = payment_data.get('payment_id', f"demo_{self.order_number}")
-        self.save()
-        
-        # Добавляем запись в историю
-        OrderStatusHistory.objects.create(
+        # Создаем запись в истории
+        history = OrderStatusHistory.objects.create(
             order=self,
-            status='paid',
-            stage_detail='Заказ оплачен',
-            comment=f'Оплата через {self.get_payment_method_display()}',
-            changed_by=self.user,
-            notify_customer=True
+            status=new_status,
+            changed_by=user,
+            comment=comment[:500] if comment else '',  # Ограничиваем длину
+            stage_detail=self._get_stage_detail(new_status),
+            photo_report=photo
         )
         
-        # Отправляем уведомление покупателю
-        self._send_notification('payment_success')
+        # Обновляем статус заказа
+        old_status = self.status
+        self.status = new_status
+        self.save()
         
-        return True
-    
-    def update_status(self, new_status, comment='', photo=None, changed_by=None):
-        """
-        Обновление статуса заказа с записью в историю
-        """
-        valid_transitions = {
-            'pending': ['paid', 'cancelled'],
-            'paid': ['processing', 'cancelled'],
-            'processing': ['shipped', 'cancelled'],
-            'shipped': ['delivered', 'cancelled'],
-            'delivered': [],  # Конечный статус
-            'cancelled': [],  # Конечный статус
-        }
+        # Отправляем уведомления
+        self._send_notifications(old_status, new_status, comment, user)
         
-        current_status = self.status
+        # Для кастомных заказов резервируем материалы
+        if new_status == 'in_work':
+            self._reserve_materials()
         
-        # Проверяем валидность перехода статусов
-        if new_status not in valid_transitions.get(current_status, []):
-            raise ValueError(
-                f"Недопустимый переход статуса: {current_status} → {new_status}"
-            )
-        
-        with transaction.atomic():
-            # Обновляем статус заказа
-            self.status = new_status
+        # Для отправленных заказов создаем трек-номер если нужно
+        if new_status == 'shipped' and not self.tracking_number:
+            self.tracking_number = self._generate_tracking_number()
             self.save()
-            
-            # Создаем запись в истории
-            OrderStatusHistory.objects.create(
-                order=self,
-                status=self._map_status_to_history_status(new_status),
-                stage_detail=self._get_stage_detail(new_status),
-                comment=comment,
-                photo=photo,
-                changed_by=changed_by,
-                notify_customer=True
-            )
-            
-            # Если заказ отменен, возвращаем товары на склад
-            if new_status == 'cancelled':
-                self._restore_stock()
-            
-            # Если заказ доставлен, списываем материалы
-            elif new_status == 'delivered':
-                self._consume_materials()
-            
-            # Отправляем уведомление
-            self._send_notification('status_changed', new_status=new_status)
-    
-    def _map_status_to_history_status(self, order_status):
-        """Маппинг статусов заказа на статусы истории"""
-        mapping = {
-            'pending': 'accepted',
-            'paid': 'agreed',
-            'processing': 'in_production',
-            'shipped': 'shipped',
-            'delivered': 'delivered',
-            'cancelled': 'cancelled',
-        }
-        return mapping.get(order_status, 'accepted')
+        
+        return history
     
     def _get_stage_detail(self, status):
-        """Получение детализации этапа для истории"""
-        details = {
-            'pending': 'Заказ ожидает оплаты',
-            'paid': 'Заказ оплачен и принят в работу',
-            'processing': 'Заказ в производстве',
-            'shipped': 'Заказ отправлен покупателю',
-            'delivered': 'Заказ доставлен получателю',
+        """Возвращает детализацию этапа на основе статуса"""
+        stage_details = {
+            'pending': 'Ожидание оплаты от покупателя',
+            'paid': 'Заказ оплачен, уведомление отправлено мастеру',
+            'processing': 'Мастер подтвердил заказ и готов приступить к работе',
+            'in_work': 'Начато изготовление изделия согласно заказу',
+            'preparing_for_shipment': 'Изделие готово, проводится контроль качества и упаковка',
+            'shipped': 'Заказ передан в службу доставки, трек-номер сгенерирован',
+            'delivered': 'Заказ успешно доставлен получателю',
             'cancelled': 'Заказ отменен',
         }
-        return details.get(status, '')
+        return stage_details.get(status, '')
     
-    def _restore_stock(self):
-        """Возврат товаров на склад при отмене заказа"""
-        for item in self.items.all():
-            product = item.product
-            product.stock_quantity += item.quantity
-            product.save()
+    def _send_notifications(self, old_status, new_status, comment, user):
+        """Отправляет уведомления о смене статуса"""
+        # Создаем уведомление в системе для покупателя
+        if self.user:
+            from notifications.models import Notification
             
-            # Освобождаем зарезервированные материалы
-            if hasattr(product, 'release_materials_for_order'):
-                product.release_materials_for_order(item.quantity, self.id)
+            title = f"Статус заказа #{self.id} изменен"
+            message = self._format_notification_message(old_status, new_status, comment)
+            
+            Notification.objects.create(
+                user=self.user,
+                title=title,
+                message=message,
+                notification_type='order_status',
+                related_object_id=self.id,
+                related_object_type='order'
+            )
+        
+        # Отправляем email уведомление (заглушка)
+        self._send_status_email(old_status, new_status, comment, user)
     
-    def _consume_materials(self):
-        """Списание материалов при завершении заказа"""
-        for item in self.items.all():
-            product = item.product
-            if hasattr(product, 'check_material_availability'):
-                # Проверяем наличие материалов
-                unavailable = product.check_material_availability(item.quantity)
-                if not unavailable:
-                    # Списываем материалы
-                    if hasattr(product, 'reserve_materials_for_order'):
-                        # В реальной системе здесь было бы списание
-                        pass
+    def _format_notification_message(self, old_status, new_status, comment):
+        """Форматирует сообщение для уведомления"""
+        old_display = dict(ORDER_STATUS_CHOICES)[old_status]
+        new_display = dict(ORDER_STATUS_CHOICES)[new_status]
+        
+        message = f"Статус вашего заказа изменен: {old_display} → {new_display}"
+        
+        if comment:
+            message += f"\n\nКомментарий мастера: {comment}"
+        
+        if new_status == 'shipped' and self.tracking_number:
+            message += f"\n\nТрек-номер для отслеживания: {self.tracking_number}"
+        
+        return message
     
-    def _send_notification(self, notification_type, **kwargs):
-        """
-        Отправка уведомления покупателю
-        В реальной системе здесь была бы отправка email/SMS
-        """
-        # TODO: Реализовать отправку уведомлений через celery
-        print(f"Уведомление для заказа #{self.order_number}: {notification_type}")
+    def _send_status_email(self, old_status, new_status, comment, user):
+        """Заглушка для отправки email"""
+        pass  # Можно добавить реальную отправку через Celery
     
-    def get_status_history(self):
-        """Получение истории статусов заказа"""
+    def _reserve_materials(self):
+        """Резервирует материалы для заказа"""
+        try:
+            from materials.utils import reserve_materials_for_order
+            reserve_materials_for_order(self)
+        except ImportError:
+            pass  # Если модуль материалов не установлен
+    
+    def _generate_tracking_number(self):
+        """Генерирует трек-номер для заказа"""
+        import uuid
+        return f"RU{self.id:06d}{uuid.uuid4().hex[:6].upper()}"
+    
+    def get_status_timeline(self):
+        """Возвращает полную хронологию статусов заказа"""
         return self.status_history.all().order_by('changed_at')
     
-    def can_be_cancelled(self):
-        """Проверка, можно ли отменить заказ"""
-        return self.status in ['pending', 'paid', 'processing']
-
+    def is_final_status(self):
+        """Проверяет, является ли текущий статус конечным"""
+        return self.status in FINAL_STATUSES
+    
     def can_be_cancelled_by_user(self):
-        """Проверка, можно ли отменить заказ пользователем"""
-        return self.can_be_cancelled()
+        """Может ли пользователь отменить заказ"""
+        return self.status in ['pending', 'paid']
+    
+    def get_status_progress(self):
+        """Возвращает прогресс выполнения заказа в процентах"""
+        try:
+            index = STATUS_FLOW.index(self.status)
+            return int((index + 1) / len(STATUS_FLOW) * 100)
+        except ValueError:
+            return 0 if self.status != 'cancelled' else 100
+    
+    def get_next_possible_statuses(self, user=None):
+        """Возвращает список возможных следующих статусов"""
+        if self.is_final_status():
+            return []
+        
+        possible = STATUS_TRANSITIONS.get(self.status, [])
+        
+        # Фильтруем по правам пользователя
+        if user:
+            return [s for s in possible if self._can_user_set_status(user, s)]
+        
+        return possible
+    
+    def _can_user_set_status(self, user, status):
+        """Может ли пользователь установить конкретный статус"""
+        if user.is_staff:
+            return True
+        
+        if user.is_master and self._is_master_order(user):
+            # Мастера не могут отменять заказы после начала работы
+            if status == 'cancelled' and self.status in IRREVERSIBLE_STATUSES:
+                return False
+            return True
+        
+        # Покупатели могут только отменять свои заказы
+        if user == self.user and status == 'cancelled':
+            return self.can_be_cancelled_by_user()
+        
+        return False
+    
+    @property
+    def status_color(self):
+        """Возвращает цвет статуса"""
+        return STATUS_COLORS.get(self.status, 'secondary')
+    
+    @property
+    def status_icon(self):
+        """Возвращает иконку статуса"""
+        return STATUS_ICONS.get(self.status, 'bi-question-circle')
+    
+    @property
+    def status_description(self):
+        """Возвращает описание статуса для покупателя"""
+        return STATUS_DESCRIPTIONS.get(self.status, '')
+    
+    def get_timeline_events(self):
+        """Возвращает все события заказа в формате для таймлайна"""
+        events = []
+        
+        # Добавляем создание заказа
+        events.append({
+            'type': 'created',
+            'title': 'Заказ создан',
+            'description': f'Заказ #{self.id} создан в системе',
+            'date': self.created_at,
+            'icon': 'bi-cart-plus',
+            'color': 'primary'
+        })
+        
+        # Добавляем все изменения статусов
+        for history in self.status_history.all().order_by('changed_at'):
+            events.append({
+                'type': 'status_change',
+                'title': f'Статус изменен: {history.get_status_display()}',
+                'description': history.comment or history.stage_detail,
+                'date': history.changed_at,
+                'icon': history.status_icon,
+                'color': history.status_color,
+                'photo': history.photo_report.url if history.photo_report else None,
+                'changed_by': history.changed_by
+            })
+        
+        # Сортируем по дате
+        events.sort(key=lambda x: x['date'])
+        return events
 
-    def get_next_possible_statuses(self):
-        """Получение возможных следующих статусов"""
-        valid_transitions = {
-            'pending': ['paid', 'cancelled'],
-            'paid': ['processing', 'cancelled'],
-            'processing': ['shipped', 'cancelled'],
-            'shipped': ['delivered', 'cancelled'],
-            'delivered': [],  # Конечный статус
-            'cancelled': [],  # Конечный статус
-        }
-        return valid_transitions.get(self.status, [])
-
-    @property
-    def is_master_order(self):
-        """Является ли заказ мастерским (для мастера)"""
-        # Проверяем, есть ли записи в истории от мастера
-        return self.status_history.filter(changed_by__is_master=True).exists()
-    
-    def get_items_count(self):
-        """Получение количества товаров в заказе"""
-        return self.items.count()
-    
-    # ============ МЕТОДЫ ДЛЯ ОТЧЁТНОСТИ ============
-    
-    def generate_invoice(self):
-        """Генерация счёта на оплату (заглушка)"""
-        # В реальной системе здесь генерировался бы PDF счёта
-        return {
-            'order_number': self.order_number,
-            'date': self.created_at.strftime('%d.%m.%Y'),
-            'customer': self.customer_name,
-            'items': [
-                {
-                    'name': item.product_name,
-                    'quantity': item.quantity,
-                    'price': float(item.price),
-                    'total': float(item.calculate_subtotal())
-                }
-                for item in self.items.all()
-            ],
-            'delivery': float(self.delivery_cost),
-            'discount': float(self.discount_amount),
-            'total': float(self.total_amount),
-        }
-    
-    # ============ СВОЙСТВА ============
-    
-    @property
-    def items_total(self):
-        """Сумма товаров (property)"""
-        return self.calculate_items_total()
-    
-    @property
-    def final_total(self):
-        """Итоговая сумма с учётом всех начислений (property)"""
-        return self.calculate_total_amount()
-    
-    @property
-    def has_discount(self):
-        """Есть ли скидка на заказ"""
-        return self.discount_amount > 0
-    
-    @property
-    def delivery_method_display(self):
-        """Отображаемое название способа доставки"""
-        return dict(self.DELIVERY_METHODS).get(self.delivery_method, self.delivery_method)
-    
-    @property
-    def payment_method_display(self):
-        """Отображаемое название способа оплаты"""
-        return dict(self.PAYMENT_METHODS).get(self.payment_method, self.payment_method)
 
 class OrderItem(models.Model):
-    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='items')
-    product = models.ForeignKey(Product, on_delete=models.PROTECT, related_name='order_items')
-    quantity = models.IntegerField('Количество')
-    price = models.DecimalField('Цена за единицу', max_digits=10, decimal_places=2)
-    product_name = models.CharField('Название товара', max_length=200)
-    
-    # Для кастомных заказов
-    custom_configuration = models.JSONField('Конфигурация кастомного заказа', null=True, blank=True)
-    custom_price = models.DecimalField('Цена кастомного заказа', max_digits=10, decimal_places=2, null=True, blank=True)
-    
+    """Элемент заказа - товар в заказе"""
+    order = models.ForeignKey(
+        Order,
+        on_delete=models.CASCADE,
+        related_name='items',
+        verbose_name='Заказ'
+    )
+    product = models.ForeignKey(
+        Product,
+        on_delete=models.PROTECT,
+        related_name='order_items',
+        verbose_name='Товар'
+    )
+    quantity = models.IntegerField(
+        verbose_name='Количество'
+    )
+    price = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        verbose_name='Цена за единицу'
+    )
+    product_name = models.CharField(
+        max_length=200,
+        verbose_name='Название товара'
+    )
+
+    # Поля для кастомных заказов
+    custom_configuration = models.JSONField(
+        blank=True,
+        null=True,
+        verbose_name='Конфигурация кастомного заказа'
+    )
+    custom_price = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        blank=True,
+        null=True,
+        verbose_name='Цена кастомного заказа'
+    )
+
     class Meta:
         verbose_name = 'Элемент заказа'
         verbose_name_plural = 'Элементы заказа'
-    
+        unique_together = ['order', 'product']  # Один товар может быть только один раз в заказе
+
     def __str__(self):
-        return f"{self.product_name} x{self.quantity}"
-    
-    def calculate_subtotal(self):
-        """Расчёт стоимости позиции"""
-        if self.custom_price:
+        return f"{self.product_name} x{self.quantity} в заказе #{self.order.id}"
+
+    def get_total_price(self):
+        """Возвращает общую стоимость позиции"""
+        if self.custom_price is not None:
             return self.custom_price * self.quantity
         return self.price * self.quantity
-    
-    def get_final_price(self):
-        """Получение итоговой цены за единицу"""
-        return self.custom_price if self.custom_price else self.price
-    
-    @property
-    def is_custom(self):
-        """Является ли товар кастомным заказом"""
-        return bool(self.custom_configuration)
+
+    def save(self, *args, **kwargs):
+        # Автоматически заполняем product_name если не указано
+        if not self.product_name and self.product:
+            self.product_name = self.product.name
+        super().save(*args, **kwargs)
+
 
 class OrderStatusHistory(models.Model):
-    STATUS_CHOICES = [
-        ('accepted', 'ПРИНЯТ'),
-        ('agreed', 'СОГЛАСОВАН'),
-        ('in_production', 'В РАБОТЕ'),
-        ('preparing_for_shipment', 'ГОТОВИТСЯ К ОТПРАВКЕ'),
-        ('shipped', 'ОТПРАВЛЕН'),
-        ('delivered', 'ДОСТАВЛЕН'),
-        ('cancelled', 'ОТМЕНЁН'),
-    ]
+    """Модель для хранения истории изменения статусов заказа"""
+    order = models.ForeignKey(
+        Order, 
+        on_delete=models.CASCADE, 
+        related_name='status_history'
+    )
+    status = models.CharField(
+        max_length=50, 
+        choices=ORDER_STATUS_CHOICES
+    )
+    stage_detail = models.TextField(
+        blank=True, 
+        null=True,
+        verbose_name='Детализация этапа'
+    )
+    comment = models.TextField(
+        blank=True, 
+        null=True,
+        verbose_name='Комментарий для покупателя'
+    )
+    changed_by = models.ForeignKey(
+        User, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True,
+        verbose_name='Кто изменил'
+    )
+    changed_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Дата изменения'
+    )
     
-    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='status_history')
-    status = models.CharField('Статус', max_length=50, choices=STATUS_CHOICES)
-    stage_detail = models.TextField('Детализация этапа', blank=True)
-    comment = models.TextField('Комментарий', blank=True)
-    photo = models.ImageField('Фотоотчёт', upload_to='order_status/', blank=True)
-    changed_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='changed_orders')
-    changed_at = models.DateTimeField('Время изменения', auto_now_add=True)
-    notify_customer = models.BooleanField('Уведомить покупателя', default=True)
+    # Поля для фотоотчёта
+    photo_report = models.ImageField(
+        upload_to='order_status_photos/%Y/%m/%d/',
+        blank=True,
+        null=True,
+        verbose_name='Фотоотчёт'
+    )
+    
+    # Уведомления
+    notification_sent = models.BooleanField(
+        default=False,
+        verbose_name='Уведомление отправлено'
+    )
+    notification_type = models.CharField(
+        max_length=20,
+        choices=[
+            ('email', 'Email'),
+            ('push', 'Push-уведомление'),
+            ('both', 'Оба способа'),
+            ('none', 'Не отправлять')
+        ],
+        default='email',
+        verbose_name='Тип уведомления'
+    )
     
     class Meta:
+        ordering = ['-changed_at']
         verbose_name = 'История статуса заказа'
         verbose_name_plural = 'История статусов заказов'
-        ordering = ['changed_at']  # Изменено на прямой порядок для отображения хронологии
+        indexes = [
+            models.Index(fields=['order', 'changed_at']),
+            models.Index(fields=['status', 'changed_at']),
+        ]
     
     def __str__(self):
-        return f"{self.order.order_number} - {self.get_status_display()}"
+        return f"{self.order} → {self.get_status_display()} ({self.changed_at})"
     
-    def get_status_display_ru(self):
-        """Получение отображаемого названия статуса на русском"""
-        status_map = {
-            'accepted': 'ПРИНЯТ',
-            'agreed': 'СОГЛАСОВАН',
-            'in_production': 'В РАБОТЕ',
-            'preparing_for_shipment': 'ГОТОВИТСЯ К ОТПРАВКЕ',
-            'shipped': 'ОТПРАВЛЕН',
-            'delivered': 'ДОСТАВЛЕН',
-            'cancelled': 'ОТМЕНЁН',
-        }
-        return status_map.get(self.status, self.status)
+    def save(self, *args, **kwargs):
+        if not self.stage_detail:
+            self.stage_detail = self._get_default_stage_detail()
+        
+        # Ограничиваем длину комментария
+        if self.comment and len(self.comment) > 500:
+            self.comment = self.comment[:500]
+        
+        super().save(*args, **kwargs)
+    
+    def _get_default_stage_detail(self):
+        """Возвращает стандартное описание этапа"""
+        return STATUS_DESCRIPTIONS.get(self.status, '')
     
     @property
-    def has_photo(self):
-        """Есть ли фотоотчёт"""
-        return bool(self.photo)
+    def status_color(self):
+        """Возвращает цвет статуса"""
+        return STATUS_COLORS.get(self.status, 'secondary')
+    
+    @property
+    def status_icon(self):
+        """Возвращает иконку статуса"""
+        return STATUS_ICONS.get(self.status, 'bi-question-circle')
+    

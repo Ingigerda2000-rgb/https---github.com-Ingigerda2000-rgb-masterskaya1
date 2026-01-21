@@ -1,204 +1,254 @@
-from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth.decorators import login_required
+from django.shortcuts import render, get_object_or_404, redirect
+from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib import messages
-from django.views.decorators.http import require_POST
+from django.utils.decorators import method_decorator
+from django.views.generic import DetailView, ListView, UpdateView
+from django.views.generic.edit import FormView
+from django.db.models import Q
 from django.http import JsonResponse
-from django.db import transaction
-from cart.views import get_or_create_cart
-from .models import Order, OrderItem
-from .forms import OrderForm
+from django.db.models import Count
 
-def checkout(request):
-    """Оформление заказа"""
-    cart = get_or_create_cart(request)
-    
-    # Проверяем, есть ли товары в корзине
-    if not cart.items.exists():
-        messages.warning(request, 'Ваша корзина пуста')
-        return redirect('cart_view')
-    
-    # Проверяем доступность всех товаров
-    unavailable_items = []
-    for item in cart.items.all():
-        if not item.is_available():
-            unavailable_items.append(item)
-    
-    if unavailable_items:
-        messages.error(request, 'Некоторые товары в корзине недоступны. Пожалуйста, проверьте корзину.')
-        return redirect('cart_view')
-    
-    # Рассчитываем стоимость
-    items_total = cart.calculate_total()
-    delivery_cost = calculate_delivery_cost(request)  # Функция для расчета доставки
-    total = items_total + delivery_cost
-    
-    if request.method == 'POST':
-        # Для авторизованных пользователей используем их данные
-        if request.user.is_authenticated:
-            form = OrderForm(request.POST, user=request.user)
-        else:
-            form = OrderForm(request.POST)
-            
-        if form.is_valid():
-            with transaction.atomic():
-                # Создаем заказ
-                order = form.save(commit=False)
-                
-                # Если пользователь авторизован, привязываем заказ к нему
-                if request.user.is_authenticated:
-                    order.user = request.user
-                
-                order.total_amount = total
-                order.delivery_cost = delivery_cost
-                
-                # Генерируем номер заказа
-                order.save()
-                
-                # Добавляем товары из корзины
-                for cart_item in cart.items.all():
-                    OrderItem.objects.create(
-                        order=order,
-                        product=cart_item.product,
-                        quantity=cart_item.quantity,
-                        price=cart_item.product.price,
-                        product_name=cart_item.product.name
-                    )
-                    
-                    # Обновляем остатки товаров
-                    product = cart_item.product
-                    product.stock_quantity -= cart_item.quantity
-                    product.save()
-                
-                # Очищаем корзину
-                cart.clear()
-                
-                # Применяем промокод если есть
-                promo_code = form.cleaned_data.get('promo_code')
-                if promo_code:
-                    success, message = order.apply_promo_code(promo_code)
-                    if success:
-                        messages.success(request, message)
-                    else:
-                        messages.warning(request, message)
-                
-                messages.success(request, f'Заказ #{order.order_number} успешно создан!')
-                return redirect('orders:order_detail', order_id=order.id)
-    else:
-        form = OrderForm(user=request.user)
-    
-    context = {
-        'form': form,
-        'cart': cart,
-        'items_total': items_total,
-        'delivery_cost': delivery_cost,
-        'total': total,
-    }
-    
-    return render(request, 'orders/checkout.html', context)
+from .models import Order, OrderStatusHistory, ORDER_STATUS_CHOICES
+from .forms import OrderStatusUpdateForm, CustomerCancelOrderForm, StatusFilterForm
 
-def calculate_delivery_cost(request):
-    """Расчет стоимости доставки (упрощенный)"""
-    # Здесь можно интегрировать API служб доставки
-    # Пока используем фиксированную стоимость или бесплатную доставку от суммы
-    cart = get_or_create_cart(request)
-    total = cart.calculate_total()
+
+@method_decorator(login_required, name='dispatch')
+class OrderListView(ListView):
+    """Список заказов текущего пользователя"""
+    model = Order
+    template_name = 'orders/order_list.html'
+    context_object_name = 'orders'
+    paginate_by = 10
     
-    if total >= 5000:  # Бесплатная доставка от 5000 руб
-        return 0
-    else:
-        return 300  # Фиксированная стоимость доставки
+    def get_queryset(self):
+        return Order.objects.filter(user=self.request.user).order_by('-created_at')
 
-def order_list(request):
-    """Список заказов пользователя"""
-    if request.user.is_authenticated:
-        orders = Order.objects.filter(user=request.user).order_by('-created_at')
-        return render(request, 'orders/order_list.html', {'orders': orders})
-    else:
-        # Для неавторизованных пользователей показываем сообщение о необходимости авторизации
-        messages.info(request, 'Для просмотра истории заказов необходимо авторизоваться')
-        return redirect('login')
 
-def order_detail(request, order_id):
+@method_decorator(login_required, name='dispatch')
+class OrderDetailView(DetailView):
     """Детальная страница заказа"""
-    # Для авторизованных пользователей проверяем, что заказ принадлежит им
-    if request.user.is_authenticated:
-        order = get_object_or_404(Order, id=order_id, user=request.user)
-    else:
-        # Для неавторизованных пользователей просто получаем заказ по ID
-        # В реальном проекте здесь должна быть дополнительная проверка
-        # например, по email или номеру телефона
-        order = get_object_or_404(Order, id=order_id)
+    model = Order
+    template_name = 'orders/order_detail.html'
+    context_object_name = 'order'
+    
+    def get_queryset(self):
+        # Пользователь может видеть только свои заказы
+        if self.request.user.is_staff:
+            return Order.objects.all()
+        return Order.objects.filter(user=self.request.user)
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['cancel_form'] = CustomerCancelOrderForm()
+        context['status_history'] = self.object.status_history.all().order_by('-changed_at')[:5]
+        context['timeline_events'] = self.object.get_timeline_events()
+        context['ORDER_STATUS_CHOICES'] = ORDER_STATUS_CHOICES
+        return context
 
-    context = {
-        'order': order,
-        'ORDER_STATUS_CHOICES': Order.STATUS_CHOICES,
-    }
 
-    return render(request, 'orders/order_detail.html', context)
+@method_decorator(login_required, name='dispatch')
+class OrderCancelView(FormView):
+    """Отмена заказа покупателем"""
+    form_class = CustomerCancelOrderForm
+    template_name = 'orders/cancel_order.html'
+    
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['order'] = get_object_or_404(Order, id=self.kwargs['pk'])
+        kwargs['user'] = self.request.user
+        return kwargs
+    
+    def form_valid(self, form):
+        try:
+            form.save()
+            messages.success(self.request, 'Заказ успешно отменен')
+            return redirect('orders:order_detail', pk=self.kwargs['pk'])
+        except Exception as e:
+            messages.error(self.request, f'Ошибка при отмене заказа: {str(e)}')
+            return self.form_invalid(form)
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['order'] = get_object_or_404(Order, id=self.kwargs['pk'])
+        return context
 
-# Функция apply_promo_code перенесена в приложение discounts
+
+@method_decorator(login_required, name='dispatch')
+class OrderStatusUpdateView(UpdateView):
+    """Изменение статуса заказа мастером/администратором"""
+    model = Order
+    form_class = OrderStatusUpdateForm
+    template_name = 'orders/update_status.html'
+    
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['order'] = self.object
+        kwargs['user'] = self.request.user
+        return kwargs
+    
+    def form_valid(self, form):
+        try:
+            form.save()
+            messages.success(
+                self.request, 
+                f'Статус заказа #{self.object.id} изменен на "{self.object.get_status_display()}"'
+            )
+            return redirect('orders:order_detail', pk=self.object.id)
+        except Exception as e:
+            messages.error(self.request, f'Ошибка: {str(e)}')
+            return self.form_invalid(form)
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['status_history'] = self.object.status_history.all().order_by('-changed_at')[:10]
+        context['next_possible_statuses'] = self.object.get_next_possible_statuses(self.request.user)
+        return context
+    
+    def dispatch(self, request, *args, **kwargs):
+        order = self.get_object()
+        
+        # Проверяем права доступа
+        if not (request.user.is_staff or 
+                (request.user.is_master and order._is_master_order(request.user))):
+            messages.error(request, 'У вас нет прав для изменения статуса этого заказа')
+            return redirect('orders:order_detail', pk=order.id)
+        
+        return super().dispatch(request, *args, **kwargs)
+
+
+@method_decorator(login_required, name='dispatch')
+class OrderTimelineView(DetailView):
+    """Полная хронология статусов заказа"""
+    model = Order
+    template_name = 'orders/order_timeline.html'
+    context_object_name = 'order'
+    
+    def get_queryset(self):
+        # Пользователь может видеть только свои заказы
+        if self.request.user.is_staff:
+            return Order.objects.all()
+        return Order.objects.filter(user=self.request.user)
+
+
+@method_decorator(login_required, name='dispatch')
+class MasterOrdersView(ListView):
+    """Список заказов для мастера с фильтрацией"""
+    model = Order
+    template_name = 'orders/master_orders.html'
+    context_object_name = 'orders'
+    paginate_by = 20
+    
+    def get_queryset(self):
+        # Мастер видит только заказы со своими товарами
+        queryset = Order.objects.filter(
+            items__product__master=self.request.user
+        ).distinct()
+        
+        # Применяем фильтры
+        form = StatusFilterForm(self.request.GET)
+        if form.is_valid():
+            status = form.cleaned_data.get('status')
+            date_from = form.cleaned_data.get('date_from')
+            date_to = form.cleaned_data.get('date_to')
+            search = form.cleaned_data.get('search')
+            
+            if status:
+                queryset = queryset.filter(status=status)
+            
+            if date_from:
+                queryset = queryset.filter(created_at__date__gte=date_from)
+            
+            if date_to:
+                queryset = queryset.filter(created_at__date__lte=date_to)
+            
+            if search:
+                queryset = queryset.filter(
+                    Q(id__icontains=search) |
+                    Q(customer_name__icontains=search) |
+                    Q(customer_email__icontains=search) |
+                    Q(customer_phone__icontains=search) |
+                    Q(tracking_number__icontains=search)
+                )
+        
+        return queryset.order_by('-created_at')
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['filter_form'] = StatusFilterForm(self.request.GET or None)
+        context['status_counts'] = self.get_status_counts()
+        context['ORDER_STATUS_CHOICES'] = ORDER_STATUS_CHOICES
+        return context
+    
+    def get_status_counts(self):
+        """Возвращает количество заказов по каждому статусу"""
+        return Order.objects.filter(
+            items__product__master=self.request.user
+        ).values('status').annotate(
+            count=Count('id')
+        ).order_by('status')
+
 
 @login_required
-@require_POST
-def cancel_order(request, order_id):
-    """Отмена заказа пользователем"""
-    order = get_object_or_404(Order, id=order_id, user=request.user)
-    
-    # Проверяем, можно ли отменить заказ
-    if not order.can_be_cancelled():
-        messages.error(request, 'Этот заказ нельзя отменить')
-        return redirect('orders:order_detail', order_id=order.id)
-    
-    try:
-        # Обновляем статус заказа на "отменен"
-        order.update_status('cancelled', comment='Отменен пользователем', changed_by=request.user)
-        messages.success(request, f'Заказ #{order.order_number} успешно отменен')
-    except Exception as e:
-        messages.error(request, f'Ошибка при отмене заказа: {str(e)}')
-
-    return redirect('orders:order_detail', order_id=order.id)
-
-@login_required
-def update_order_status(request, order_id):
-    """Обновление статуса заказа (страница)"""
-    order = get_object_or_404(Order, id=order_id)
-
-    # Проверяем права доступа
-    if not (request.user.is_staff or request.user.is_master):
-        messages.error(request, 'У вас нет прав для изменения статуса заказа')
-        return redirect('orders:order_detail', order_id=order.id)
-
+def update_order_status_ajax(request, pk):
+    """AJAX-метод для быстрого изменения статуса"""
     if request.method == 'POST':
+        order = get_object_or_404(Order, id=pk)
+        
+        # Проверяем права доступа
+        if not (request.user.is_staff or 
+                (request.user.is_master and order._is_master_order(request.user))):
+            return JsonResponse({
+                'success': False,
+                'error': 'Недостаточно прав'
+            })
+        
         new_status = request.POST.get('status')
         comment = request.POST.get('comment', '')
-        photo = request.FILES.get('photo')
+        
+        if new_status:
+            try:
+                order.update_status(
+                    new_status=new_status,
+                    user=request.user,
+                    comment=comment
+                )
+                return JsonResponse({
+                    'success': True,
+                    'status': order.get_status_display(),
+                    'status_class': order.status,
+                    'status_color': order.status_color,
+                    'status_icon': order.status_icon,
+                    'progress': order.get_status_progress()
+                })
+            except ValueError as e:
+                return JsonResponse({
+                    'success': False,
+                    'error': str(e)
+                })
+    
+    return JsonResponse({'success': False, 'error': 'Invalid request'})
 
-        try:
-            order.update_status(new_status, comment=comment, photo=photo, changed_by=request.user)
-            messages.success(request, f'Статус заказа #{order.order_number} обновлен')
-        except ValueError as e:
-            messages.error(request, str(e))
-
-        return redirect('orders:order_detail', order_id=order.id)
-
-    return render(request, 'orders/update_status.html', {'order': order})
 
 @login_required
-@require_POST
-def update_order_status_ajax(request, order_id):
-    """AJAX обновление статуса заказа"""
-    order = get_object_or_404(Order, id=order_id)
-
-    # Проверяем права доступа
-    if not (request.user.is_staff or request.user.is_master):
-        return JsonResponse({'success': False, 'error': 'Нет прав доступа'})
-
-    new_status = request.POST.get('status')
-    if not new_status:
-        return JsonResponse({'success': False, 'error': 'Не указан статус'})
-
-    try:
-        order.update_status(new_status, changed_by=request.user)
-        return JsonResponse({'success': True})
-    except ValueError as e:
-        return JsonResponse({'success': False, 'error': str(e)})
+def order_status_counts_api(request):
+    """API для получения статистики по статусам"""
+    if request.user.is_staff:
+        queryset = Order.objects.all()
+    elif request.user.is_master:
+        queryset = Order.objects.filter(
+            items__product__master=request.user
+        ).distinct()
+    else:
+        queryset = Order.objects.filter(user=request.user)
+    
+    counts = queryset.values('status').annotate(
+        count=Count('id')
+    ).order_by('status')
+    
+    data = {
+        'total': queryset.count(),
+        'statuses': list(counts),
+        'status_display': dict(ORDER_STATUS_CHOICES)
+    }
+    
+    return JsonResponse(data)

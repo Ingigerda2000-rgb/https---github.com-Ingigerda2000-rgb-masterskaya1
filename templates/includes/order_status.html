@@ -1,57 +1,44 @@
-{% if show_progress %}
-<div class="mb-3">
-    <div class="progress" style="height: 8px;">
-        {% if order.status == 'pending' %}
-            {% with progress=20 %}
-            <div class="progress-bar bg-success" role="progressbar" style="width: {{ progress }}%" aria-valuenow="{{ progress }}" aria-valuemin="0" aria-valuemax="100"></div>
-            {% endwith %}
-        {% elif order.status == 'paid' %}
-            {% with progress=40 %}
-            <div class="progress-bar bg-success" role="progressbar" style="width: {{ progress }}%" aria-valuenow="{{ progress }}" aria-valuemin="0" aria-valuemax="100"></div>
-            {% endwith %}
-        {% elif order.status == 'processing' %}
-            {% with progress=60 %}
-            <div class="progress-bar bg-success" role="progressbar" style="width: {{ progress }}%" aria-valuenow="{{ progress }}" aria-valuemin="0" aria-valuemax="100"></div>
-            {% endwith %}
-        {% elif order.status == 'shipped' %}
-            {% with progress=80 %}
-            <div class="progress-bar bg-success" role="progressbar" style="width: {{ progress }}%" aria-valuenow="{{ progress }}" aria-valuemin="0" aria-valuemax="100"></div>
-            {% endwith %}
-        {% elif order.status == 'delivered' %}
-            {% with progress=100 %}
-            <div class="progress-bar bg-success" role="progressbar" style="width: {{ progress }}%" aria-valuenow="{{ progress }}" aria-valuemin="0" aria-valuemax="100"></div>
-            {% endwith %}
-        {% else %}
-            {% with progress=0 %}
-            <div class="progress-bar bg-success" role="progressbar" style="width: {{ progress }}%" aria-valuenow="{{ progress }}" aria-valuemin="0" aria-valuemax="100"></div>
-            {% endwith %}
-        {% endif %}
-    </div>
-</div>
-{% endif %}
+{% load order_filters %}
 
-<div class="timeline">
-    {% for history in order.status_history.all %}
-    <div class="timeline-item {% if forloop.last %}current{% endif %}">
-        <div class="timeline-marker"></div>
-        <div class="timeline-content">
-            <div class="d-flex justify-content-between align-items-start">
-                <div>
-                    <strong>{{ history.get_status_display }}</strong>
-                    <br>
-                    <small class="text-muted">{{ history.changed_at|date:"d.m.Y H:i" }}</small>
-                    {% if history.comment %}
-                    <br>
-                    <small>{{ history.comment }}</small>
-                    {% endif %}
-                </div>
-                {% if history.photo %}
-                <div>
-                    <img src="{{ history.photo.url }}" class="img-thumbnail" style="width: 60px; height: 60px; object-fit: cover;" alt="Фото">
-                </div>
+{% comment %}
+Макрос для отображения статуса заказа
+Использование: {% include "includes/order_status.html" with order=order show_progress=True %}
+{% endcomment %}
+
+<div class="order-status">
+    <div class="d-flex align-items-center">
+        <div class="status-icon me-2">
+            <i class="bi {{ order.status_icon }} fs-5 text-{{ order.status_color }}"></i>
+        </div>
+        <div class="status-content">
+            <div class="d-flex align-items-center">
+                <span class="badge bg-{{ order.status_color }} fs-6">
+                    {{ order.get_status_display }}
+                </span>
+                {% if order.is_final_status %}
+                <i class="bi bi-check-circle-fill text-success ms-2" title="Заказ завершен"></i>
                 {% endif %}
             </div>
+            <small class="text-muted d-block mt-1">
+                {{ order.status_description }}
+            </small>
         </div>
     </div>
-    {% endfor %}
+    
+    {% if show_progress %}
+    <div class="status-progress mt-2">
+        <div class="progress" style="height: 6px;">
+            <div class="progress-bar bg-{{ order.status_color }}" 
+                 role="progressbar" 
+                 style="width: {{ order.get_status_progress }}%"
+                 aria-valuenow="{{ order.get_status_progress }}" 
+                 aria-valuemin="0" 
+                 aria-valuemax="100">
+            </div>
+        </div>
+        <small class="text-muted">
+            Прогресс выполнения: {{ order.get_status_progress }}%
+        </small>
+    </div>
+    {% endif %}
 </div>

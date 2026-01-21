@@ -1,103 +1,217 @@
 from django import forms
-from .models import Order
+from django.core.exceptions import ValidationError
+from .models import Order, OrderStatusHistory, STATUS_TRANSITIONS, ORDER_STATUS_CHOICES
 
-class OrderForm(forms.ModelForm):
-    """Форма оформления заказа"""
-    promo_code = forms.CharField(
+
+class OrderStatusUpdateForm(forms.ModelForm):
+    """Форма для изменения статуса заказа мастером/администратором"""
+    comment = forms.CharField(
+        label='Комментарий для покупателя',
+        widget=forms.Textarea(attrs={
+            'rows': 3,
+            'placeholder': 'Опишите текущий этап работы (до 500 символов)...',
+            'maxlength': 500,
+            'class': 'form-control'
+        }),
         required=False,
-        label='Промокод',
-        widget=forms.TextInput(attrs={
+        help_text='Будет отправлен покупателю в уведомлении'
+    )
+    photo_report = forms.ImageField(
+        label='Фотоотчёт',
+        required=False,
+        help_text='JPG/PNG, не более 10 МБ. Покажет прогресс работы покупателю',
+        widget=forms.FileInput(attrs={
             'class': 'form-control',
-            'placeholder': 'Введите промокод, если есть'
+            'accept': 'image/jpeg,image/png'
         })
+    )
+    send_notification = forms.BooleanField(
+        label='Отправить уведомление покупателю',
+        initial=True,
+        required=False,
+        help_text='Отправить email или push-уведомление о смене статуса'
     )
     
     class Meta:
         model = Order
-        fields = [
-            'customer_name',
-            'customer_phone',
-            'customer_email',
-            'region',
-            'city',
-            'street',
-            'house',
-            'apartment',
-            'delivery_method',
-            'payment_method',
-        ]
+        fields = ['status']
         widgets = {
-            'customer_name': forms.TextInput(attrs={'class': 'form-control'}),
-            'customer_phone': forms.TextInput(attrs={'class': 'form-control', 'placeholder': '+7 XXX XXX XX XX'}),
-            'customer_email': forms.EmailInput(attrs={'class': 'form-control'}),
-            'region': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Например: Московская область'}),
-            'city': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Например: Москва'}),
-            'street': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Например: ул. Ленина'}),
-            'house': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Например: 10'}),
-            'apartment': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Например: 42'}),
-            'delivery_method': forms.Select(attrs={'class': 'form-control'}),
-            'payment_method': forms.Select(attrs={'class': 'form-control'}),
+            'status': forms.Select(attrs={'class': 'form-select'})
         }
     
     def __init__(self, *args, **kwargs):
+        self.order = kwargs.pop('order', None)
         self.user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
         
-        # Заполняем данные пользователя по умолчанию
-        if self.user:
-            if not self.instance.customer_name and (self.user.first_name or self.user.last_name):
-                self.initial['customer_name'] = f"{self.user.first_name} {self.user.last_name}".strip()
-            if not self.instance.customer_email:
-                self.initial['customer_email'] = self.user.email
-            if not self.instance.customer_phone:
-                self.initial['customer_phone'] = self.user.phone
+        if self.order and self.user:
+            # Получаем возможные следующие статусы
+            possible_statuses = self.order.get_next_possible_statuses(self.user)
             
-            # Заполняем адрес из профиля пользователя
-            if self.user.default_city:
-                self.initial['city'] = self.user.default_city
-            if self.user.default_postal_code:
-                self.initial['region'] = self.user.default_postal_code
-            if self.user.default_address:
-                # Пытаемся разделить адрес на улицу и дом
-                address_parts = self.user.default_address.split(',')
-                if len(address_parts) >= 2:
-                    self.initial['street'] = address_parts[0].strip()
-                    self.initial['house'] = address_parts[1].strip()
-                else:
-                    self.initial['street'] = self.user.default_address
+            # Фильтруем choices поля status
+            self.fields['status'].choices = [
+                (code, label) for code, label in ORDER_STATUS_CHOICES 
+                if code in possible_statuses
+            ]
+            
+            # Если возможен только один статус, делаем его выбранным по умолчанию
+            if len(possible_statuses) == 1:
+                self.fields['status'].initial = possible_statuses[0]
     
-    def clean_customer_phone(self):
-        phone = self.cleaned_data.get('customer_phone')
-        # Простая валидация телефона
-        if phone:
-            phone = phone.replace(' ', '').replace('-', '').replace('(', '').replace(')', '')
-            if not phone.startswith('+7') and not phone.startswith('8'):
-                phone = '+7' + phone[-10:]
-        return phone
+    def clean(self):
+        cleaned_data = super().clean()
+        new_status = cleaned_data.get('status')
+        
+        if self.order and self.user and new_status:
+            can_change, message = self.order.can_change_status(new_status, self.user)
+            if not can_change:
+                raise ValidationError(message)
+            
+            # Проверяем размер файла
+            photo = cleaned_data.get('photo_report')
+            if photo and photo.size > 10 * 1024 * 1024:  # 10 MB
+                raise ValidationError({
+                    'photo_report': 'Файл слишком большой. Максимальный размер - 10 МБ.'
+                })
+        
+        return cleaned_data
+    
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        
+        if self.order and self.user:
+            comment = self.cleaned_data.get('comment', '')
+            photo = self.cleaned_data.get('photo_report')
+            send_notification = self.cleaned_data.get('send_notification', True)
+            
+            try:
+                # Используем метод update_status для создания записи в истории
+                history = self.order.update_status(
+                    new_status=self.cleaned_data['status'],
+                    user=self.user,
+                    comment=comment,
+                    photo=photo
+                )
+                
+                # Настраиваем отправку уведомлений
+                history.notification_sent = send_notification
+                if not send_notification:
+                    history.notification_type = 'none'
+                history.save()
+                
+            except ValueError as e:
+                raise ValidationError(str(e))
+        
+        return instance
+
+
+class CustomerCancelOrderForm(forms.Form):
+    """Форма для отмены заказа покупателем"""
+    reason = forms.ChoiceField(
+        label='Причина отмены',
+        choices=[
+            ('changed_mind', 'Передумал(а) покупать'),
+            ('found_cheaper', 'Нашел(а) дешевле'),
+            ('delivery_issues', 'Проблемы с доставкой'),
+            ('quality_concerns', 'Сомнения в качестве'),
+            ('other', 'Другая причина')
+        ],
+        widget=forms.Select(attrs={'class': 'form-select'})
+    )
+    comment = forms.CharField(
+        label='Комментарий (необязательно)',
+        widget=forms.Textarea(attrs={
+            'rows': 3,
+            'placeholder': 'Уточните причину отмены...',
+            'class': 'form-control'
+        }),
+        required=False
+    )
+    
+    def __init__(self, *args, **kwargs):
+        self.order = kwargs.pop('order', None)
+        self.user = kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+        
+        if self.order and not self.order.can_be_cancelled_by_user():
+            raise ValidationError("Этот заказ нельзя отменить")
     
     def clean(self):
         cleaned_data = super().clean()
         
-        # Формируем полный адрес доставки из отдельных полей
-        region = cleaned_data.get('region', '')
-        city = cleaned_data.get('city', '')
-        street = cleaned_data.get('street', '')
-        house = cleaned_data.get('house', '')
-        apartment = cleaned_data.get('apartment', '')
+        if self.order and self.user:
+            if self.user != self.order.user:
+                raise ValidationError("Вы можете отменять только свои заказы")
+            
+            if not self.order.can_be_cancelled_by_user():
+                raise ValidationError("Этот заказ нельзя отменить")
         
-        address_parts = []
-        if region:
-            address_parts.append(f"Регион: {region}")
-        if city:
-            address_parts.append(f"Город: {city}")
-        if street:
-            address_parts.append(f"Улица: {street}")
-        if house:
-            address_parts.append(f"Дом: {house}")
-        if apartment:
-            address_parts.append(f"Квартира: {apartment}")
+        return cleaned_data
+    
+    def save(self):
+        """Отменяет заказ"""
+        if self.order and self.user:
+            comment = f"Отменено покупателем. Причина: {self.get_reason_display()}"
+            if self.cleaned_data.get('comment'):
+                comment += f". Комментарий: {self.cleaned_data['comment']}"
+            
+            return self.order.update_status(
+                new_status='cancelled',
+                user=self.user,
+                comment=comment
+            )
+    
+    def get_reason_display(self):
+        """Возвращает читаемое описание причины"""
+        reasons = {
+            'changed_mind': 'Передумал(а) покупать',
+            'found_cheaper': 'Нашел(а) дешевле',
+            'delivery_issues': 'Проблемы с доставкой',
+            'quality_concerns': 'Сомнения в качестве',
+            'other': 'Другая причина'
+        }
+        return reasons.get(self.cleaned_data.get('reason', ''), '')
+
+
+class StatusFilterForm(forms.Form):
+    """Форма фильтрации заказов по статусу"""
+    status = forms.ChoiceField(
+        choices=[('', 'Все статусы')] + ORDER_STATUS_CHOICES,
+        required=False,
+        label='Статус заказа',
+        widget=forms.Select(attrs={'class': 'form-select'})
+    )
+    date_from = forms.DateField(
+        required=False,
+        label='С даты',
+        widget=forms.DateInput(attrs={
+            'type': 'date',
+            'class': 'form-control'
+        })
+    )
+    date_to = forms.DateField(
+        required=False,
+        label='По дату',
+        widget=forms.DateInput(attrs={
+            'type': 'date',
+            'class': 'form-control'
+        })
+    )
+    search = forms.CharField(
+        required=False,
+        label='Поиск',
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'ID, имя, email, телефон...'
+        })
+    )
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        date_from = cleaned_data.get('date_from')
+        date_to = cleaned_data.get('date_to')
         
-        full_address = ", ".join(address_parts)
-        cleaned_data['delivery_address'] = full_address
+        if date_from and date_to and date_from > date_to:
+            raise ValidationError('Дата "С" не может быть больше даты "По"')
         
         return cleaned_data

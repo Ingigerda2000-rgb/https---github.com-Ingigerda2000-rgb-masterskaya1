@@ -1,13 +1,14 @@
-- [x] Update templates/products/product_list.html: change 'product_detail' to 'products:product_detail'
-- [x] Update templates/products/product_detail.html: change 'product_detail' to 'products:product_detail'
-- [x] Update templates/products/favorites.html: change 'product_detail' to 'products:product_detail'
-- [x] Update templates/orders/order_detail.html: change 'product_detail' to 'products:product_detail'
-- [x] Update templates/materials/materialrecipe_form.html: change 'product_detail' to 'products:product_detail'
-- [x] Update templates/custom_orders/constructor.html: change 'product_detail' to 'products:product_detail'
-- [x] Update templates/cart/cart.html: change 'product_detail' to 'products:product_detail'
-- [x] Update templates/accounts/master_dashboard.html: change 'product_detail' and 'update_product' and 'master_products_list' to namespaced URLs
-- [x] Add links to become_master for non-master users in profile
-- [x] Test the URLs to ensure they work (server started successfully)
-- [x] Modify product_detail view to allow masters to view their own inactive products
-- [x] Fix template to handle cases where product.master might be None
-- [x] Add search_query to product_detail context to prevent template errors
+# TODO: Fix order_detail.html template error
+
+## Completed:
+- [x] Create orders/templatetags/__init__.py
+- [x] Create orders/templatetags/order_filters.py with to_dict and get filters
+- [x] Update orders/views.py to pass ORDER_STATUS_CHOICES in context for order_detail view
+- [x] Verified Order model has required methods: can_be_cancelled_by_user, get_next_possible_statuses, is_master_order
+- [x] Verified User model has is_master() method
+- [x] Verified template includes and URLs are correct
+- [x] Fixed template syntax error in templates/includes/order_status.html (restructured {% if %} {% elif %} blocks to properly close {% with %} tags)
+
+## Next Steps:
+- [ ] Test the order detail page after placing an order to confirm no errors
+- [ ] If errors persist, check for other missing dependencies or template syntax issues

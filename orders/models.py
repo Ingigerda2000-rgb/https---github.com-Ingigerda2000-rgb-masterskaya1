@@ -421,6 +421,28 @@ class Order(models.Model):
     def can_be_cancelled(self):
         """Проверка, можно ли отменить заказ"""
         return self.status in ['pending', 'paid', 'processing']
+
+    def can_be_cancelled_by_user(self):
+        """Проверка, можно ли отменить заказ пользователем"""
+        return self.can_be_cancelled()
+
+    def get_next_possible_statuses(self):
+        """Получение возможных следующих статусов"""
+        valid_transitions = {
+            'pending': ['paid', 'cancelled'],
+            'paid': ['processing', 'cancelled'],
+            'processing': ['shipped', 'cancelled'],
+            'shipped': ['delivered', 'cancelled'],
+            'delivered': [],  # Конечный статус
+            'cancelled': [],  # Конечный статус
+        }
+        return valid_transitions.get(self.status, [])
+
+    @property
+    def is_master_order(self):
+        """Является ли заказ мастерским (для мастера)"""
+        # Проверяем, есть ли записи в истории от мастера
+        return self.status_history.filter(changed_by__is_master=True).exists()
     
     def get_items_count(self):
         """Получение количества товаров в заказе"""

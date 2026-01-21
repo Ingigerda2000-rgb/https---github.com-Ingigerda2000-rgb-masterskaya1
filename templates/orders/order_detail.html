@@ -195,7 +195,7 @@
         {% endif %}
         
         <!-- Быстрое изменение для мастера -->
-        {% if user.is_staff or user.is_master and order._is_master_order %}
+        {% if user.is_staff or user.is_master and order.is_master_order %}
         <div class="mt-3">
             <div class="btn-group">
                 {% for next_status in order.get_next_possible_statuses %}

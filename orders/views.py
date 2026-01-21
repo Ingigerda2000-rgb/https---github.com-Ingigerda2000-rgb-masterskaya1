@@ -128,8 +128,13 @@ def order_detail(request, order_id):
         # В реальном проекте здесь должна быть дополнительная проверка
         # например, по email или номеру телефона
         order = get_object_or_404(Order, id=order_id)
-    
-    return render(request, 'orders/order_detail.html', {'order': order})
+
+    context = {
+        'order': order,
+        'ORDER_STATUS_CHOICES': Order.STATUS_CHOICES,
+    }
+
+    return render(request, 'orders/order_detail.html', context)
 
 # Функция apply_promo_code перенесена в приложение discounts
 
@@ -150,5 +155,50 @@ def cancel_order(request, order_id):
         messages.success(request, f'Заказ #{order.order_number} успешно отменен')
     except Exception as e:
         messages.error(request, f'Ошибка при отмене заказа: {str(e)}')
-    
+
     return redirect('orders:order_detail', order_id=order.id)
+
+@login_required
+def update_order_status(request, order_id):
+    """Обновление статуса заказа (страница)"""
+    order = get_object_or_404(Order, id=order_id)
+
+    # Проверяем права доступа
+    if not (request.user.is_staff or request.user.is_master):
+        messages.error(request, 'У вас нет прав для изменения статуса заказа')
+        return redirect('orders:order_detail', order_id=order.id)
+
+    if request.method == 'POST':
+        new_status = request.POST.get('status')
+        comment = request.POST.get('comment', '')
+        photo = request.FILES.get('photo')
+
+        try:
+            order.update_status(new_status, comment=comment, photo=photo, changed_by=request.user)
+            messages.success(request, f'Статус заказа #{order.order_number} обновлен')
+        except ValueError as e:
+            messages.error(request, str(e))
+
+        return redirect('orders:order_detail', order_id=order.id)
+
+    return render(request, 'orders/update_status.html', {'order': order})
+
+@login_required
+@require_POST
+def update_order_status_ajax(request, order_id):
+    """AJAX обновление статуса заказа"""
+    order = get_object_or_404(Order, id=order_id)
+
+    # Проверяем права доступа
+    if not (request.user.is_staff or request.user.is_master):
+        return JsonResponse({'success': False, 'error': 'Нет прав доступа'})
+
+    new_status = request.POST.get('status')
+    if not new_status:
+        return JsonResponse({'success': False, 'error': 'Не указан статус'})
+
+    try:
+        order.update_status(new_status, changed_by=request.user)
+        return JsonResponse({'success': True})
+    except ValueError as e:
+        return JsonResponse({'success': False, 'error': str(e)})

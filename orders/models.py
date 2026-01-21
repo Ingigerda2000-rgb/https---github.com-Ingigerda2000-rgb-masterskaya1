@@ -226,7 +226,7 @@ class Order(models.Model):
             return True
         
         # Мастера могут менять статусы своих заказов
-        if user.is_master and self._is_master_order(user):
+        if user.is_master and self.is_master_order(user):
             return True
         
         # Покупатели могут отменять только свои заказы в статусе pending или paid
@@ -235,7 +235,7 @@ class Order(models.Model):
             
         return False
     
-    def _is_master_order(self, user):
+    def is_master_order(self, user):
         """Проверяет, является ли пользователь мастером для этого заказа"""
         # Проверяем, есть ли товары от этого мастера в заказе
         return self.items.filter(product__master=user).exists()
@@ -388,7 +388,7 @@ class Order(models.Model):
         if user.is_staff:
             return True
         
-        if user.is_master and self._is_master_order(user):
+        if user.is_master and self.is_master_order(user):
             # Мастера не могут отменять заказы после начала работы
             if status == 'cancelled' and self.status in IRREVERSIBLE_STATUSES:
                 return False

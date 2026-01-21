@@ -32,8 +32,8 @@
                         <i class="bi bi-x-circle"></i> Отменить
                     </button>
                     {% endif %}
-                    
-                    {% if user.is_staff or user.is_master and order._is_master_order %}
+
+                    {% if user.is_staff or user.is_master and order.is_master_order %}
                     <a href="{% url 'orders:update_order_status' order.id %}" class="btn btn-primary">
                         <i class="bi bi-pencil-square"></i> Изменить статус
                     </a>
@@ -177,9 +177,9 @@
                     {% endif %}
                 </div>
             </div>
-            
+
             <!-- Быстрое управление для мастера -->
-            {% if user.is_staff or user.is_master and order._is_master_order %}
+            {% if user.is_staff or user.is_master and order.is_master_order %}
             <div class="card">
                 <div class="card-header">
                     <h5 class="mb-0">Быстрое управление</h5>

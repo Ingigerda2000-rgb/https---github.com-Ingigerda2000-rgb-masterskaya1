@@ -108,8 +108,8 @@ class OrderStatusUpdateView(UpdateView):
         order = self.get_object()
         
         # Проверяем права доступа
-        if not (request.user.is_staff or 
-                (request.user.is_master and order._is_master_order(request.user))):
+        if not (request.user.is_staff or
+                (request.user.is_master and order.is_master_order(request.user))):
             messages.error(request, 'У вас нет прав для изменения статуса этого заказа')
             return redirect('orders:order_detail', pk=order.id)
         
@@ -195,8 +195,8 @@ def update_order_status_ajax(request, pk):
         order = get_object_or_404(Order, id=pk)
         
         # Проверяем права доступа
-        if not (request.user.is_staff or 
-                (request.user.is_master and order._is_master_order(request.user))):
+        if not (request.user.is_staff or
+                (request.user.is_master and order.is_master_order(request.user))):
             return JsonResponse({
                 'success': False,
                 'error': 'Недостаточно прав'

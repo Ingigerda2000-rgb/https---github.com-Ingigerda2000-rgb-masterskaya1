@@ -99,8 +99,8 @@
                                 <a href="/analytics/" class="btn btn-yellow fw-medium">
                                     <i class="bi bi-bar-chart me-2"></i>Аналитика
                                 </a>
-                                <a href="/orders/" class="btn btn-gray fw-medium">
-                                    <i class="bi bi-archive me-2"></i>Архив
+                                <a href="{% url 'orders:master_orders' %}" class="btn btn-gray fw-medium">
+                                    <i class="bi bi-archive me-2"></i>Мои заказы
                                 </a>
                             </div>
                         </div>
@@ -341,7 +341,7 @@
                         </div>
                         {% if recent_orders|length > 5 %}
                         <div class="card-footer py-3 text-center bg-green-light">
-                            <a href="/orders/" class="btn btn-green fw-medium">
+                            <a href="{% url 'orders:master_orders' %}" class="btn btn-green fw-medium">
                                 <i class="bi bi-clock-history me-2"></i>Все заказы
                             </a>
                         </div>

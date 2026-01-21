@@ -84,19 +84,19 @@
                         </a>
                     </li>
                     <li class="list-group-item">
-                        <a href="{% url 'change_password' %}" class="text-decoration-none d-flex align-items-center">
+                        <a href="{% url 'accounts:change_password' %}" class="text-decoration-none d-flex align-items-center">
                             <i class="bi bi-shield-lock me-2"></i>Сменить пароль
                         </a>
                     </li>
                     {% if user.is_master %}
                     <li class="list-group-item bg-light">
-                        <a href="{% url 'master_dashboard' %}" class="text-decoration-none d-flex align-items-center text-primary">
+                        <a href="{% url 'accounts:master_dashboard' %}" class="text-decoration-none d-flex align-items-center text-primary">
                             <i class="bi bi-tools me-2"></i>Панель мастера
                         </a>
                     </li>
                     {% else %}
                     <li class="list-group-item">
-                        <a href="{% url 'become_master' %}" class="text-decoration-none d-flex align-items-center text-warning">
+                        <a href="{% url 'accounts:become_master' %}" class="text-decoration-none d-flex align-items-center text-warning">
                             <i class="bi bi-palette me-2"></i>Стать мастером
                         </a>
                     </li>
@@ -305,7 +305,7 @@
                         </div>
                     </div>
                     <div class="text-center mt-4">
-                        <a href="{% url 'master_dashboard' %}" class="btn btn-primary">
+                        <a href="{% url 'accounts:master_dashboard' %}" class="btn btn-primary">
                             <i class="bi bi-tools me-1"></i>Перейти в панель мастера
                         </a>
                     </div>
@@ -349,7 +349,7 @@
                         </div>
                     </div>
                     <div class="text-center mt-4">
-                        <a href="{% url 'become_master' %}" class="btn btn-warning btn-lg">
+                        <a href="{% url 'accounts:become_master' %}" class="btn btn-warning btn-lg">
                             <i class="bi bi-palette me-2"></i>Стать мастером
                         </a>
                     </div>

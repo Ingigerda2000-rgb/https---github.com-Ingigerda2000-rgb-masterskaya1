@@ -3,6 +3,8 @@ from django.contrib.auth import views as auth_views
 from . import views
 from django.views.generic import TemplateView
 
+app_name = 'accounts'
+
 urlpatterns = [
     # Регистрация и авторизация
     path('register/', views.register, name='register'),

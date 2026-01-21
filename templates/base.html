@@ -110,7 +110,7 @@
                             <i class="bi bi-person me-1"></i>{{ user.email|truncatechars:15 }}
                         </button>
                         <ul class="dropdown-menu dropdown-menu-end">
-                            <li><a class="dropdown-item" href="{% url 'profile' %}">
+                            <li><a class="dropdown-item" href="{% url 'accounts:profile' %}">
                                 <i class="bi bi-person me-2"></i>Профиль
                             </a></li>
                             
@@ -123,11 +123,11 @@
                             </a></li>
                             
                             {% if user.is_master %}
-                            <li><a class="dropdown-item" href="{% url 'master_dashboard' %}">
+                            <li><a class="dropdown-item" href="{% url 'accounts:master_dashboard' %}">
                                 <i class="bi bi-tools me-2"></i>Панель мастера
                             </a></li>
                             {% else %}
-                            <li><a class="dropdown-item" href="{% url 'become_master' %}">
+                            <li><a class="dropdown-item" href="{% url 'accounts:become_master' %}">
                                 <i class="bi bi-palette me-2"></i>Стать мастером
                             </a></li>
                             {% endif %}
@@ -135,7 +135,7 @@
                             <li><hr class="dropdown-divider"></li>
                             
                             <li>
-                                <form method="post" action="{% url 'logout' %}">
+                                <form method="post" action="{% url 'accounts:logout' %}">
                                     {% csrf_token %}
                                     <button type="submit" class="dropdown-item">
                                         <i class="bi bi-box-arrow-right me-2"></i>Выйти
@@ -145,7 +145,7 @@
                         </ul>
                     </div>
                     {% else %}
-                    <a href="{% url 'login' %}" class="login-btn" 
+                    <a href="{% url 'accounts:login' %}" class="login-btn" 
                        style="background-color: transparent; color: var(--primary-color); border: 1px solid var(--primary-color); padding: 8px 20px; border-radius: 20px; font-weight: 500; text-decoration: none;">
                         <i class="bi bi-person me-1"></i>Войти / Регистрация
                     </a>

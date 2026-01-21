@@ -8,3 +8,6 @@
 - [x] Update templates/accounts/master_dashboard.html: change 'product_detail' and 'update_product' and 'master_products_list' to namespaced URLs
 - [x] Add links to become_master for non-master users in profile
 - [x] Test the URLs to ensure they work (server started successfully)
+- [x] Modify product_detail view to allow masters to view their own inactive products
+- [x] Fix template to handle cases where product.master might be None
+- [x] Add search_query to product_detail context to prevent template errors

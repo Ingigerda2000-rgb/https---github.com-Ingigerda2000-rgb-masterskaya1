@@ -77,24 +77,30 @@ def product_list(request):
 
 def product_detail(request, product_id):
     """Детальная страница товара"""
-    product = get_object_or_404(Product, id=product_id, status='active')
-    
-    # Получаем похожие товары
+    product = get_object_or_404(Product, id=product_id)
+
+    # Проверяем доступ: активные товары для всех, неактивные только для мастера-владельца
+    if product.status != 'active' and not (request.user.is_authenticated and request.user == product.master):
+        from django.http import Http404
+        raise Http404
+
+    # Получаем похожие товары (только активные)
     similar_products = Product.objects.filter(
-        Q(category=product.category) | 
+        Q(category=product.category) |
         Q(technique=product.technique)
     ).exclude(id=product.id).filter(status='active')[:4]
-    
+
     # Получаем изображения
     images = product.images.all()
-    
+
     context = {
         'product': product,
         'similar_products': similar_products,
         'images': images,
         'main_image': product.get_main_image(),
+        'search_query': '',
     }
-    
+
     return render(request, 'products/product_detail.html', context)
 
 def master_check(user):

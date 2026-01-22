@@ -1,44 +1,326 @@
+{# templates/includes/order_status.html #}
 {% load order_filters %}
 
-{% comment %}
-Макрос для отображения статуса заказа
-Использование: {% include "includes/order_status.html" with order=order show_progress=True %}
-{% endcomment %}
-
-<div class="order-status">
-    <div class="d-flex align-items-center">
-        <div class="status-icon me-2">
-            <i class="bi {{ order.status_icon }} fs-5 text-{{ order.status_color }}"></i>
-        </div>
-        <div class="status-content">
-            <div class="d-flex align-items-center">
-                <span class="badge bg-{{ order.status_color }} fs-6">
-                    {{ order.get_status_display }}
-                </span>
-                {% if order.is_final_status %}
-                <i class="bi bi-check-circle-fill text-success ms-2" title="Заказ завершен"></i>
-                {% endif %}
+<div class="order-status-display">
+    <!-- Верхняя строка: статус и прогресс -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <!-- Бейдж статуса с иконкой -->
+        <div class="d-flex align-items-center">
+            <div class="status-badge badge bg-{{ order.status_color }} p-2 d-flex align-items-center">
+                <i class="{{ order.status_icon }} me-2 fs-5"></i>
+                <span class="fs-6">{{ order.get_status_display }}</span>
             </div>
-            <small class="text-muted d-block mt-1">
-                {{ order.status_description }}
-            </small>
+            
+            {% if order.tracking_number %}
+            <div class="ms-3">
+                <span class="badge bg-info d-flex align-items-center">
+                    <i class="bi bi-truck me-1"></i>
+                    <small>Отслеживание: {{ order.tracking_number|truncatechars:10 }}</small>
+                </span>
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- Процент выполнения -->
+        {% if show_progress %}
+        <div class="text-end">
+            <div class="progress-percentage fw-bold fs-5 text-{{ order.status_color }}">
+                {{ order.get_status_progress }}%
+            </div>
+            <small class="text-muted">Прогресс выполнения</small>
+        </div>
+        {% endif %}
+    </div>
+    
+    <!-- Прогресс-бар -->
+    {% if show_progress %}
+    <div class="progress mb-3" style="height: 12px; border-radius: 6px;">
+        <div class="progress-bar bg-{{ order.status_color }}" 
+             role="progressbar" 
+             style="width: {{ order.get_status_progress }}%"
+             aria-valuenow="{{ order.get_status_progress }}" 
+             aria-valuemin="0" 
+             aria-valuemax="100">
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Этапы заказа -->
+    <div class="order-timeline mt-4">
+        <div class="row">
+            {% with progress=order.get_status_progress %}
+            <div class="col text-center {% if progress >= 10 %}completed{% endif %}">
+                <div class="timeline-step {% if order.status == 'pending' %}current{% endif %}">
+                    <div class="step-icon">
+                        <i class="bi bi-cart-check {% if progress >= 10 %}text-white{% else %}text-muted{% endif %}"></i>
+                    </div>
+                    <div class="step-label mt-2">
+                        <small class="d-block fw-semibold">Оформлен</small>
+                        <small class="text-muted">Заказ принят</small>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col text-center {% if progress >= 25 %}completed{% endif %}">
+                <div class="timeline-step {% if order.status == 'confirmed' %}current{% endif %}">
+                    <div class="step-icon">
+                        <i class="bi bi-check-circle {% if progress >= 25 %}text-white{% else %}text-muted{% endif %}"></i>
+                    </div>
+                    <div class="step-label mt-2">
+                        <small class="d-block fw-semibold">Подтверждён</small>
+                        <small class="text-muted">Оплата получена</small>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col text-center {% if progress >= 50 %}completed{% endif %}">
+                <div class="timeline-step {% if order.status == 'in_progress' %}current{% endif %}">
+                    <div class="step-icon">
+                        <i class="bi bi-tools {% if progress >= 50 %}text-white{% else %}text-muted{% endif %}"></i>
+                    </div>
+                    <div class="step-label mt-2">
+                        <small class="d-block fw-semibold">В работе</small>
+                        <small class="text-muted">Изготавливается</small>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col text-center {% if progress >= 75 %}completed{% endif %}">
+                <div class="timeline-step {% if order.status == 'ready_for_shipping' %}current{% endif %}">
+                    <div class="step-icon">
+                        <i class="bi bi-box-seam {% if progress >= 75 %}text-white{% else %}text-muted{% endif %}"></i>
+                    </div>
+                    <div class="step-label mt-2">
+                        <small class="d-block fw-semibold">Готов к отправке</small>
+                        <small class="text-muted">Упакован</small>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col text-center {% if progress >= 85 %}completed{% endif %}">
+                <div class="timeline-step {% if order.status == 'shipped' %}current{% endif %}">
+                    <div class="step-icon">
+                        <i class="bi bi-truck {% if progress >= 85 %}text-white{% else %}text-muted{% endif %}"></i>
+                    </div>
+                    <div class="step-label mt-2">
+                        <small class="d-block fw-semibold">Отправлен</small>
+                        <small class="text-muted">В пути</small>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col text-center {% if progress >= 100 %}completed{% endif %}">
+                <div class="timeline-step {% if order.status == 'delivered' %}current{% endif %}">
+                    <div class="step-icon">
+                        <i class="bi bi-house-check {% if progress >= 100 %}text-white{% else %}text-muted{% endif %}"></i>
+                    </div>
+                    <div class="step-label mt-2">
+                        <small class="d-block fw-semibold">Доставлен</small>
+                        <small class="text-muted">Получен</small>
+                    </div>
+                </div>
+            </div>
+            {% endwith %}
+        </div>
+        
+        <!-- Соединительные линии между этапами -->
+        <div class="timeline-connector">
+            {% with progress=order.get_status_progress %}
+            <div class="connector-line {% if progress >= 25 %}completed{% endif %}"></div>
+            <div class="connector-line {% if progress >= 50 %}completed{% endif %}"></div>
+            <div class="connector-line {% if progress >= 75 %}completed{% endif %}"></div>
+            <div class="connector-line {% if progress >= 85 %}completed{% endif %}"></div>
+            <div class="connector-line {% if progress >= 100 %}completed{% endif %}"></div>
+            {% endwith %}
         </div>
     </div>
     
-    {% if show_progress %}
-    <div class="status-progress mt-2">
-        <div class="progress" style="height: 6px;">
-            <div class="progress-bar bg-{{ order.status_color }}" 
-                 role="progressbar" 
-                 style="width: {{ order.get_status_progress }}%"
-                 aria-valuenow="{{ order.get_status_progress }}" 
-                 aria-valuemin="0" 
-                 aria-valuemax="100">
-            </div>
+    <!-- Последний комментарий статуса -->
+    {% if order.last_status_comment %}
+    <div class="status-comment mt-3 p-3 bg-light border rounded">
+        <div class="d-flex align-items-center mb-1">
+            <i class="bi bi-chat-left-text me-2 text-primary"></i>
+            <small class="fw-semibold">Последнее обновление:</small>
         </div>
-        <small class="text-muted">
-            Прогресс выполнения: {{ order.get_status_progress }}%
-        </small>
+        <p class="mb-0 small">{{ order.last_status_comment }}</p>
+        
+        {% if order.last_status_changed_at %}
+        <div class="text-end mt-2">
+            <small class="text-muted">{{ order.last_status_changed_at|date:"d.m.Y H:i" }}</small>
+        </div>
+        {% endif %}
     </div>
     {% endif %}
 </div>
+
+<style>
+/* Стили для отображения статуса */
+.order-status-display {
+    padding: 1rem;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+
+.status-badge {
+    border-radius: 8px;
+    font-weight: 600;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Цвета статусов */
+.bg-secondary { background: linear-gradient(135deg, #6c757d, #5a6268) !important; }
+.bg-info { background: linear-gradient(135deg, #0dcaf0, #0baccc) !important; }
+.bg-primary { background: linear-gradient(135deg, #0d6efd, #0b5ed7) !important; }
+.bg-warning { background: linear-gradient(135deg, #ffc107, #e0a800) !important; color: #000 !important; }
+.bg-success { background: linear-gradient(135deg, #198754, #157347) !important; }
+.bg-danger { background: linear-gradient(135deg, #dc3545, #c82333) !important; }
+.bg-dark { background: linear-gradient(135deg, #212529, #1a1e21) !important; }
+
+/* Таймлайн этапов заказа */
+.order-timeline {
+    position: relative;
+    margin-top: 1.5rem;
+}
+
+.timeline-step {
+    position: relative;
+    z-index: 2;
+}
+
+.step-icon {
+    width: 40px;
+    height: 40px;
+    margin: 0 auto;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f8f9fa;
+    border: 2px solid #dee2e6;
+    transition: all 0.3s ease;
+}
+
+.timeline-step.current .step-icon {
+    border-width: 3px;
+    border-color: var(--bs-primary);
+    transform: scale(1.1);
+    box-shadow: 0 0 0 4px rgba(13, 110, 253, 0.1);
+}
+
+.timeline-step.completed .step-icon {
+    background: var(--bs-primary);
+    border-color: var(--bs-primary);
+}
+
+.step-label small {
+    font-size: 0.75rem;
+}
+
+/* Соединительные линии */
+.timeline-connector {
+    position: absolute;
+    top: 20px;
+    left: 50px;
+    right: 50px;
+    height: 2px;
+    background: #dee2e6;
+    z-index: 1;
+}
+
+.connector-line {
+    position: absolute;
+    top: 0;
+    width: 0%;
+    height: 2px;
+    background: var(--bs-primary);
+    transition: width 0.5s ease;
+}
+
+.connector-line:nth-child(1) { left: 0; }
+.connector-line:nth-child(2) { left: 20%; }
+.connector-line:nth-child(3) { left: 40%; }
+.connector-line:nth-child(4) { left: 60%; }
+.connector-line:nth-child(5) { left: 80%; }
+
+.connector-line.completed:nth-child(1) { width: 20%; }
+.connector-line.completed:nth-child(2) { width: 20%; }
+.connector-line.completed:nth-child(3) { width: 20%; }
+.connector-line.completed:nth-child(4) { width: 20%; }
+.connector-line.completed:nth-child(5) { width: 20%; }
+
+/* Комментарий статуса */
+.status-comment {
+    border-left: 4px solid var(--bs-primary);
+    animation: fadeIn 0.5s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    .order-timeline .row {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        padding-bottom: 1rem;
+    }
+    
+    .order-timeline .col {
+        min-width: 100px;
+        flex: 0 0 auto;
+    }
+    
+    .timeline-connector {
+        display: none;
+    }
+    
+    .step-label small {
+        font-size: 0.65rem;
+    }
+}
+</style>
+
+<script>
+// Анимация прогресса при загрузке страницы
+document.addEventListener('DOMContentLoaded', function() {
+    const progressBar = document.querySelector('.progress-bar');
+    const progressPercentage = document.querySelector('.progress-percentage');
+    
+    if (progressBar && progressPercentage) {
+        const targetWidth = progressBar.style.width;
+        progressBar.style.width = '0%';
+        progressPercentage.textContent = '0%';
+        
+        setTimeout(() => {
+            progressBar.style.transition = 'width 1s ease';
+            progressBar.style.width = targetWidth;
+            
+            // Анимируем проценты
+            let current = 0;
+            const target = parseInt(targetWidth);
+            const interval = setInterval(() => {
+                if (current >= target) {
+                    clearInterval(interval);
+                    progressPercentage.textContent = targetWidth;
+                } else {
+                    current += Math.ceil(target / 100);
+                    progressPercentage.textContent = Math.min(current, target) + '%';
+                }
+            }, 10);
+        }, 300);
+    }
+    
+    // Подсвечиваем текущий этап
+    const currentStep = document.querySelector('.timeline-step.current');
+    if (currentStep) {
+        currentStep.scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'nearest', 
+            inline: 'center' 
+        });
+    }
+});
+</script>

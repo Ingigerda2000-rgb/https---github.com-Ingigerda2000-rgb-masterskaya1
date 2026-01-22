@@ -101,29 +101,50 @@
                     <h5 class="mb-0">Состав заказа</h5>
                 </div>
                 <div class="card-body">
-                    {% for item in order.items.all %}
-                    <div class="row mb-3 pb-3 border-bottom">
-                        <div class="col-2">
-                            {% if item.product.images.first %}
-                            <img src="{{ item.product.images.first.image.url }}" 
-                                 alt="{{ item.product.name }}" 
-                                 class="img-fluid rounded">
-                            {% endif %}
-                        </div>
-                        <div class="col-6">
-                            <h6>{{ item.product.name }}</h6>
-                            <p class="text-muted mb-1">Количество: {{ item.quantity }}</p>
-                            {% if item.custom_specification %}
-                            <p class="text-muted mb-1 small">
-                                <i class="bi bi-gear"></i> Индивидуальный заказ
-                            </p>
-                            {% endif %}
-                        </div>
-                        <div class="col-4 text-end">
-                            <strong>{{ item.price }} ₽ × {{ item.quantity }}</strong>
-                        </div>
-                    </div>
-                    {% endfor %}
+                   {% for item in order.items.all %}
+<div class="row mb-3 pb-3 border-bottom">
+    <div class="col-2">
+        {% with main_image=item.product.get_main_image %}
+            {% if main_image %}
+            <img src="{{ main_image.url }}" 
+                 alt="{{ item.product.name }}" 
+                 class="img-fluid rounded" 
+                 style="max-height: 80px; object-fit: cover;">
+            {% else %}
+            <div class="bg-light rounded d-flex align-items-center justify-content-center" 
+                 style="width: 80px; height: 80px;">
+                <i class="bi bi-image text-muted fs-4"></i>
+            </div>
+            {% endif %}
+        {% endwith %}
+    </div>
+    <div class="col-6">
+        <h6 class="mb-1">{{ item.product.name }}</h6>
+        <p class="text-muted mb-1">Количество: {{ item.quantity }}</p>
+        
+        {% if item.custom_specification %}
+        <p class="text-muted mb-1 small">
+            <i class="bi bi-gear me-1"></i> Индивидуальный заказ
+        </p>
+        {% endif %}
+        
+        {% if item.product.master %}
+        <p class="mb-0 small">
+            <i class="bi bi-person-circle me-1"></i>
+            Мастер: {{ item.product.master.get_full_name|default:item.product.master.email }}
+        </p>
+        {% endif %}
+    </div>
+    <div class="col-4 text-end">
+        <div class="mb-1">
+            <strong>{{ item.price }} ₽ × {{ item.quantity }}</strong>
+        </div>
+        <div class="text-success fw-bold">
+            {{ item.subtotal }} ₽
+        </div>
+    </div>
+</div>
+{% endfor %}
                     
                     <div class="row mt-3 pt-3 border-top">
                         <div class="col-8">

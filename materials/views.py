@@ -255,7 +255,7 @@ def material_recipe_create(request, product_id):
                     recipes.append(recipe)
             if recipes:
                 messages.success(request, f'✅ Добавлено {len(recipes)} рецептов материала')
-            return redirect('product_detail', pk=product_id)
+            return redirect('products:product_detail', pk=product_id)
         else:
             messages.error(request, '❌ Проверьте правильность заполнения формы')
     else:

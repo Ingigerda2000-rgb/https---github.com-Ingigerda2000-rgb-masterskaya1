@@ -8,9 +8,90 @@ from django.db.models import Q
 from django.http import JsonResponse
 from django.db.models import Count
 
-from .models import Order, OrderStatusHistory, ORDER_STATUS_CHOICES
+from .models import Order, OrderStatusHistory, ORDER_STATUS_CHOICES, OrderItem
 from .forms import OrderStatusUpdateForm, CustomerCancelOrderForm, StatusFilterForm
+from cart.models import Cart
 
+# ============================================================================
+# ФУНКЦИЯ ОФОРМЛЕНИЯ ЗАКАЗА
+# ============================================================================
+
+@login_required
+def checkout(request):
+    """Оформление заказа"""
+    try:
+        # Получаем корзину текущего пользователя
+        cart = Cart.objects.get(user=request.user)
+    except Cart.DoesNotExist:
+        cart = None
+    
+    if not cart or cart.items.count() == 0:
+        messages.error(request, 'Ваша корзина пуста!')
+        return redirect('cart:cart_view')
+    
+    # Проверяем доступность всех товаров
+    unavailable_items = []
+    for item in cart.items.all():
+        if not item.is_available():
+            unavailable_items.append(item)
+    
+    if unavailable_items:
+        messages.error(request, 'Некоторые товары в корзине недоступны. Пожалуйста, проверьте корзину.')
+        return redirect('cart:cart_view')
+    
+    if request.method == 'POST':
+        # Создание заказа
+        try:
+            # Создаем объект заказа
+            order = Order.objects.create(
+                user=request.user,
+                customer_name=request.POST.get('customer_name', f'{request.user.first_name} {request.user.last_name}'),
+                customer_email=request.POST.get('customer_email', request.user.email),
+                customer_phone=request.POST.get('customer_phone', ''),
+                shipping_address=request.POST.get('shipping_address', ''),
+                billing_address=request.POST.get('billing_address', ''),
+                comments=request.POST.get('comments', ''),
+                total_amount=cart.calculate_total(),
+                status='pending'
+            )
+            
+            # Создаем OrderItem для каждого товара в корзине
+            for cart_item in cart.items.all():
+                OrderItem.objects.create(
+                    order=order,
+                    product=cart_item.product,
+                    quantity=cart_item.quantity,
+                    price=cart_item.product.price,
+                    subtotal=cart_item.calculate_subtotal()
+                )
+            
+            # Очищаем корзину
+            cart.clear()
+            
+            # Перенаправляем на страницу заказа
+            messages.success(request, 'Заказ успешно оформлен!')
+            return redirect('orders:order_detail', pk=order.id)
+            
+        except Exception as e:
+            messages.error(request, f'Ошибка при оформлении заказа: {str(e)}')
+            return render(request, 'orders/checkout.html', {'cart': cart})
+    
+    # Для GET запроса показываем страницу оформления
+    # Используем данные пользователя по умолчанию
+    user_data = {
+        'customer_name': f'{request.user.first_name} {request.user.last_name}'.strip() or request.user.email,
+        'customer_email': request.user.email,
+        'customer_phone': request.user.phone if hasattr(request.user, 'phone') else '',
+    }
+    
+    return render(request, 'orders/checkout.html', {
+        'cart': cart,
+        'user_data': user_data
+    })
+
+# ============================================================================
+# КЛАССЫ-ПРЕДСТАВЛЕНИЯ
+# ============================================================================
 
 @method_decorator(login_required, name='dispatch')
 class OrderListView(ListView):

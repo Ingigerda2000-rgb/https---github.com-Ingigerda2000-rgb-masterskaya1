@@ -133,7 +133,7 @@ def add_product(request):
                 )
 
             messages.success(request, f'Товар "{product.name}" успешно добавлен!')
-            return redirect('master_dashboard')
+            return redirect('accounts:master_dashboard')
     else:
         form = ProductForm(master=request.user)
 
@@ -169,7 +169,7 @@ def update_product(request, product_id):
                     )
 
             messages.success(request, f'Товар "{product.name}" успешно обновлен!')
-            return redirect('master_dashboard')
+            return redirect('accounts:master_dashboard')
     else:
         form = ProductForm(instance=product, master=request.user)
 

@@ -94,7 +94,7 @@
                                         <span class="fw-bold" id="cart-total">0 ₽</span>
                                     </div>
                                     <div class="d-grid">
-                                        <a href="{% url 'cart_view' %}" class="btn" style="background-color: #8a2be2; color: white;">
+                                        <a href="{% url 'cart:cart_view' %}" class="btn" style="background-color: #8a2be2; color: white;">
                                             <i class="bi bi-cart-check me-2"></i>Перейти в корзину
                                         </a>
                                     </div>
@@ -114,7 +114,7 @@
                                 <i class="bi bi-person me-2"></i>Профиль
                             </a></li>
                             
-                            <li><a class="dropdown-item" href="{% url 'cart_view' %}">
+                            <li><a class="dropdown-item" href="{% url 'cart:cart_view' %}">
                                 <i class="bi bi-cart me-2"></i>Корзина
                             </a></li>
                             

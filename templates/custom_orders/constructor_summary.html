@@ -635,7 +635,7 @@ function finalizeOrder() {
     })
     .then(response => {
         if (response.status === 302 || response.status === 401) {
-            window.location.href = '{% url "login" %}?next={% url "custom_orders:constructor_step" step=6 %}';
+            window.location.href = '{% url "accounts:login" %}?next={% url "custom_orders:constructor_step" step=6 %}';
             return null;
         }
         if (!response.ok) {

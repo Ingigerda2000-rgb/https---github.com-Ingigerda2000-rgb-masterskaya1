@@ -394,7 +394,7 @@
                                         <span class="fw-bold" id="cart-total">0 ₽</span>
                                     </div>
                                     <div class="d-grid">
-                                        <a href="{% url 'cart_view' %}" class="btn" style="background-color: #8a2be2; color: white;">
+                                        <a href="{% url 'cart:cart_view' %}" class="btn" style="background-color: #8a2be2; color: white;">
                                             <i class="bi bi-cart-check me-2"></i>Перейти в корзину
                                         </a>
                                     </div>
@@ -410,11 +410,11 @@
                             <i class="bi bi-person me-1"></i>{{ user.email|truncatechars:15 }}
                         </button>
                         <ul class="dropdown-menu dropdown-menu-end">
-                            <li><a class="dropdown-item" href="{% url 'profile' %}">
+                            <li><a class="dropdown-item" href="{% url 'accounts:profile' %}">
                                 <i class="bi bi-person me-2"></i>Профиль
                             </a></li>
 
-                            <li><a class="dropdown-item" href="{% url 'cart_view' %}">
+                            <li><a class="dropdown-item" href="{% url 'cart:cart_view' %}">
                                 <i class="bi bi-cart me-2"></i>Корзина
                             </a></li>
 
@@ -423,7 +423,7 @@
                             </a></li>
 
                             {% if user.is_master %}
-                            <li><a class="dropdown-item" href="{% url 'master_dashboard' %}">
+                            <li><a class="dropdown-item" href="{% url 'accounts:master_dashboard' %}">
                                 <i class="bi bi-tools me-2"></i>Панель мастера
                             </a></li>
                             {% else %}
@@ -435,7 +435,7 @@
                             <li><hr class="dropdown-divider"></li>
 
                             <li>
-                                <form method="post" action="{% url 'logout' %}">
+                                <form method="post" action="{% url 'accounts:logout' %}">
                                     {% csrf_token %}
                                     <button type="submit" class="dropdown-item">
                                         <i class="bi bi-box-arrow-right me-2"></i>Выйти
@@ -548,7 +548,7 @@
                     </div>
                     
                     <!-- Кнопки действий -->
-                    <form id="add-to-cart-form" method="post" action="{% url 'add_to_cart' product.id %}" class="action-buttons">
+                    <form id="add-to-cart-form" method="post" action="{% url 'cart:add_to_cart' product.id %}" class="action-buttons">
     {% csrf_token %}
     <div class="quantity-selector">
         <label for="quantity" style="font-weight: 600;">Количество:</label>
@@ -793,7 +793,7 @@
             const form = document.getElementById('add-to-cart-form');
             const formData = new FormData(form);
             const productId = {{ product.id }};
-            const url = "{% url 'add_to_cart' product.id %}";
+            const url = "{% url 'cart:add_to_cart' product.id %}";
             
             // Добавляем заголовок для AJAX-запроса
             const headers = {

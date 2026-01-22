@@ -73,7 +73,7 @@
                         </a>
                     </li>
                     <li class="list-group-item">
-                        <a href="{% url 'cart_view' %}" class="text-decoration-none d-flex align-items-center">
+                        <a href="{% url 'cart:cart_view' %}" class="text-decoration-none d-flex align-items-center">
                             <i class="bi bi-cart me-2"></i>Корзина
                             <span class="badge bg-primary rounded-pill ms-auto" id="nav-cart-count">0</span>
                         </a>
@@ -364,7 +364,7 @@
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         // Обновление счетчика корзины в навигации
-        fetch('{% url "cart_summary" %}')
+        fetch('{% url "cart:cart_summary" %}')
             .then(response => response.json())
             .then(data => {
                 const navCartCount = document.getElementById('nav-cart-count');

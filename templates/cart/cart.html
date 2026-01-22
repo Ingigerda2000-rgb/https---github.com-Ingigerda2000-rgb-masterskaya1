@@ -84,7 +84,7 @@
                                         {% endif %}
                                     </td>
                                     <td class="text-center">
-                                        <form method="post" action="{% url 'update_cart_item' item.id %}" class="d-inline-block">
+                                        <form method="post" action="{% url 'cart:update_cart_item' item.id %}" class="d-inline-block">
                                             {% csrf_token %}
                                             <div class="input-group input-group-sm" style="width: 120px;">
                                                 <button type="button" class="btn btn-outline-secondary"
@@ -103,7 +103,7 @@
                                         <strong>{{ item.calculate_subtotal }} ₽</strong>
                                     </td>
                                     <td>
-                                        <form method="post" action="{% url 'remove_from_cart' item.id %}">
+                                        <form method="post" action="{% url 'cart:remove_from_cart' item.id %}">
                                             {% csrf_token %}
                                             <button type="submit" class="btn btn-sm btn-outline-danger" title="Удалить">
                                                 <i class="bi bi-trash"></i>
@@ -118,7 +118,7 @@
                 </div>
                 <div class="card-footer bg-white">
                     <div class="d-flex justify-content-between">
-                        <form method="post" action="{% url 'clear_cart' %}">
+                        <form method="post" action="{% url 'cart:clear_cart' %}">
                             {% csrf_token %}
                             <button type="submit" class="btn btn-outline-danger btn-sm">
                                 <i class="bi bi-trash me-1"></i>Очистить корзину
@@ -183,7 +183,7 @@
                         Для оформления заказа исправьте проблемные товары в корзине
                     </p>
                     {% else %}
-                    <a href="{% url 'checkout' %}" class="btn btn-primary w-100 btn-lg mb-3">
+                    <a href="{% url 'cart:checkout' %}" class="btn btn-primary w-100 btn-lg mb-3">
                         <i class="bi bi-bag-check me-2"></i>
                         Оформить заказ
                     </a>

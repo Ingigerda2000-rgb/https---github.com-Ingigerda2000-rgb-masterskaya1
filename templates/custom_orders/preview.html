@@ -1,0 +1,128 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Предпросмотр кастомного заказа - Рукодельная мастерская{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white">
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb mb-0">
+                            <li class="breadcrumb-item"><a href="{% url 'my_custom_orders' %}">Мои кастомные заказы</a></li>
+                            <li class="breadcrumb-item active">Предпросмотр</li>
+                        </ol>
+                    </nav>
+                </div>
+                
+                <div class="card-body">
+                    <h2 class="mb-4 text-center">Предпросмотр кастомного заказа</h2>
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="card h-100">
+                                <div class="card-header">
+                                    <h5 class="mb-0">Информация о заказе</h5>
+                                </div>
+                                <div class="card-body">
+                                    <p><strong>Товар:</strong> {{ specification.template.product.name }}</p>
+                                    <p><strong>Шаблон:</strong> {{ specification.template.name }}</p>
+                                    <p><strong>Дата создания:</strong> {{ specification.created_at|date:"d.m.Y H:i" }}</p>
+                                    <p><strong>Статус:</strong> 
+                                        {% if specification.is_approved %}
+                                        <span class="badge bg-success">Согласовано</span>
+                                        {% else %}
+                                        <span class="badge bg-warning">Ожидает согласования</span>
+                                        {% endif %}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="card h-100">
+                                <div class="card-header">
+                                    <h5 class="mb-0">Стоимость и сроки</h5>
+                                </div>
+                                <div class="card-body">
+                                    <p><strong>Итоговая цена:</strong> 
+                                        <span class="fs-4 text-primary">{{ specification.total_price }} ₽</span>
+                                    </p>
+                                    <p><strong>Срок изготовления:</strong> 
+                                        <span class="fs-5">{{ specification.production_days }} дней</span>
+                                    </p>
+                                    {% if specification.customer_notes %}
+                                    <p><strong>Ваши примечания:</strong></p>
+                                    <p class="text-muted">{{ specification.customer_notes }}</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">Конфигурация заказа</h5>
+                        </div>
+                        <div class="card-body">
+                            {% if summary %}
+                            <ul class="list-group list-group-flush">
+                                {% for item in summary %}
+                                <li class="list-group-item">{{ item }}</li>
+                                {% endfor %}
+                            </ul>
+                            {% else %}
+                            <p class="text-muted text-center">Конфигурация не указана</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">Детали заказа</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p><strong>Номер заказа:</strong> {{ specification.order_item.order.order_number }}</p>
+                                    <p><strong>Общий статус заказа:</strong> 
+                                        <span class="badge {% if specification.order_item.order.status == 'pending' %}bg-warning
+                                                          {% elif specification.order_item.order.status == 'paid' %}bg-success
+                                                          {% elif specification.order_item.order.status == 'processing' %}bg-info
+                                                          {% elif specification.order_item.order.status == 'cancelled' %}bg-danger
+                                                          {% else %}bg-secondary{% endif %}">
+                                            {{ specification.order_item.order.get_status_display }}
+                                        </span>
+                                    </p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p><strong>Общая сумма заказа:</strong> {{ specification.order_item.order.total_amount }} ₽</p>
+                                    <p><strong>Дата заказа:</strong> {{ specification.order_item.order.created_at|date:"d.m.Y H:i" }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {% if specification.order_item.order.status == 'pending' %}
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle me-2"></i>
+                        Этот заказ ожидает оплаты. После оплаты мастер приступит к согласованию деталей.
+                    </div>
+                    {% endif %}
+                    
+                    <div class="text-center">
+                        <a href="{% url 'order_detail' specification.order_item.order.id %}" class="btn btn-primary me-2">
+                            <i class="bi bi-eye me-1"></i>Перейти к заказу
+                        </a>
+                        <a href="{% url 'my_custom_orders' %}" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left me-1"></i>Назад к списку
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

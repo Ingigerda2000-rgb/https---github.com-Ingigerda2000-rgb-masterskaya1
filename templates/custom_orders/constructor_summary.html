@@ -1,0 +1,688 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Шаг 6: Итоговая информация{% endblock %}
+
+{% block content %}
+<style>
+    .summary-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 40px 20px;
+    }
+
+    .step-progress {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        margin-bottom: 30px;
+        flex-wrap: wrap;
+    }
+
+    .step-progress-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .step-progress-number {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        background: #f5f5f5;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+        font-weight: 600;
+        color: #999;
+    }
+
+    .step-progress-number.active {
+        background: #667eea;
+        color: white;
+    }
+
+    .step-progress-label {
+        font-size: 14px;
+        color: #666;
+        display: none;
+    }
+
+    @media (min-width: 768px) {
+        .step-progress-label {
+            display: block;
+        }
+    }
+
+    .step-header {
+        margin-bottom: 40px;
+        text-align: center;
+    }
+
+    .step-title {
+        font-size: 28px;
+        font-weight: 700;
+        color: #333;
+        margin-bottom: 10px;
+    }
+
+    .step-subtitle {
+        color: #666;
+        font-size: 16px;
+        margin-bottom: 20px;
+    }
+
+    .summary-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 30px;
+    }
+
+    @media (min-width: 992px) {
+        .summary-grid {
+            grid-template-columns: 1fr 1fr;
+        }
+    }
+
+    .order-details, .calculation-box {
+        background: white;
+        border-radius: 12px;
+        padding: 25px;
+        border: 1px solid #eee;
+        box-shadow: 0 3px 10px rgba(0,0,0,0.05);
+    }
+
+    .details-section {
+        margin-bottom: 25px;
+    }
+
+    .details-section:last-child {
+        margin-bottom: 0;
+    }
+
+    .section-title {
+        font-size: 18px;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 15px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #f0f0f0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .product-image-placeholder {
+        width: 80px;
+        height: 80px;
+        background: #f8f9fa;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 15px;
+        color: #6c757d;
+        font-size: 24px;
+    }
+
+    .detail-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 0;
+        border-bottom: 1px solid #f0f0f0;
+    }
+
+    .detail-row:last-child {
+        border-bottom: none;
+    }
+
+    .detail-label {
+        font-weight: 500;
+        color: #555;
+    }
+
+    .detail-value {
+        font-weight: 600;
+        color: #333;
+        text-align: right;
+    }
+
+    .material-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 4px 0;
+    }
+
+    .material-name {
+        font-weight: 500;
+    }
+
+    .material-quantity {
+        color: #666;
+        font-size: 14px;
+    }
+
+    .reservation-note {
+        background: #e7f3ff;
+        padding: 15px;
+        border-radius: 8px;
+        margin-top: 20px;
+        font-size: 14px;
+        color: #0066cc;
+        border-left: 4px solid #0066cc;
+    }
+
+    .calculation-box {
+        height: fit-content;
+    }
+
+    .calculation-title {
+        font-size: 20px;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 20px;
+        text-align: center;
+    }
+
+    .calculation-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 0;
+        border-bottom: 1px solid #f0f0f0;
+    }
+
+    .calculation-row:last-child {
+        border-bottom: none;
+    }
+
+    .calculation-label {
+        font-weight: 500;
+        color: #555;
+    }
+
+    .calculation-value {
+        font-weight: 600;
+        color: #333;
+    }
+
+    .calculation-total {
+        background: #f8f9fa;
+        padding: 15px;
+        border-radius: 8px;
+        margin-top: 10px;
+        border: 2px solid #667eea;
+    }
+
+    .calculation-total .calculation-label,
+    .calculation-total .calculation-value {
+        font-size: 18px;
+        font-weight: 700;
+        color: #667eea;
+    }
+
+    /* Убираем timeline-summary с доставкой */
+    .timeline-summary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 12px;
+        padding: 25px;
+        margin-top: 30px;
+    }
+
+    .timeline-title {
+        font-size: 16px;
+        font-weight: 600;
+        margin-bottom: 15px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .timeline-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 0;
+    }
+
+    .timeline-item.total {
+        border-top: 1px solid rgba(255,255,255,0.3);
+        padding-top: 15px;
+        margin-top: 10px;
+        font-weight: 600;
+    }
+
+    /* Обновляем цвета для срочности */
+    .urgency-badge {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 15px;
+        font-size: 12px;
+        font-weight: 600;
+        margin-left: 10px;
+    }
+
+    .urgency-standard { background: #6c757d; color: white; }
+    .urgency-fast { background: #ffc107; color: #212529; }
+    .urgency-express { background: #dc3545; color: white; }
+
+    .action-buttons {
+        display: flex;
+        gap: 15px;
+        justify-content: center;
+        margin-top: 30px;
+    }
+
+    .action-btn {
+        padding: 12px 30px;
+        border-radius: 50px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        border: none;
+        font-size: 16px;
+        min-width: 160px;
+        justify-content: center;
+    }
+
+    .btn-edit {
+        background: #f8f5f2;
+        color: #333;
+        border: 1px solid #ddd;
+    }
+
+    .btn-edit:hover {
+        background: #eee;
+    }
+
+    .btn-confirm {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+
+    .btn-confirm:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+    }
+
+    .btn-confirm:disabled {
+        background: #ccc;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+    }
+
+    @media (max-width: 768px) {
+        .summary-container {
+            padding: 20px 15px;
+        }
+
+        .step-title {
+            font-size: 24px;
+        }
+
+        .action-buttons {
+            flex-direction: column;
+        }
+
+        .action-btn {
+            width: 100%;
+        }
+    }
+</style>
+<div class="summary-container">
+    <!-- Прогресс - теперь 6 шагов -->
+    <div class="step-progress">
+        {% for i in "123456" %}
+        <div class="step-progress-item">
+            <div class="step-progress-number {% if i|add:'0' == current_step %}active{% endif %}">
+                {{ i }}
+            </div>
+            {% if i|add:'0' == current_step %}
+            <div class="step-progress-label">{{ step_display_name }}</div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    
+    <!-- Заголовок -->
+    <div class="step-header">
+        <h1 class="step-title">Итоговая информация</h1>
+        <p class="step-subtitle">Проверьте все детали перед добавлением в корзину</p>
+    </div>
+    
+    <div class="summary-grid">
+        <!-- Левая часть: Детали заказа -->
+        <div class="order-details">
+            <!-- Изделие -->
+            <div class="details-section">
+                <h3 class="section-title">
+                    <i class="bi bi-box"></i> Изделие
+                </h3>
+                {% if template.product.get_main_image %}
+                <img src="{{ template.product.get_main_image.url }}" alt="{{ template.product.name }}"
+                     class="img-fluid rounded" style="max-height: 150px;">
+                {% else %}
+                <div class="product-image-placeholder">
+                    <i class="bi bi-image"></i>
+                </div>
+                {% endif %}
+                <div class="detail-row">
+                    <div class="detail-label">Товар:</div>
+                    <div class="detail-value">{{ template.product.name }} → {{ template.name }}</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Срочность:</div>
+                    <div class="detail-value">
+                        {% if urgency == 'standard' %}
+                        Стандартная
+                        <span class="urgency-badge urgency-standard">Обычный срок</span>
+                        {% elif urgency == 'fast' %}
+                        Ускоренная
+                        <span class="urgency-badge urgency-fast">На 30% быстрее</span>
+                        {% elif urgency == 'express' %}
+                        Экспресс
+                        <span class="urgency-badge urgency-express">На 50% быстрее</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Настройки -->
+            <div class="details-section">
+                <h3 class="section-title">
+                    <i class="bi bi-sliders"></i> Настройки
+                </h3>
+                
+                {% if selected_size %}
+                <div class="detail-row">
+                    <div class="detail-label">Размер:</div>
+                    <div class="detail-value">{{ selected_size.value|default:"M" }}</div>
+                </div>
+                {% endif %}
+                
+                {% if selected_color %}
+                <div class="detail-row">
+                    <div class="detail-label">Цвет:</div>
+                    <div class="detail-value">{{ selected_color.name|default:"Зеленый" }}</div>
+                </div>
+                {% endif %}
+                
+                {% if selected_materials %}
+                <div class="detail-row">
+                    <div class="detail-label">Материал:</div>
+                    <div class="detail-value">
+                        {% for material in selected_materials %}
+                        <div class="material-item">
+                            <span class="material-name">{{ material.name }}</span>
+                            <span class="material-quantity">{{ material.required_amount }} г</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            
+            <!-- Дополнительно -->
+            {% if selected_options %}
+            <div class="details-section">
+                <h3 class="section-title">
+                    <i class="bi bi-plus-circle"></i> Дополнительно
+                </h3>
+                {% for option_id, option in selected_options.items %}
+                {% if option.selected %}
+                <div class="detail-row">
+                    <div class="detail-label">{{ option.name }}:</div>
+                    <div class="detail-value">+{{ option.price }} ₽</div>
+                </div>
+                {% endif %}
+                {% endfor %}
+            </div>
+            {% endif %}
+            
+            <!-- Описание идеи -->
+            {% if description %}
+            <div class="details-section">
+                <h3 class="section-title">
+                    <i class="bi bi-chat-left-text"></i> Описание идеи
+                </h3>
+                <div class="detail-row">
+                    <div class="detail-value" style="font-style: italic;">
+                        "{{ description|truncatewords:30 }}"
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Примечание о резервировании материалов -->
+            <div class="reservation-note">
+                <i class="bi bi-info-circle me-2"></i>
+                <strong>Резервирование материалов:</strong><br>
+                {% if selected_materials %}
+                {% for material in selected_materials %}
+                {{ material.name }}: {{ material.required_amount }} г<br>
+                {% endfor %}
+                {% endif %}
+                Материал будет зарезервирован после подтверждения заказа
+            </div>
+        </div>
+        
+        <!-- Правая часть: Расчет стоимости -->
+        <div class="calculation-box">
+            <h3 class="calculation-title">Расчет стоимости</h3>
+            
+            <!-- Базовая цена -->
+            <div class="calculation-row">
+                <span class="calculation-label">Базовая цена изделия</span>
+                <span class="calculation-value">{{ template.base_price }} ₽</span>
+            </div>
+            
+            <!-- Материалы -->
+            {% if selected_materials %}
+            <div class="calculation-row">
+                <span class="calculation-label">Материалы</span>
+                <span class="calculation-value" id="materialsTotal">{{ total_materials }} ₽</span>
+            </div>
+            {% endif %}
+            
+            <!-- Дополнительные опции -->
+            {% if selected_options %}
+            <div class="calculation-row">
+                <span class="calculation-label">Дополнительные опции</span>
+                <span class="calculation-value" id="optionsTotal">{{ total_options }} ₽</span>
+            </div>
+            {% endif %}
+            
+            <!-- Наценка за срочность -->
+            {% if urgency != 'standard' %}
+            <div class="calculation-row">
+                <span class="calculation-label">
+                    {% if urgency == 'fast' %}
+                    Ускоренное изготовление (+20%)
+                    {% elif urgency == 'express' %}
+                    Экспресс изготовление (+50%)
+                    {% endif %}
+                </span>
+                <span class="calculation-value">
+                    {% if urgency == 'fast' %}
+                    +{{ surcharge_fast|floatformat:0 }} ₽
+                    {% elif urgency == 'express' %}
+                    +{{ surcharge_express|floatformat:0 }} ₽
+                    {% endif %}
+                </span>
+            </div>
+            {% endif %}
+            
+            <!-- Итого -->
+            <div class="calculation-row calculation-total">
+                <span>Итого к оплате:</span>
+                <span id="finalTotal">{{ total_price }} ₽</span>
+            </div>
+            
+            <!-- Таймлайн ТОЛЬКО изготовления -->
+            <div class="timeline-summary">
+                <h4 class="timeline-title">
+                    <i class="bi bi-calendar-check"></i> Срок изготовления
+                </h4>
+                <div class="timeline-item">
+                    <span>Базовое время:</span>
+                    <span>{{ template.base_production_days }} дней</span>
+                </div>
+                
+                {% if selected_materials %}
+                <div class="timeline-item">
+                    <span>Доп. время на материалы:</span>
+                    <span>+{{ additional_days|default:"2" }} дней</span>
+                </div>
+                {% endif %}
+                
+                <div class="timeline-item total">
+                    <span>Общий срок:</span>
+                    <span>{{ production_days }} дней</span>
+                </div>
+                
+                <div class="mt-3 small opacity-75">
+                    <i class="bi bi-info-circle me-1"></i>
+                    Доставка будет рассчитана при оформлении заказа
+                </div>
+            </div>
+            
+            <!-- Кнопки действия -->
+            <div class="action-buttons mt-4">
+                <a href="{% url 'custom_orders:constructor_step' step=current_step|add:'-1' %}" 
+                   class="action-btn btn-edit">
+                    <i class="bi bi-pencil"></i> Редактировать
+                </a>
+                
+                <button class="action-btn btn-confirm" onclick="finalizeOrder()">
+                    <i class="bi bi-cart-plus"></i> Добавить в корзину
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно подтверждения -->
+<div class="modal fade" id="confirmationModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Добавление в корзину</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                <div class="mb-4">
+                    <i class="bi bi-cart-check" style="font-size: 60px; color: #28a745;"></i>
+                </div>
+                <h4 class="mb-3">Индивидуальный заказ готов!</h4>
+                <p class="text-muted mb-4">
+                    Ваше изделие добавлено в корзину. Продолжите оформление заказа.
+                </p>
+                
+                <div class="alert alert-info text-start">
+                    <small>
+                        <i class="bi bi-info-circle me-1"></i>
+                        В корзине вы можете:<br>
+                        • Указать адрес доставки<br>
+                        • Выбрать способ оплаты<br>
+                        • Оформить заказ
+                    </small>
+                </div>
+            </div>
+            <div class="modal-footer justify-content-center">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    Продолжить настройку
+                </button>
+                <button type="button" class="btn btn-primary" onclick="finalizeOrder()">
+                    <i class="bi bi-cart me-2"></i>Перейти в корзину
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Финальное оформление заказа - теперь просто добавление в корзину
+function finalizeOrder() {
+    // Проверяем, авторизован ли пользователь
+    {% if not request.user.is_authenticated %}
+        alert('Для добавления в корзину необходимо авторизоваться');
+        window.location.href = '{% url "login" %}?next={% url "custom_orders:constructor_step" step=6 %}';
+        return;
+    {% endif %}
+
+    // Показываем индикатор загрузки
+    const confirmBtn = document.querySelector('.btn-confirm');
+    const originalText = confirmBtn.innerHTML;
+    confirmBtn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Добавление...';
+    confirmBtn.disabled = true;
+    
+    // Отправляем запрос на добавление в корзину
+    fetch("{% url 'custom_orders:finalize_custom_order' %}", {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        }
+    })
+    .then(response => {
+        if (response.status === 302 || response.status === 401) {
+            window.location.href = '{% url "accounts:login" %}?next={% url "custom_orders:constructor_step" step=6 %}';
+            return null;
+        }
+        if (!response.ok) {
+            throw new Error('HTTP ' + response.status);
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data === null) return; // redirected
+        if (data.success) {
+            // Показываем успешное сообщение
+            alert('Индивидуальный заказ добавлен в корзину!');
+            window.location.href = data.redirect_url || '/cart/';
+        } else {
+            // Показываем ошибку
+            alert('Ошибка: ' + data.error);
+            confirmBtn.innerHTML = originalText;
+            confirmBtn.disabled = false;
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Произошла ошибка при добавлении в корзину');
+        confirmBtn.innerHTML = originalText;
+        confirmBtn.disabled = false;
+    });
+}
+
+// Показываем модальное окно подтверждения
+function confirmOrder() {
+    // Проверяем, авторизован ли пользователь
+    {% if not request.user.is_authenticated %}
+        alert('Для добавления в корзину необходимо авторизоваться');
+        window.location.href = '{% url "login" %}?next={% url "custom_orders:constructor_step" step=6 %}';
+        return;
+    {% endif %}
+    
+    // Показываем модальное окно
+    const modal = new bootstrap.Modal(document.getElementById('confirmationModal'));
+    modal.show();
+}
+
+// Инициализация
+document.addEventListener('DOMContentLoaded', function() {
+    // Обновляем итоговую стоимость
+    const totalPrice = {{ total_price }};
+    document.getElementById('finalTotal').textContent = totalPrice + ' ₽';
+});
+</script>
+{% endblock %}

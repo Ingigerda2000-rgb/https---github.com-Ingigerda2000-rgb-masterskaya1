@@ -19,6 +19,35 @@ class Category(models.Model):
     def __str__(self):
         return self.name
 
+    def get_all_descendant_ids(self):
+        """Получение ID всех потомков включая себя"""
+        ids = [self.id]
+        for child in self.children.all():
+            ids.extend(child.get_all_descendant_ids())
+        return ids
+
+class Technique(models.Model):
+    """Модель для техник рукоделия"""
+    name = models.CharField('Название техники', max_length=100, unique=True)
+    slug = models.SlugField('Slug', max_length=100, unique=True)
+    description = models.TextField('Описание', blank=True)
+    icon = models.CharField('Иконка', max_length=50, blank=True, 
+                           help_text='Название иконки Bootstrap, например: bi-scissors')
+    created_at = models.DateTimeField('Дата создания', auto_now_add=True)
+    
+    class Meta:
+        verbose_name = 'Техника'
+        verbose_name_plural = 'Техники'
+        ordering = ['name']
+    
+    def __str__(self):
+        return self.name
+    
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            from django.utils.text import slugify
+            self.slug = slugify(self.name)
+        super().save(*args, **kwargs)
 class Product(models.Model):
     STATUS_CHOICES = [
         ('active', 'Активен'),
@@ -128,6 +157,10 @@ class Product(models.Model):
             main_image = ProductImage.objects.filter(product=self, is_main=True).first()
             if main_image:
                 return main_image.image
+            # Если нет основного изображения, вернуть первое изображение
+            first_image = ProductImage.objects.filter(product=self).first()
+            if first_image:
+                return first_image.image
         except:
             pass
         return None
@@ -238,3 +271,17 @@ class ProductAttribute(models.Model):
     
     def __str__(self):
         return f"{self.name}: {self.value}"
+
+class Favorite(models.Model):
+    """Модель для избранных товаров пользователя"""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='favorites')
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='favorited_by')
+    added_at = models.DateTimeField('Дата добавления', auto_now_add=True)
+    
+    class Meta:
+        verbose_name = 'Избранное'
+        verbose_name_plural = 'Избранное'
+        unique_together = ['user', 'product']  # Пользователь может добавить товар в избранное только один раз
+    
+    def __str__(self):
+        return f"{self.user.email} - {self.product.name}"

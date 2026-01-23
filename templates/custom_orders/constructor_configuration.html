@@ -1,0 +1,861 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Шаг 3: Настройка изделия{% endblock %}
+
+{% block extra_css %}
+<style>
+    .step-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 40px 20px;
+    }
+    
+    .step-header {
+        margin-bottom: 40px;
+    }
+    
+    .step-title {
+        font-size: 28px;
+        font-weight: 700;
+        color: #333;
+        margin-bottom: 10px;
+    }
+    
+    .step-subtitle {
+        color: #666;
+        font-size: 16px;
+        margin-bottom: 20px;
+    }
+    
+    .configuration-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 30px;
+        margin-bottom: 40px;
+    }
+    
+    .config-section {
+        background: white;
+        border-radius: 12px;
+        padding: 25px;
+        border: 1px solid #eee;
+        box-shadow: 0 3px 10px rgba(0,0,0,0.05);
+    }
+    
+    .section-title {
+        font-size: 18px;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #f0f0f0;
+    }
+    
+    .form-group {
+        margin-bottom: 20px;
+    }
+    
+    .form-label {
+        display: block;
+        font-weight: 500;
+        margin-bottom: 8px;
+        color: #555;
+    }
+    
+    .form-options {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+    
+    .form-option {
+        flex: 1;
+        min-width: 120px;
+    }
+    
+    .form-radio {
+        display: none;
+    }
+    
+    .form-radio + label {
+        display: block;
+        padding: 12px 15px;
+        border: 2px solid #eee;
+        border-radius: 8px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s;
+        background: white;
+        font-weight: 500;
+    }
+    
+    .form-radio:checked + label {
+        border-color: #667eea;
+        background: rgba(102, 126, 234, 0.1);
+        color: #667eea;
+        font-weight: 600;
+    }
+    
+    .size-option .form-radio + label:after {
+        content: attr(data-multiplier);
+        display: block;
+        font-size: 12px;
+        color: #999;
+        margin-top: 5px;
+        font-weight: normal;
+    }
+    
+    .color-options {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+    
+    .color-option {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        cursor: pointer;
+        border: 1px solid #ccc;
+        transition: all 0.3s;
+        position: relative;
+    }
+
+    .color-option:hover {
+        transform: scale(1.1);
+    }
+
+    .color-option.selected {
+        border: 3px solid #333;
+        transform: scale(1.1);
+    }
+
+    .color-option.selected:after {
+        content: '✓';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        color: rgba(255, 255, 255, 0.8);
+        font-weight: bold;
+        background: rgba(0, 0, 0, 0.3);
+        border-radius: 50%;
+        width: 20px;
+        height: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-shadow: none;
+    }
+
+    .custom-color-option {
+        width: 80px;
+        height: auto;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        padding: 8px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+        background: white;
+        position: relative;
+    }
+
+    .custom-color-option:hover {
+        transform: scale(1.05);
+    }
+
+    .custom-color-option.selected {
+        border: 3px solid #333;
+        transform: scale(1.05);
+    }
+
+    .custom-color-text {
+        font-size: 12px;
+        font-weight: 600;
+        color: #333;
+        text-align: center;
+    }
+
+    .custom-color-circle {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        border: 1px solid #ccc;
+    }
+
+    .custom-color-desc {
+        font-size: 10px;
+        color: #666;
+        text-align: center;
+        line-height: 1.2;
+    }
+
+    .custom-color-option.selected .custom-color-circle:after {
+        content: '✓';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        color: rgba(255, 255, 255, 0.8);
+        font-weight: bold;
+        background: rgba(0, 0, 0, 0.3);
+        border-radius: 50%;
+        width: 20px;
+        height: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-shadow: none;
+    }
+    
+    .materials-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 15px;
+    }
+    
+    .material-card {
+        border: 2px solid #eee;
+        border-radius: 8px;
+        padding: 15px;
+        cursor: pointer;
+        transition: all 0.3s;
+        background: white;
+    }
+    
+    .material-card:hover {
+        border-color: #ddd;
+        transform: translateY(-2px);
+    }
+    
+    .material-card.selected {
+        border-color: #667eea;
+        background: rgba(102, 126, 234, 0.05);
+    }
+    
+    .material-card.disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        position: relative;
+    }
+    
+    .material-card.disabled:after {
+        content: 'Недостаточно';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: rgba(255, 0, 0, 0.8);
+        color: white;
+        padding: 2px 8px;
+        border-radius: 10px;
+        font-size: 11px;
+    }
+    
+    .material-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: start;
+        margin-bottom: 10px;
+    }
+    
+    .material-name {
+        font-weight: 600;
+        font-size: 14px;
+    }
+    
+    .material-price {
+        font-weight: 700;
+        color: #667eea;
+        font-size: 16px;
+    }
+    
+    .material-info {
+        font-size: 12px;
+        color: #666;
+        margin-bottom: 5px;
+    }
+    
+    .material-stock {
+        font-size: 11px;
+        color: #999;
+        display: flex;
+        justify-content: space-between;
+    }
+    
+    .material-required {
+        background: #f0f7ff;
+        padding: 10px;
+        border-radius: 6px;
+        margin-top: 20px;
+        font-size: 14px;
+        color: #555;
+    }
+    
+    .material-required strong {
+        color: #667eea;
+    }
+    
+    .info-panel {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 30px;
+    }
+    
+    .info-title {
+        font-size: 16px;
+        font-weight: 600;
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .info-content {
+        font-size: 14px;
+        opacity: 0.9;
+    }
+    
+    .step-navigation {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 40px;
+        padding-top: 20px;
+        border-top: 1px solid #eee;
+    }
+    
+    .nav-btn {
+        padding: 12px 30px;
+        border-radius: 50px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        border: none;
+        font-size: 16px;
+    }
+    
+    .btn-back {
+        background: #f8f5f2;
+        color: #333;
+        border: 1px solid #ddd;
+    }
+    
+    .btn-back:hover {
+        background: #eee;
+    }
+    
+    .btn-next {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+    
+    .btn-next:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+    }
+    
+    .btn-next:disabled {
+        background: #ccc;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+    }
+    
+    .step-progress {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        margin-bottom: 30px;
+        flex-wrap: wrap;
+    }
+    
+    .step-progress-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .step-progress-number {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        background: #f5f5f5;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+        font-weight: 600;
+        color: #999;
+    }
+    
+    .step-progress-number.active {
+        background: #667eea;
+        color: white;
+    }
+    
+    .step-progress-label {
+        font-size: 14px;
+        color: #666;
+        display: none;
+    }
+    
+    @media (min-width: 768px) {
+        .step-progress-label {
+            display: block;
+        }
+    }
+    
+    .color-red { background-color: #FF0000; }
+    .color-blue { background-color: #0000FF; }
+    .color-green { background-color: #00FF00; }
+    .color-black { background-color: #000000; }
+    .color-white { background-color: #FFFFFF; border: 1px solid #ddd; }
+    .color-gray { background-color: #808080; }
+    .color-yellow { background-color: #FFFF00; }
+    .color-purple { background-color: #800080; }
+    .color-pink { background-color: #FFC0CB; }
+    .color-brown { background-color: #A52A2A; }
+    .color-orange { background-color: #FFA500; }
+    .color-teal { background-color: #008080; }
+    
+    .urgency-badge {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 15px;
+        font-size: 12px;
+        font-weight: 600;
+        margin-left: 10px;
+    }
+    
+    .urgency-standard { background: #6c757d; color: white; }
+    .urgency-fast { background: #ffc107; color: #212529; }
+    .urgency-express { background: #dc3545; color: white; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="step-container">
+    <!-- Индикатор прогресса -->
+    <div class="step-progress">
+        {% for i in "123456" %}
+        <div class="step-progress-item">
+            <div class="step-progress-number {% if i|add:'0' == current_step %}active{% endif %}">
+                {{ i }}
+            </div>
+            {% if i|add:'0' == current_step %}
+            <div class="step-progress-label">{{ step_display_name }}</div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    
+    <!-- Информационная панель -->
+    <div class="info-panel">
+        <div class="info-title">
+            <i class="bi bi-info-circle"></i>
+            Настройка изделия
+        </div>
+        <div class="info-content">
+            Выберите форму, размер, цвет, материал и срочность изготовления.
+        </div>
+    </div>
+    
+    <!-- Заголовок шага -->
+    <div class="step-header">
+        <h1 class="step-title">Настройка изделия</h1>
+        <p class="step-subtitle">Выберите параметры для вашего изделия</p>
+    </div>
+    
+    <!-- Конфигурация -->
+    <div class="configuration-grid">
+        
+        <!-- Размер -->
+        <div class="config-section">
+            <h3 class="section-title">Размер</h3>
+            <div class="form-group">
+                <div class="form-options">
+                    {% for size in sizes %}
+                    <div class="form-option size-option">
+                        <input type="radio" 
+                               name="size" 
+                               id="size-{{ size.value }}" 
+                               value="{{ size.value }}" 
+                               class="form-radio"
+                               data-multiplier="×{{ size.multiplier }}"
+                               {% if size.value == 'M' %}checked{% endif %}>
+                        <label for="size-{{ size.value }}" 
+                               data-multiplier="×{{ size.multiplier }}">
+                            {{ size.label }}
+                        </label>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Цвет -->
+        <div class="config-section">
+            <h3 class="section-title">Цвет</h3>
+            <div class="form-group">
+                <div class="color-options" id="colorOptions">
+                    {% for color in colors %}
+                    {% if color.name == 'Свой вариант' %}
+                    <div class="color-option custom-color-option"
+                         data-color-id="{{ color.id }}"
+                         data-color-name="{{ color.name }}"
+                         onclick="selectColor(this)"
+                         title="{{ color.name }}">
+                        <div class="custom-color-text">Свой вариант</div>
+                        <div class="custom-color-circle" style="background-color: {{ color.hex }};"></div>
+                        <div class="custom-color-desc">(более подробно в следующем шаге)</div>
+                    </div>
+                    {% else %}
+                    <div class="color-option"
+                         style="background-color: {{ color.hex }};"
+                         data-color-id="{{ color.id }}"
+                         data-color-name="{{ color.name }}"
+                         onclick="selectColor(this)"
+                         title="{{ color.name }}">
+                    </div>
+                    {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Срочность изготовления -->
+        <div class="config-section">
+            <h3 class="section-title">
+                <i class="bi bi-clock"></i> Срочность изготовления
+            </h3>
+            <div class="form-group">
+                <div class="form-options">
+                    <!-- Стандартный -->
+                    <div class="form-option">
+                        <input type="radio" 
+                               name="urgency" 
+                               id="urgency-standard" 
+                               value="standard" 
+                               class="form-radio"
+                               checked
+                               data-multiplier="1.0">
+                        <label for="urgency-standard">
+                            Стандартный
+                            <small class="d-block text-muted">Базовое время изготовления</small>
+                            <small class="d-block fw-bold" id="standard-time">{{ base_days }} дней</small>
+                        </label>
+                    </div>
+
+                    <!-- Ускоренный -->
+                    <div class="form-option">
+                        <input type="radio"
+                               name="urgency"
+                               id="urgency-fast"
+                               value="fast"
+                               class="form-radio"
+                               data-multiplier="0.7">
+                        <label for="urgency-fast">
+                            Ускоренный
+                            <small class="d-block text-muted">На 30% быстрее</small>
+                            <small class="d-block fw-bold" id="fast-time">{{ fast_days }} дней</small>
+                            <small class="d-block text-danger">+20% к стоимости</small>
+                        </label>
+                    </div>
+
+                    <!-- Экспресс -->
+                    <div class="form-option">
+                        <input type="radio"
+                               name="urgency"
+                               id="urgency-express"
+                               value="express"
+                               class="form-radio"
+                               data-multiplier="0.5">
+                        <label for="urgency-express">
+                            Экспресс
+                            <small class="d-block text-muted">На 50% быстрее</small>
+                            <small class="d-block fw-bold" id="express-time">{{ express_days }} дней</small>
+                            <small class="d-block text-danger">+50% к стоимости</small>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Материалы -->
+    <div class="config-section">
+        <h3 class="section-title">Материал</h3>
+
+    <div class="materials-grid" id="materialsGrid">
+            {% for material in materials %}
+            <div class="material-card"
+                 data-material-id="{{ material.id }}"
+                 data-material-name="{{ material.name }}"
+                 data-material-price="{{ material.price_per_unit }}"
+                 data-material-stock="{{ material.current_quantity }}"
+                 data-material-unit="{{ material.unit }}"
+                 data-required-quantity="{{ material.required_quantity }}"
+                 onclick="selectMaterial(this)">
+                <div class="material-header">
+                    <div class="material-name">{{ material.name }}</div>
+                    <div class="material-price" id="price-{{ material.id }}">
+                        {{ material.price_per_unit|floatformat:0 }} ₽/{{ material.get_unit_display }}
+                    </div>
+                </div>
+                <div class="material-info">
+                    Доступно: {{ material.current_quantity }} {{ material.get_unit_display }}
+                </div>
+                <div class="material-info">
+                    Требуется: <span id="required-{{ material.id }}">{{ material.required_quantity }}</span> {{ material.get_unit_display }}
+                </div>
+                <div class="material-stock">
+                    <span>Стоимость за изделие:</span>
+                    <span class="fw-bold" id="total-price-{{ material.id }}">
+                        {{ material.calculated_price|floatformat:0 }} ₽
+                    </span>
+                </div>
+            </div>
+            {% empty %}
+            <p class="text-center">Нет доступных материалов</p>
+            {% endfor %}
+        </div>
+    </div>
+    
+    <!-- Навигация -->
+    <div class="step-navigation">
+        <a href="{% url 'custom_orders:constructor_step' step=current_step|add:'-1' %}" 
+           class="nav-btn btn-back">
+            <i class="bi bi-arrow-left"></i>Назад
+        </a>
+        
+        <button class="nav-btn btn-next" id="nextBtn" onclick="saveConfiguration()">
+            Далее <i class="bi bi-arrow-right"></i>
+        </button>
+    </div>
+</div>
+
+<script>
+// Данные размеров
+const sizes = [
+    {value: 'XS', label: 'XS', multiplier: 0.8},
+    {value: 'S', label: 'S', multiplier: 0.9},
+    {value: 'M', label: 'M', multiplier: 1.0},
+    {value: 'L', label: 'L', multiplier: 1.1},
+    {value: 'XL', label: 'XL', multiplier: 1.2}
+];
+
+// Данные цветов
+const colors = [
+    {id: 1, name: 'Белый', hex: '#FFFFFF'},
+    {id: 2, name: 'Черный', hex: '#000000'},
+    {id: 3, name: 'Серый', hex: '#808080'},
+    {id: 4, name: 'Бежевый', hex: '#F5F5DC'},
+    {id: 5, name: 'Коричневый', hex: '#A52A2A'},
+    {id: 6, name: 'Красный', hex: '#FF0000'},
+    {id: 7, name: 'Розовый', hex: '#FFC0CB'},
+    {id: 8, name: 'Фиолетовый', hex: '#800080'},
+    {id: 9, name: 'Синий', hex: '#0000FF'},
+    {id: 10, name: 'Зеленый', hex: '#00FF00'},
+    {id: 11, name: 'Желтый', hex: '#FFFF00'},
+    {id: 12, name: 'Оранжевый', hex: '#FFA500'},
+    {id: 13, name: 'Свой вариант', hex: '#CCCCCC'}
+];
+
+// Текущие выборы
+let selectedColor = null;
+let selectedMaterial = null;
+let selectedSize = 'M';
+let selectedUrgency = 'standard';
+let sizeMultiplier = 1.0;
+let urgencyMultiplier = 1.0;
+const baseMaterialRequired = 840;
+
+// Обновляем требуемое количество материала при изменении размера
+document.querySelectorAll('input[name="size"]').forEach(radio => {
+    radio.addEventListener('change', function() {
+        selectedSize = this.value;
+        sizeMultiplier = parseFloat(this.dataset.multiplier) || 1.0;
+
+        // Обновляем требуемое количество для всех материалов
+        document.querySelectorAll('.material-card').forEach(card => {
+            const baseRequired = parseFloat(card.dataset.requiredQuantity) || 1;
+            const requiredAmount = Math.round(baseRequired * sizeMultiplier);
+            const requiredElement = card.querySelector(`#required-${card.dataset.materialId}`);
+            if (requiredElement) {
+                requiredElement.textContent = requiredAmount;
+            }
+        });
+
+        // Обновляем стоимость выбранного материала
+        if (selectedMaterial) {
+            const baseRequired = parseFloat(selectedMaterial.dataset.requiredQuantity) || 1;
+            const requiredAmount = Math.round(baseRequired * sizeMultiplier);
+            updateMaterialPrice(selectedMaterial, requiredAmount);
+        }
+    });
+});
+
+// Обработчик срочности
+document.querySelectorAll('input[name="urgency"]').forEach(radio => {
+    radio.addEventListener('change', function() {
+        selectedUrgency = this.value;
+        urgencyMultiplier = parseFloat(this.dataset.multiplier) || 1.0;
+        
+        // Обновляем отображение дней
+        const baseDays = {{ template.base_production_days }};
+        const urgencyDays = Math.max(Math.round(baseDays * urgencyMultiplier), 1);
+        
+        // Обновляем подписи
+        document.getElementById('standard-time').textContent = baseDays + ' дней';
+        document.getElementById('fast-time').textContent = Math.round(baseDays * 0.7) + ' дней';
+        document.getElementById('express-time').textContent = Math.round(baseDays * 0.5) + ' дней';
+    });
+});
+
+// Выбор цвета
+function selectColor(colorElement) {
+    document.querySelectorAll('.color-option').forEach(c => {
+        c.classList.remove('selected');
+    });
+    
+    colorElement.classList.add('selected');
+    selectedColor = {
+        id: colorElement.dataset.colorId,
+        name: colorElement.dataset.colorName
+    };
+}
+
+// Выбор материала
+function selectMaterial(materialElement) {
+    document.querySelectorAll('.material-card').forEach(m => {
+        m.classList.remove('selected');
+    });
+
+    materialElement.classList.add('selected');
+    selectedMaterial = materialElement;
+
+    const materialId = materialElement.dataset.materialId;
+    const materialName = materialElement.dataset.materialName;
+    const materialPrice = parseFloat(materialElement.dataset.materialPrice);
+    const materialStock = parseFloat(materialElement.dataset.materialStock);
+    const baseRequired = parseFloat(materialElement.dataset.requiredQuantity) || 1;
+
+    const requiredAmount = Math.round(baseRequired * sizeMultiplier);
+
+    if (materialStock < requiredAmount) {
+        const unit = materialElement.dataset.materialUnit || 'г';
+        alert(`Недостаточно материала "${materialName}". Доступно: ${materialStock} ${unit}, требуется: ${requiredAmount} ${unit}`);
+        materialElement.classList.remove('selected');
+        selectedMaterial = null;
+        return;
+    }
+
+    updateMaterialPrice(materialElement, requiredAmount);
+}
+
+// Обновление цены материала
+function updateMaterialPrice(materialElement, requiredAmount) {
+    const materialId = materialElement.dataset.materialId;
+    const materialPrice = parseFloat(materialElement.dataset.materialPrice);
+    const totalPrice = Math.round(materialPrice * requiredAmount);
+    
+    const totalPriceElement = document.getElementById(`total-price-${materialId}`);
+    if (totalPriceElement) {
+        totalPriceElement.textContent = `${totalPrice} ₽`;
+    }
+}
+
+// Сохранение конфигурации
+function saveConfiguration() {
+    if (!selectedColor) {
+        alert('Пожалуйста, выберите цвет');
+        return;
+    }
+
+    if (!selectedMaterial) {
+        alert('Пожалуйста, выберите материал');
+        return;
+    }
+
+    const materialId = selectedMaterial.dataset.materialId;
+    const materialName = selectedMaterial.dataset.materialName;
+    const materialPrice = parseFloat(selectedMaterial.dataset.materialPrice);
+    const baseRequired = parseFloat(selectedMaterial.dataset.requiredQuantity) || 1;
+    const requiredAmount = Math.round(baseRequired * sizeMultiplier);
+    const totalMaterialPrice = Math.round(materialPrice * requiredAmount);
+
+    const configData = {
+        size: selectedSize,
+        color: selectedColor,
+        materials: [{
+            id: materialId,
+            name: materialName,
+            price: totalMaterialPrice,
+            required_amount: requiredAmount,
+            additional_days: 2
+        }],
+        urgency: selectedUrgency,
+        urgency_multiplier: urgencyMultiplier
+    };
+
+    fetch("{% url 'custom_orders:save_constructor_step' %}", {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        },
+        body: JSON.stringify({
+            step: 'configuration',
+            data: configData
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            window.location.href = "{% url 'custom_orders:constructor_step' step=current_step|add:1 %}";
+        } else {
+            alert('Ошибка сохранения: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Произошла ошибка при сохранении');
+    });
+}
+
+// Инициализация
+document.addEventListener('DOMContentLoaded', function() {
+    // Восстанавливаем выбранную срочность
+    const savedUrgency = "{{ selected_urgency }}";
+    if (savedUrgency && savedUrgency !== 'standard') {
+        const urgencyRadio = document.getElementById(`urgency-${savedUrgency}`);
+        if (urgencyRadio) {
+            urgencyRadio.checked = true;
+            urgencyRadio.dispatchEvent(new Event('change'));
+        }
+    }
+    
+    // Выбираем первый цвет
+    const firstColor = document.querySelector('.color-option');
+    if (firstColor) {
+        selectColor(firstColor);
+    }
+    
+    // Выбираем первый доступный материал
+    const firstAvailableMaterial = document.querySelector('.material-card:not(.disabled)');
+    if (firstAvailableMaterial) {
+        selectMaterial(firstAvailableMaterial);
+    }
+});
+</script>
+{% endblock %}

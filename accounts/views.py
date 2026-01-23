@@ -74,7 +74,7 @@ def home_view(request):
     categories = Category.objects.all()
     techniques = Product.objects.filter(status='active').exclude(
         technique__isnull=True
-    ).exclude(technique='').values_list('technique', flat=True).distinct()
+    ).exclude(technique='').values('technique').distinct().order_by('technique').values_list('technique', flat=True)
 
     context = {
         'products': products_page,
@@ -238,11 +238,12 @@ def profile(request):
     
     # Получаем заказы пользователя
     from orders.models import Order
-    orders = Order.objects.filter(user=request.user).order_by('-created_at')[:5]
+    orders = Order.objects.filter(user=request.user).order_by('-created_at')
     
     context = {
         'form': form,
-        'title': 'Мой профиль'
+        'title': 'Мой профиль',
+        'orders': orders
     }
     return render(request, 'accounts/profile.html', context)
 
@@ -290,11 +291,13 @@ def master_dashboard(request):
         total_income = sum(order.total_amount for order in completed_orders)
         
         # Материалы мастера
-        materials_count = Material.objects.filter(master=request.user).count()
-        
+        materials = Material.objects.filter(master=request.user, is_active=True).order_by('-created_at')
+        materials_count = materials.count()
+        materials_display = materials[:5]
+
         # Отзывы на товары мастера
         reviews_count = Review.objects.filter(product__master=request.user).count()
-        
+
         # Список заказов для отображения (если нужен)
         recent_orders = orders.order_by('-created_at')[:5]
         
@@ -306,6 +309,7 @@ def master_dashboard(request):
         total_orders = 0
         pending_orders = 0
         total_income = 0
+        materials = []
         materials_count = 0
         reviews_count = 0
         recent_orders = []
@@ -318,7 +322,8 @@ def master_dashboard(request):
         'total_income': total_income,
         'materials_count': materials_count,
         'reviews_count': reviews_count,
-        'products': products[:5],  # Последние 5 товаров
+        'products': products,  # Все товары мастера
+        'materials': materials_display,  # Последние 5 материалов
         'recent_orders': recent_orders,
     }
     return render(request, 'accounts/master_dashboard.html', context)

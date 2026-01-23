@@ -1,0 +1,410 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load order_filters %}
+
+{% block title %}Заказ #{{ order.id }} - Детализация этапов{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Хлебные крошки -->
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'home' %}">Главная</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'orders:order_list' %}">Мои заказы</a></li>
+            <li class="breadcrumb-item active">Заказ #{{ order.id }}</li>
+        </ol>
+    </nav>
+    
+    <div class="row">
+        <div class="col-md-8">
+            <!-- Заголовок и статус -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1>Заказ #{{ order.id }}</h1>
+                    <p class="text-muted mb-0">Создан: {{ order.created_at|date:"d.m.Y H:i" }}</p>
+                </div>
+                
+                <!-- Быстрые действия -->
+                <div class="btn-group">
+                    {% if user == order.user and order.can_be_cancelled_by_user %}
+                    <button type="button" class="btn btn-outline-danger" 
+                            data-bs-toggle="modal" data-bs-target="#cancelModal">
+                        <i class="bi bi-x-circle"></i> Отменить
+                    </button>
+                    {% endif %}
+
+                    {% if user.is_staff or user.is_master and order.is_master_order %}
+                    <a href="{% url 'orders:update_order_status' order.id %}" class="btn btn-primary">
+                        <i class="bi bi-pencil-square"></i> Изменить статус
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Статус заказа -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Статус заказа</h5>
+                </div>
+                <div class="card-body">
+                    {% include "includes/order_status.html" with order=order show_progress=True %}
+                </div>
+            </div>
+            
+            <!-- История статусов (последние 5) -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Последние изменения</h5>
+                </div>
+                <div class="card-body">
+                    {% if status_history %}
+                    <div class="timeline-simple">
+                        {% for history in status_history %}
+                        <div class="timeline-item-simple">
+                            <div class="timeline-marker-simple bg-{{ history.status_color }}"></div>
+                            <div class="timeline-content-simple">
+                                <div class="d-flex justify-content-between">
+                                    <h6 class="mb-1">{{ history.get_status_display }}</h6>
+                                    <small class="text-muted">{{ history.changed_at|date:"d.m.Y H:i" }}</small>
+                                </div>
+                                {% if history.comment %}
+                                <p class="mb-1 small">{{ history.comment }}</p>
+                                {% endif %}
+                                {% if history.photo_report %}
+                                <a href="{{ history.photo_report.url }}" class="d-inline-block mt-1" data-fancybox="gallery">
+                                    <img src="{{ history.photo_report.url }}" alt="Фотоотчёт" 
+                                         class="img-thumbnail" style="max-height: 80px;">
+                                </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    
+                    {% if order.status_history.count > 5 %}
+                    <div class="text-center mt-3">
+                        <a href="{% url 'orders:order_timeline' order.id %}" class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-clock-history"></i> Вся история ({{ order.status_history.count }} событий)
+                        </a>
+                    </div>
+                    {% endif %}
+                    
+                    {% else %}
+                    <p class="text-muted text-center mb-0">История изменений отсутствует</p>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Состав заказа -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Состав заказа</h5>
+                </div>
+                <div class="card-body">
+                   {% for item in order.items.all %}
+<div class="row mb-3 pb-3 border-bottom">
+    <div class="col-2">
+        {% with main_image=item.product.get_main_image %}
+            {% if main_image %}
+            <img src="{{ main_image.url }}" 
+                 alt="{{ item.product.name }}" 
+                 class="img-fluid rounded" 
+                 style="max-height: 80px; object-fit: cover;">
+            {% else %}
+            <div class="bg-light rounded d-flex align-items-center justify-content-center" 
+                 style="width: 80px; height: 80px;">
+                <i class="bi bi-image text-muted fs-4"></i>
+            </div>
+            {% endif %}
+        {% endwith %}
+    </div>
+    <div class="col-6">
+        <h6 class="mb-1">{{ item.product.name }}</h6>
+        <p class="text-muted mb-1">Количество: {{ item.quantity }}</p>
+        
+        {% if item.custom_specification %}
+        <p class="text-muted mb-1 small">
+            <i class="bi bi-gear me-1"></i> Индивидуальный заказ
+        </p>
+        {% endif %}
+        
+        {% if item.product.master %}
+        <p class="mb-0 small">
+            <i class="bi bi-person-circle me-1"></i>
+            Мастер: {{ item.product.master.get_full_name|default:item.product.master.email }}
+        </p>
+        {% endif %}
+    </div>
+    <div class="col-4 text-end">
+        <div class="mb-1">
+            <strong>{{ item.price }} ₽ × {{ item.quantity }}</strong>
+        </div>
+        <div class="text-success fw-bold">
+            {{ item.subtotal }} ₽
+        </div>
+    </div>
+</div>
+{% endfor %}
+                    
+                    <div class="row mt-3 pt-3 border-top">
+                        <div class="col-8">
+                            <h5>Итого:</h5>
+                        </div>
+                        <div class="col-4 text-end">
+                            <h4>{{ order.total_amount }} ₽</h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Боковая панель -->
+        <div class="col-md-4">
+            <!-- Информация о доставке -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Доставка и контакты</h5>
+                </div>
+                <div class="card-body">
+                    <h6>Получатель</h6>
+                    <p class="mb-3">{{ order.customer_name }}</p>
+                    
+                    <h6>Контакты</h6>
+                    <p class="mb-1">
+                        <i class="bi bi-telephone"></i> {{ order.customer_phone }}
+                    </p>
+                    <p class="mb-3">
+                        <i class="bi bi-envelope"></i> {{ order.customer_email }}
+                    </p>
+                    
+                    <h6>Адрес доставки</h6>
+                    <p class="mb-3">{{ order.delivery_address }}</p>
+                    
+                    {% if order.tracking_number %}
+                    <div class="alert alert-info">
+                        <h6><i class="bi bi-truck"></i> Трек-номер</h6>
+                        <div class="input-group">
+                            <input type="text" class="form-control" value="{{ order.tracking_number }}" 
+                                   readonly id="trackingNumber">
+                            <button class="btn btn-outline-secondary" type="button" onclick="copyTrackingNumber()">
+                                <i class="bi bi-clipboard"></i>
+                            </button>
+                        </div>
+                        <a href="https://www.pochta.ru/tracking#{{ order.tracking_number }}" 
+                           target="_blank" class="btn btn-sm btn-outline-primary mt-2 w-100">
+                            <i class="bi bi-search"></i> Отследить
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Быстрое управление для мастера -->
+            {% if user.is_staff or user.is_master and order.is_master_order %}
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Быстрое управление</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" action="{% url 'orders:update_status_ajax' order.id %}" 
+                          id="quickStatusForm" class="ajax-form">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label class="form-label">Сменить статус на:</label>
+                            <select class="form-select" name="status" id="quickStatusSelect">
+                                <option value="">Выберите статус...</option>
+                                {% for code, label in ORDER_STATUS_CHOICES %}
+                                    {% if code in order.get_next_possible_statuses %}
+                                    <option value="{{ code }}">{{ label }}</option>
+                                    {% endif %}
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Комментарий (необязательно)</label>
+                            <textarea class="form-control" name="comment" rows="2"></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100" id="updateStatusBtn">
+                            Обновить статус
+                        </button>
+                    </form>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно отмены -->
+<div class="modal fade" id="cancelModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Отмена заказа #{{ order.id }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="{% url 'orders:cancel_order' order.id %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <p>Вы уверены, что хотите отменить заказ?</p>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Причина отмены:</label>
+                        <select name="reason" class="form-select" required>
+                            <option value="">Выберите причину...</option>
+                            <option value="changed_mind">Передумал(а) покупать</option>
+                            <option value="found_cheaper">Нашел(а) дешевле</option>
+                            <option value="delivery_issues">Проблемы с доставкой</option>
+                            <option value="quality_concerns">Сомнения в качестве</option>
+                            <option value="other">Другая причина</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Комментарий (необязательно):</label>
+                        <textarea name="comment" class="form-control" rows="3"></textarea>
+                    </div>
+                    
+                    {% if order.status == 'paid' %}
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        <strong>Внимание!</strong> При отмене оплаченного заказа 
+                        деньги будут возвращены в течение 3-10 рабочих дней.
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        Нет, оставить
+                    </button>
+                    <button type="submit" class="btn btn-danger">
+                        Да, отменить заказ
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+.timeline-simple {
+    position: relative;
+    padding-left: 30px;
+}
+
+.timeline-item-simple {
+    position: relative;
+    padding-bottom: 15px;
+}
+
+.timeline-marker-simple {
+    position: absolute;
+    left: -30px;
+    top: 5px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 2px solid white;
+}
+
+.timeline-content-simple {
+    padding-left: 10px;
+}
+
+.timeline-item-simple:not(:last-child)::before {
+    content: '';
+    position: absolute;
+    left: -25px;
+    top: 17px;
+    bottom: 0;
+    width: 2px;
+    background: #e9ecef;
+}
+
+.badge.bg-secondary { background-color: #6c757d !important; }
+.badge.bg-info { background-color: #0dcaf0 !important; }
+.badge.bg-primary { background-color: #0d6efd !important; }
+.badge.bg-warning { background-color: #ffc107 !important; color: #000 !important; }
+.badge.bg-success { background-color: #198754 !important; }
+.badge.bg-danger { background-color: #dc3545 !important; }
+</style>
+
+<script>
+function copyTrackingNumber() {
+    const input = document.getElementById('trackingNumber');
+    input.select();
+    document.execCommand('copy');
+    
+    // Показываем уведомление
+    const btn = event.target.closest('button');
+    const originalHTML = btn.innerHTML;
+    btn.innerHTML = '<i class="bi bi-check"></i>';
+    btn.classList.add('btn-success');
+    
+    setTimeout(() => {
+        btn.innerHTML = originalHTML;
+        btn.classList.remove('btn-success');
+    }, 2000);
+}
+
+// AJAX обновление статуса
+document.getElementById('quickStatusForm')?.addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const form = this;
+    const button = document.getElementById('updateStatusBtn');
+    const originalText = button.innerHTML;
+    
+    button.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Обновление...';
+    button.disabled = true;
+    
+    fetch(form.action, {
+        method: 'POST',
+        body: new FormData(form),
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRFToken': '{{ csrf_token }}'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Показываем уведомление
+            showAlert('Статус успешно обновлен!', 'success');
+            
+            // Перезагружаем страницу через 1 секунду
+            setTimeout(() => {
+                location.reload();
+            }, 1000);
+        } else {
+            showAlert(data.error, 'danger');
+        }
+    })
+    .catch(error => {
+        showAlert('Ошибка сети', 'danger');
+    })
+    .finally(() => {
+        button.innerHTML = originalText;
+        button.disabled = false;
+    });
+});
+
+function showAlert(message, type) {
+    // Создаем временное уведомление
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+    alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.body.appendChild(alertDiv);
+    
+    setTimeout(() => {
+        alertDiv.classList.remove('show');
+        setTimeout(() => alertDiv.remove(), 150);
+    }, 3000);
+}
+</script>
+{% endblock %}

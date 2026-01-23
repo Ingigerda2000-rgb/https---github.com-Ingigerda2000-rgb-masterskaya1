@@ -1,0 +1,201 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Изменение статуса заказа #{{ order.id }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Хлебные крошки -->
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'home' %}">Главная</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'orders:master_orders' %}">Заказы</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'orders:order_detail' order.id %}">Заказ #{{ order.id }}</a></li>
+            <li class="breadcrumb-item active">Изменение статуса</li>
+        </ol>
+    </nav>
+    
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">Изменение статуса заказа #{{ order.id }}</h4>
+                </div>
+                <div class="card-body">
+                    <!-- Текущий статус -->
+                    <div class="alert alert-info">
+                        <strong>Текущий статус:</strong> 
+                        <span class="badge bg-{{ order.status_color }} ms-2">
+                            {{ order.get_status_display }}
+                        </span>
+                        <br>
+                        <small>Изменен: {{ order.updated_at|date:"d.m.Y H:i" }}</small>
+                    </div>
+                    
+                    <!-- Форма изменения статуса -->
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="id_status" class="form-label">
+                                Новый статус <span class="text-danger">*</span>
+                            </label>
+                            {{ form.status }}
+                            {% if form.status.errors %}
+                            <div class="text-danger small">{{ form.status.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="id_comment" class="form-label">
+                                Комментарий для покупателя
+                            </label>
+                            {{ form.comment }}
+                            <div class="form-text">
+                                Максимум 500 символов. Будет отправлен покупателю в уведомлении.
+                            </div>
+                            {% if form.comment.errors %}
+                            <div class="text-danger small">{{ form.comment.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label for="id_photo_report" class="form-label">
+                                Фотоотчёт
+                            </label>
+                            {{ form.photo_report }}
+                            <div class="form-text">
+                                JPG или PNG, не более 10 МБ. Покажет покупателю прогресс работы.
+                            </div>
+                            {% if form.photo_report.errors %}
+                            <div class="text-danger small">{{ form.photo_report.errors }}</div>
+                            {% endif %}
+                            
+                            <!-- Предпросмотр фото -->
+                            <div id="photoPreview" class="mt-2" style="display: none;">
+                                <img id="previewImage" class="img-thumbnail" style="max-height: 200px;">
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <div class="form-check">
+                                {{ form.send_notification }}
+                                <label class="form-check-label" for="id_send_notification">
+                                    Отправить уведомление покупателю
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'orders:order_detail' order.id %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left"></i> Отмена
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-circle"></i> Сохранить изменения
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- История статусов -->
+            {% if status_history %}
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0">История изменений статуса</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Дата</th>
+                                    <th>Статус</th>
+                                    <th>Кто изменил</th>
+                                    <th>Комментарий</th>
+                                    <th>Фото</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for history in status_history %}
+                                <tr>
+                                    <td>{{ history.changed_at|date:"d.m.Y H:i" }}</td>
+                                    <td>
+                                        <span class="badge bg-{{ history.status_color }}">
+                                            {{ history.get_status_display }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if history.changed_by %}
+                                        {{ history.changed_by.get_full_name|default:history.changed_by.username }}
+                                        {% else %}
+                                        Система
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if history.comment %}
+                                        <small>{{ history.comment|truncatechars:50 }}</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if history.photo_report %}
+                                        <a href="{{ history.photo_report.url }}" data-fancybox="history-gallery">
+                                            <i class="bi bi-image"></i>
+                                        </a>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+// Предпросмотр фото
+const photoInput = document.getElementById('id_photo_report');
+if (photoInput) {
+    photoInput.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        const preview = document.getElementById('previewImage');
+        const previewContainer = document.getElementById('photoPreview');
+        
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                preview.src = e.target.result;
+                previewContainer.style.display = 'block';
+            }
+            reader.readAsDataURL(file);
+        } else {
+            previewContainer.style.display = 'none';
+        }
+    });
+}
+
+// Валидация размера файла
+document.querySelector('form').addEventListener('submit', function(e) {
+    const fileInput = document.getElementById('id_photo_report');
+    if (fileInput && fileInput.files.length > 0) {
+        const fileSize = fileInput.files[0].size / 1024 / 1024; // MB
+        if (fileSize > 10) {
+            e.preventDefault();
+            alert('Файл слишком большой! Максимальный размер - 10 МБ.');
+            return false;
+        }
+    }
+    
+    const comment = document.getElementById('id_comment');
+    if (comment && comment.value.length > 500) {
+        e.preventDefault();
+        alert('Комментарий слишком длинный! Максимум 500 символов.');
+        return false;
+    }
+});
+</script>
+{% endblock %}

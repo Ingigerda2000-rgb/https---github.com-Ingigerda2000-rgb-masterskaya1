@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}{{ material.name }} :: HandMadeShop{% endblock %}
+{% block title %}{{ material.name }} :: Masterskaya{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -302,7 +302,7 @@
                             <div class="col-md-6">
                                 <div class="card bg-light">
                                     <div class="card-body py-2">
-                                        <small class="text-muted">Всего товаров с этим материалом:</small>
+                                        <small class="text-muted">Всего изделий с этим материалом:</small>
                                         <div class="fw-bold">{{ recipes.count }}</div>
                                     </div>
                                 </div>
@@ -336,10 +336,10 @@
                         </div>
                         <h6 class="mb-2">Рецепты не найдены</h6>
                         <p class="text-muted mb-3">
-                            Этот материал пока не используется ни в одном товаре
+                            Этот материал пока не используется ни в одном изделии
                         </p>
                         <a href="{% url 'products:product_list' %}" class="btn btn-outline-primary btn-sm">
-                            <i class="bi bi-plus-circle me-1"></i>Создать товар с этим материалом
+                            <i class="bi bi-plus-circle me-1"></i>Создать изделие с этим материалом
                         </a>
                     </div>
                     {% endif %}
@@ -558,7 +558,7 @@
                                 </div>
                                 {% endfor %}
                                 {% if recipes.count > 3 %}
-                                <small class="text-muted">... и ещё {{ recipes.count|add:"-3" }} товаров</small>
+                                <small class="text-muted">... и ещё {{ recipes.count|add:"-3" }} изделий</small>
                                 {% endif %}
                             </div>
                         </div>
@@ -611,7 +611,7 @@
                         <select name="reason" class="form-select">
                             <option value="">Выберите причину</option>
                             <option value="purchase">Закупка у поставщика</option>
-                            <option value="production">Производство товаров</option>
+                            <option value="production">Производство изделий</option>
                             <option value="waste">Списание отходов/брака</option>
                             <option value="correction">Коррекция остатка</option>
                             <option value="other">Другое</option>

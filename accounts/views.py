@@ -22,7 +22,7 @@ from products.models import Product, Category
 
 def home_view(request):
     """Главная страница мастерской"""
-    # Получаем все активные товары
+    # Получаем все активные изделия
     products = Product.objects.filter(status='active').order_by('-created_at')
 
     # Поиск по названию и описанию
@@ -61,7 +61,7 @@ def home_view(request):
 
     # Пагинация
     page = request.GET.get('page', 1)
-    paginator = Paginator(products, 12)  # 12 товаров на странице
+    paginator = Paginator(products, 12)  # 12 изделий на странице
 
     try:
         products_page = paginator.page(page)
@@ -295,7 +295,7 @@ def master_dashboard(request):
         materials_count = materials.count()
         materials_display = materials[:5]
 
-        # Отзывы на товары мастера
+        # Отзывы на изделия мастера
         reviews_count = Review.objects.filter(product__master=request.user).count()
 
         # Список заказов для отображения (если нужен)
@@ -322,7 +322,7 @@ def master_dashboard(request):
         'total_income': total_income,
         'materials_count': materials_count,
         'reviews_count': reviews_count,
-        'products': products,  # Все товары мастера
+        'products': products,  # Все изделия мастера
         'materials': materials_display,  # Последние 5 материалов
         'recent_orders': recent_orders,
     }
@@ -332,7 +332,7 @@ def master_detail(request, user_id):
     """Страница мастера для покупателей"""
     master = get_object_or_404(User, id=user_id, role='master')
     
-    # Если у мастера есть товары
+    # Если у мастера есть изделия
     try:
         products = master.products.filter(status='active')[:12]
     except:

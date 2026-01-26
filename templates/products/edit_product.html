@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}Редактировать товар{% endblock %}
+{% block title %}Редактировать изделие{% endblock %}
 
 {% block content %}
 <div class="container py-4">
@@ -9,7 +9,7 @@
             <div class="card shadow">
                 <div class="card-header bg-purple text-white">
                     <h4 class="mb-0">
-                        <i class="bi bi-pencil-square me-2"></i>Редактировать товар
+                        <i class="bi bi-pencil-square me-2"></i>Редактировать изделие
                     </h4>
                 </div>
                 <div class="card-body">
@@ -18,7 +18,7 @@
 
                         <div class="row">
                             <div class="col-md-6 mb-3">
-                                <label for="{{ form.name.id_for_label }}" class="form-label fw-semibold">Название товара *</label>
+                                <label for="{{ form.name.id_for_label }}" class="form-label fw-semibold">Название изделия *</label>
                                 {{ form.name }}
                                 {% if form.name.errors %}
                                     <div class="text-danger small">{{ form.name.errors.0 }}</div>
@@ -35,7 +35,7 @@
                         </div>
 
                         <div class="mb-3">
-                            <label for="{{ form.description.id_for_label }}" class="form-label fw-semibold">Описание товара *</label>
+                            <label for="{{ form.description.id_for_label }}" class="form-label fw-semibold">Описание изделия *</label>
                             {{ form.description }}
                             {% if form.description.errors %}
                                 <div class="text-danger small">{{ form.description.errors.0 }}</div>
@@ -151,13 +151,13 @@
                             {% if form.materials.errors %}
                                 <div class="text-danger small">{{ form.materials.errors.0 }}</div>
                             {% endif %}
-                            <div class="form-text">Выберите материалы, используемые для изготовления товара</div>
+                            <div class="form-text">Выберите материалы, используемые для изготовления изделия</div>
                         </div>
 
                         <div class="mb-4">
-                            <label for="id_images" class="form-label fw-semibold">Фотографии товара</label>
+                            <label for="id_images" class="form-label fw-semibold">Фотографии изделия</label>
                             <input type="file" name="images" accept="image/*" multiple id="id_images" class="form-control">
-                            <div class="form-text">Выберите новые фотографии товара (старые будут заменены)</div>
+                            <div class="form-text">Выберите новые фотографии изделия (старые будут заменены)</div>
                             {% if product.images.exists %}
                             <div class="mt-2">
                                 <small class="text-muted">Текущие изображения:</small>

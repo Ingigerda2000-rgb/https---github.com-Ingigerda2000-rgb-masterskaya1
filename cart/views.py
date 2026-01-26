@@ -34,7 +34,7 @@ def cart_view(request):
     items = cart.items.select_related('product').all()
     total = cart.calculate_total()
     
-    # Проверяем доступность каждого товара
+    # Проверяем доступность каждого изделия
     unavailable_items = []
     for item in items:
         if not item.is_available():
@@ -53,7 +53,7 @@ def cart_view(request):
 
 @require_POST
 def add_to_cart(request, product_id):
-    """Добавление товара в корзину"""
+    """Добавление изделия в корзину"""
     product = get_object_or_404(Product, id=product_id, status='active')
     
     # Проверяем, запрос AJAX или обычный
@@ -81,22 +81,22 @@ def add_to_cart(request, product_id):
     # Проверяем наличие достаточного количества
     if product.stock_quantity < quantity:
         if is_ajax:
-            return JsonResponse({'success': False, 'message': f'Недостаточно товара в наличии. Доступно: {product.stock_quantity} шт.'})
-        messages.error(request, f'Недостаточно товара в наличии. Доступно: {product.stock_quantity} шт.')
+            return JsonResponse({'success': False, 'message': f'Недостаточно изделий в наличии. Доступно: {product.stock_quantity} шт.'})
+        messages.error(request, f'Недостаточно изделий в наличии. Доступно: {product.stock_quantity} шт.')
         return redirect('product_detail', product_id=product_id)
     
     cart = get_or_create_cart(request)
 
-    # Проверяем, есть ли уже такой товар в корзине
+    # Проверяем, есть ли уже такое изделие в корзине
     cart_item = CartItem.objects.filter(cart=cart, product=product).first()
 
     if cart_item:
-        # Если товар уже есть в корзине, увеличиваем количество
+        # Если изделие уже есть в корзине, увеличиваем количество
         new_quantity = cart_item.quantity + quantity
         if new_quantity > product.stock_quantity:
             if is_ajax:
-                return JsonResponse({'success': False, 'message': f'Нельзя добавить больше товара, чем есть в наличии. Уже в корзине: {cart_item.quantity} шт.'})
-            messages.error(request, f'Нельзя добавить больше товара, чем есть в наличии. Уже в корзине: {cart_item.quantity} шт.')
+                return JsonResponse({'success': False, 'message': f'Нельзя добавить больше изделий, чем есть в наличии. Уже в корзине: {cart_item.quantity} шт.'})
+            messages.error(request, f'Нельзя добавить больше изделий, чем есть в наличии. Уже в корзине: {cart_item.quantity} шт.')
             return redirect('product_detail', product_id=product_id)
         else:
             cart_item.quantity = new_quantity
@@ -105,8 +105,8 @@ def add_to_cart(request, product_id):
         # Создаем новый элемент корзины
         if quantity > product.stock_quantity:
             if is_ajax:
-                return JsonResponse({'success': False, 'message': f'Недостаточно товара в наличии. Доступно: {product.stock_quantity} шт.'})
-            messages.error(request, f'Недостаточно товара в наличии. Доступно: {product.stock_quantity} шт.')
+                return JsonResponse({'success': False, 'message': f'Недостаточно изделий в наличии. Доступно: {product.stock_quantity} шт.'})
+            messages.error(request, f'Недостаточно изделий в наличии. Доступно: {product.stock_quantity} шт.')
             return redirect('product_detail', product_id=product_id)
         else:
             cart_item = CartItem.objects.create(
@@ -128,12 +128,12 @@ def add_to_cart(request, product_id):
             'total': float(total)
         })
     
-    # Для обычного запроса возвращаем пользователя на страницу товара
+    # Для обычного запроса возвращаем пользователя на страницу изделия
     return redirect('product_detail', product_id=product_id)
 
 @require_POST
 def update_cart_item(request, item_id):
-    """Обновление количества товара в корзине"""
+    """Обновление количества изделий в корзине"""
     cart = get_or_create_cart(request)
     cart_item = get_object_or_404(CartItem, id=item_id, cart=cart)
     
@@ -146,7 +146,7 @@ def update_cart_item(request, item_id):
         quantity = 1
     
     if quantity <= 0:
-        # Если количество 0 или меньше, удаляем товар
+        # Если количество 0 или меньше, удаляем изделие
         product_name = cart_item.product.name
         cart_item.delete()
         
@@ -165,10 +165,10 @@ def update_cart_item(request, item_id):
             if is_ajax:
                 return JsonResponse({
                     'success': False,
-                    'message': f'Недостаточно товара в наличии. Доступно: {cart_item.product.stock_quantity} шт.'
+                    'message': f'Недостаточно изделий в наличии. Доступно: {cart_item.product.stock_quantity} шт.'
                 })
             
-            messages.error(request, f'Недостаточно товара в наличии. Доступно: {cart_item.product.stock_quantity} шт.')
+            messages.error(request, f'Недостаточно изделий в наличии. Доступно: {cart_item.product.stock_quantity} шт.')
         else:
             cart_item.quantity = quantity
             cart_item.save()
@@ -176,7 +176,7 @@ def update_cart_item(request, item_id):
             if is_ajax:
                 return JsonResponse({
                     'success': True,
-                    'message': 'Количество товара обновлено',
+                    'message': 'Количество изделий обновлено',
                     'item_count': cart.item_count(),
                     'total': float(cart.calculate_total())
                 })
@@ -186,7 +186,7 @@ def update_cart_item(request, item_id):
 
 @require_POST
 def remove_from_cart(request, item_id):
-    """Удаление товара из корзины"""
+    """Удаление изделия из корзины"""
     cart = get_or_create_cart(request)
     cart_item = get_object_or_404(CartItem, id=item_id, cart=cart)
     product_name = cart_item.product.name
@@ -198,12 +198,12 @@ def remove_from_cart(request, item_id):
     if is_ajax:
         return JsonResponse({
             'success': True,
-            'message': f'Товар "{product_name}" удален из корзины',
+            'message': f'Изделие "{product_name}" удалено из корзины',
             'item_count': cart.item_count(),
             'total': float(cart.calculate_total())
         })
     
-    messages.success(request, f'Товар "{product_name}" удален из корзины')
+    messages.success(request, f'Изделие "{product_name}" удалено из корзины')
     return redirect('cart_view')
 
 @require_POST
@@ -213,7 +213,7 @@ def clear_cart(request):
     item_count = cart.items.count()
     cart.clear()
     
-    messages.success(request, f'Корзина очищена ({item_count} товаров удалено)')
+    messages.success(request, f'Корзина очищена ({item_count} изделиеов удалено)')
     return redirect('cart_view')
 
 def cart_summary(request):
@@ -223,7 +223,7 @@ def cart_summary(request):
     item_count = cart.item_count()
     total = cart.calculate_total()
     
-    # Собираем информацию о товарах в корзине для отображения
+    # Собираем информацию о изделиеах в корзине для отображения
     cart_items = []
     for item in items:
         cart_items.append({
@@ -249,19 +249,19 @@ def checkout(request):
     """Переход к оформлению заказа"""
     cart = get_or_create_cart(request)
     
-    # Проверяем, есть ли товары в корзине
+    # Проверяем, есть ли изделия в корзине
     if not cart.items.exists():
         messages.warning(request, 'Ваша корзина пуста')
         return redirect('cart_view')
     
-    # Проверяем доступность всех товаров
+    # Проверяем доступность всех изделий
     unavailable_items = []
     for item in cart.items.all():
         if not item.is_available():
             unavailable_items.append(item)
     
     if unavailable_items:
-        messages.error(request, 'Некоторые товары в корзине недоступны. Пожалуйста, проверьте корзину.')
+        messages.error(request, 'Некоторые изделия в корзине недоступны. Пожалуйста, проверьте корзину.')
         return redirect('cart_view')
     
     # Перенаправляем на страницу оформления заказа

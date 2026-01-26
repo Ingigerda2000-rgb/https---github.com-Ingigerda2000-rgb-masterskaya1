@@ -111,7 +111,7 @@ class MaterialRecipeForm(forms.ModelForm):
             'auto_consume': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
         labels = {
-            'consumption_rate': 'Норма расхода на 1 единицу товара',
+            'consumption_rate': 'Норма расхода на 1 единицу изделия',
             'waste_factor': 'Коэффициент отходов (0.1 = 10%)',
             'auto_consume': 'Автоматически списывать при производстве',
         }

@@ -212,7 +212,7 @@ class Material(models.Model):
 
 
 class MaterialRecipe(models.Model):
-    """Рецепт расхода материала на товар"""
+    """Рецепт расхода материала на изделие"""
     id = models.BigAutoField(primary_key=True)
     product = models.ForeignKey(
         Product, 
@@ -233,7 +233,7 @@ class MaterialRecipe(models.Model):
         max_digits=10, 
         decimal_places=3,
         validators=[MinValueValidator(0.001)],
-        help_text='Сколько материала требуется для производства одной единицы товара'
+        help_text='Сколько материала требуется для производства одной единицы изделия'
     )
     waste_factor = models.DecimalField(
         'Коэффициент отходов', 
@@ -248,7 +248,7 @@ class MaterialRecipe(models.Model):
     auto_consume = models.BooleanField(
         'Автоматическое списание', 
         default=True,
-        help_text='Автоматически списывать материал при производстве товара'
+        help_text='Автоматически списывать материал при производстве изделия'
     )
     
     # Примечания
@@ -280,7 +280,7 @@ class MaterialRecipe(models.Model):
         return self.material.reserve(order_item, total_needed)
     
     def get_total_cost(self, quantity=1):
-        """Стоимость материала для производства указанного количества товара"""
+        """Стоимость материала для производства указанного количества изделия"""
         required = self.calculate_required(quantity)
         return required * self.material.price_per_unit
 

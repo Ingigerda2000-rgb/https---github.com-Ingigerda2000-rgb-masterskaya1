@@ -141,7 +141,7 @@
             border-radius: 8px;
         }
         
-        /* Заголовок товаров */
+        /* Заголовок изделий */
         .products-title {
             font-weight: 700;
             color: #333;
@@ -150,7 +150,7 @@
             border-bottom: 2px solid var(--secondary-color);
         }
         
-        /* Карточки товаров */
+        /* Карточки изделий */
         .product-card {
             border: none;
             border-radius: 12px;
@@ -303,7 +303,7 @@
                 <div class="col-md-6 d-none d-md-block">
                     <div class="search-container">
                         <form method="get" action="">
-                            <input type="text" class="search-input" name="search" placeholder="Поиск товаров..." value="{{ search_query }}">
+                            <input type="text" class="search-input" name="search" placeholder="Поиск изделий..." value="{{ search_query }}">
                         </form>
                     </div>
                 </div>
@@ -318,7 +318,7 @@
                 <div class="col-12 d-md-none mt-3">
                     <div class="search-container">
                         <form method="get" action="">
-                            <input type="text" class="search-input" name="search" placeholder="Поиск товаров..." value="{{ search_query }}">
+                            <input type="text" class="search-input" name="search" placeholder="Поиск изделий..." value="{{ search_query }}">
                         </form>
                     </div>
                 </div>
@@ -383,12 +383,12 @@
             </form>
         </div>
 
-        <!-- Секция товаров -->
+        <!-- Секция изделий -->
         <h3 class="products-title">
             {% if search_query %}
                 Результаты поиска: "{{ search_query }}"
             {% else %}
-                Все товары ({{ products.count }})
+                Все изделия ({{ products.count }})
             {% endif %}
         </h3>
         
@@ -461,7 +461,7 @@
         {% else %}
         <div class="text-center py-5">
             <i class="bi bi-search" style="font-size: 80px; color: #ddd;"></i>
-            <h4 class="mt-3">Товары не найдены</h4>
+            <h4 class="mt-3">Изделия не найдены</h4>
             <p>Попробуйте изменить параметры поиска или фильтров</p>
         </div>
         {% endif %}

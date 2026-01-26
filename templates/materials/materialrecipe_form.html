@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}{{ title|default:'Добавление рецепта' }} :: HandMadeShop{% endblock %}
+{% block title %}{{ title|default:'Добавление рецепта' }} :: Masterskaya{% endblock %}
 
 {% block content %}
 <div class="container py-4">
@@ -27,7 +27,7 @@
             </p>
         </div>
         <a href="{% url 'products:product_detail' product.id %}" class="btn btn-outline-secondary">
-            <i class="bi bi-arrow-left me-1"></i>Назад к товару
+            <i class="bi bi-arrow-left me-1"></i>Назад к изделию
         </a>
     </div>
     
@@ -81,7 +81,7 @@
                                             {% if form.consumption_rate.errors %}
                                             <div class="invalid-feedback d-block">{{ form.consumption_rate.errors }}</div>
                                             {% endif %}
-                                            <div class="form-text">На 1 единицу товара</div>
+                                            <div class="form-text">На 1 единицу изделия</div>
                                         </div>
 
                                         <!-- Коэффициент отходов -->
@@ -205,10 +205,10 @@
                 </div>
                 {% endif %}
                 
-                <!-- Информация о товаре -->
+                <!-- Информация о изделии -->
                 <div class="card">
                     <div class="card-header bg-light">
-                        <h6 class="mb-0"><i class="bi bi-box me-2"></i>Информация о товаре</h6>
+                        <h6 class="mb-0"><i class="bi bi-box me-2"></i>Информация о изделии</h6>
                     </div>
                     <div class="card-body">
                         <h6 class="mb-2">{{ product.name }}</h6>
@@ -229,7 +229,7 @@
                         
                         <div class="d-grid">
                             <a href="{% url 'products:product_detail' product.id %}" class="btn btn-outline-primary btn-sm">
-                                <i class="bi bi-eye me-1"></i>Просмотреть товар
+                                <i class="bi bi-eye me-1"></i>Просмотреть изделие
                             </a>
                         </div>
                     </div>
@@ -401,7 +401,7 @@ function addMaterialForm() {
                     <input type="number" class="form-control" name="form-${formIndex}-consumption_rate" step="0.001" min="0.001" required>
                     <span class="input-group-text consumption-unit">ед.</span>
                 </div>
-                <div class="form-text">На 1 единицу товара</div>
+                <div class="form-text">На 1 единицу изделия</div>
             </div>
             <div class="col-md-3">
                 <label class="form-label">Отходы (%)</label>

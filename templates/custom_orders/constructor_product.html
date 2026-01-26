@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Шаг 2: Выберите товар{% endblock %}
+{% block title %}Шаг 2: Выберите изделие{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -119,7 +119,7 @@
         }
     }
 
-    /* Стили аналогичные предыдущему шагу, но для товаров */
+    /* Стили аналогичные предыдущему шагу, но для изделий */
     .products-grid {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -230,7 +230,7 @@
     
     <!-- Заголовок шага -->
     <div class="step-header">
-        <h1 class="step-title">Выберите конкретный товар</h1>
+        <h1 class="step-title">Выберите конкретное изделие</h1>
         <p class="step-subtitle">Выберите базовую модель для кастомизации</p>
         
         {% if constructor_data.category_name %}
@@ -240,7 +240,7 @@
         {% endif %}
     </div>
     
-    <!-- Выбор товара -->
+    <!-- Выбор изделия -->
     <div class="products-grid" id="productsGrid">
         {% for template in templates %}
         <div class="product-card" 
@@ -268,7 +268,7 @@
         </div>
         {% empty %}
         <div class="text-center py-5">
-            <p>Нет доступных товаров в этой категории</p>
+            <p>Нет доступных изделий в этой категории</p>
             <a href="{% url 'custom_orders:constructor_step' step=1 %}" class="btn btn-primary">
                 Вернуться к выбору категории
             </a>

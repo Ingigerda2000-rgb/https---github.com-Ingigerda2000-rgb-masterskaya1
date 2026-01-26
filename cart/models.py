@@ -51,5 +51,5 @@ class CartItem(models.Model):
         return price * self.quantity
     
     def is_available(self):
-        """Проверка доступности товара"""
+        """Проверка доступности изделия"""
         return self.product.is_available() and self.product.stock_quantity >= self.quantity

@@ -53,8 +53,8 @@ class MasterStat(models.Model):
     average_order_value = models.DecimalField('Средний чек', max_digits=10, decimal_places=2, default=0)
     
     # Товары
-    top_product = models.CharField('Топ товар', max_length=200, blank=True)
-    top_product_sales = models.IntegerField('Продажи топ товара', default=0)
+    top_product = models.CharField('Топ изделие', max_length=200, blank=True)
+    top_product_sales = models.IntegerField('Продажи топ изделия', default=0)
     
     # Материалы
     materials_cost = models.DecimalField('Стоимость материалов', max_digits=10, decimal_places=2, default=0)

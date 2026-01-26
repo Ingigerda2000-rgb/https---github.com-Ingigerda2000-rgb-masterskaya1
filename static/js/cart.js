@@ -21,7 +21,7 @@ function updateCartCount() {
             // Обновляем всплывающее окно корзины
             updateCartPreview(data);
             
-            // Обновляем иконки товаров в каталоге
+            // Обновляем иконки изделий в каталоге
             updateCartIcons(data.items);
         })
         .catch(error => {
@@ -130,7 +130,7 @@ function addCartItemEventListeners() {
     });
 }
 
-// Функция для обновления количества товара в корзине
+// Функция для обновления количества изделий в корзине
 function updateCartItemQuantity(itemId, change) {
     // Находим текущее количество
     const itemElement = document.querySelector(`.cart-preview-item[data-item-id="${itemId}"]`);
@@ -138,7 +138,7 @@ function updateCartItemQuantity(itemId, change) {
     let currentQuantity = parseInt(quantityInput.value);
     let newQuantity = currentQuantity + change;
     
-    // Если новое количество меньше или равно 0, удаляем товар
+    // Если новое количество меньше или равно 0, удаляем изделие
     if (newQuantity <= 0) {
         removeCartItem(itemId);
         return;
@@ -170,11 +170,11 @@ function updateCartItemQuantity(itemId, change) {
         }
     })
     .catch(error => {
-        console.error('Ошибка при обновлении количества товара:', error);
+        console.error('Ошибка при обновлении количества изделий:', error);
     });
 }
 
-// Функция для удаления товара из корзины
+// Функция для удаления изделия из корзины
 function removeCartItem(itemId) {
     // Получаем CSRF токен
     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || 
@@ -193,15 +193,15 @@ function removeCartItem(itemId) {
             // Обновляем корзину
             updateCartCount();
         } else {
-            alert(data.message || 'Произошла ошибка при удалении товара из корзины');
+            alert(data.message || 'Произошла ошибка при удалении изделия из корзины');
         }
     })
     .catch(error => {
-        console.error('Ошибка при удалении товара из корзины:', error);
+        console.error('Ошибка при удалении изделия из корзины:', error);
     });
 }
 
-// Функция для обновления иконок товаров в каталоге
+// Функция для обновления иконок изделий в каталоге
 function updateCartIcons(items) {
     if (!items || !Array.isArray(items)) return;
     
@@ -216,7 +216,7 @@ function updateCartIcons(items) {
         qty.textContent = '0';
     });
     
-    // Затем обновляем иконки для товаров в корзине
+    // Затем обновляем иконки для изделий в корзине
     items.forEach(item => {
         const productId = item.product_id;
         const iconElement = document.getElementById(`cart-icon-${productId}`);
@@ -234,7 +234,7 @@ function updateCartIcons(items) {
     });
 }
 
-// Функция для добавления товара в корзину
+// Функция для добавления изделия в корзину
 function addToCart(productId, quantity = 1) {
     // Получаем CSRF токен
     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || 
@@ -268,12 +268,12 @@ function addToCart(productId, quantity = 1) {
             showToast('Товар добавлен в корзину', 'success');
         } else {
             // Показываем сообщение об ошибке
-            showToast(data.message || 'Произошла ошибка при добавлении товара в корзину', 'danger');
+            showToast(data.message || 'Произошла ошибка при добавлении изделия в корзину', 'danger');
         }
     })
     .catch(error => {
-        console.error('Ошибка при добавлении товара в корзину:', error);
-        showToast('Произошла ошибка при добавлении товара в корзину', 'danger');
+        console.error('Ошибка при добавлении изделия в корзину:', error);
+        showToast('Произошла ошибка при добавлении изделия в корзину', 'danger');
     });
 }
 

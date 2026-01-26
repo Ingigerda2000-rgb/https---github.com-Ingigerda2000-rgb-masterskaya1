@@ -10,8 +10,8 @@ from materials.models import Material
 from .forms import ProductForm
 
 def product_list(request):
-    """Список товаров с поиском и фильтрацией"""
-    # Получаем все активные товары
+    """Список изделий с поиском и фильтрацией"""
+    # Получаем все активные изделия
     products = Product.objects.filter(status='active').order_by('-created_at')
     
     # Поиск по названию и описанию
@@ -51,7 +51,7 @@ def product_list(request):
     
     # Пагинация
     page = request.GET.get('page', 1)
-    paginator = Paginator(products, 12)  # 12 товаров на странице
+    paginator = Paginator(products, 12)  # 12 изделий на странице
     
     try:
         products_page = paginator.page(page)
@@ -76,15 +76,15 @@ def product_list(request):
     return render(request, 'products/product_list.html', context)
 
 def product_detail(request, product_id):
-    """Детальная страница товара"""
+    """Детальная страница изделия"""
     product = get_object_or_404(Product, id=product_id)
 
-    # Проверяем доступ: активные товары для всех, неактивные только для мастера-владельца
+    # Проверяем доступ: активные изделия для всех, неактивные только для мастера-владельца
     if product.status != 'active' and not (request.user.is_authenticated and request.user == product.master):
         from django.http import Http404
         raise Http404
 
-    # Получаем похожие товары (только активные)
+    # Получаем похожие изделия (только активные)
     similar_products = Product.objects.filter(
         Q(category=product.category) |
         Q(technique=product.technique)
@@ -110,7 +110,7 @@ def master_check(user):
 @login_required
 @user_passes_test(master_check)
 def add_product(request):
-    """Добавление нового товара мастером"""
+    """Добавление нового изделия мастером"""
     if request.method == 'POST':
         print(f"DEBUG: POST request received")
         print(f"DEBUG: FILES keys: {list(request.FILES.keys())}")
@@ -139,7 +139,7 @@ def add_product(request):
 
     context = {
         'form': form,
-        'title': 'Добавить товар'
+        'title': 'Добавить изделие'
     }
 
     return render(request, 'products/add_product.html', context)
@@ -147,7 +147,7 @@ def add_product(request):
 @login_required
 @user_passes_test(master_check)
 def update_product(request, product_id):
-    """Редактирование товара мастером"""
+    """Редактирование изделия мастером"""
     product = get_object_or_404(Product, id=product_id, master=request.user)
 
     if request.method == 'POST':
@@ -176,13 +176,13 @@ def update_product(request, product_id):
     context = {
         'form': form,
         'product': product,
-        'title': 'Редактировать товар'
+        'title': 'Редактировать изделие'
     }
 
     return render(request, 'products/edit_product.html', context)
 
 def toggle_favorite(request, product_id):
-    """Добавление/удаление товара из избранного"""
+    """Добавление/удаление изделия из избранного"""
     if not request.user.is_authenticated:
         # Для неавторизованных пользователей возвращаем JSON с ошибкой
         return JsonResponse({
@@ -193,21 +193,21 @@ def toggle_favorite(request, product_id):
     
     product = get_object_or_404(Product, id=product_id)
     
-    # Проверяем, есть ли товар в избранном
+    # Проверяем, есть ли изделие в избранном
     from .models import Favorite
     favorite, created = Favorite.objects.get_or_create(
         user=request.user,
         product=product
     )
     
-    # Если товар уже был в избранном, удаляем его
+    # Если изделие уже было в избранном, удаляем его
     if not created:
         favorite.delete()
         is_favorite = False
-        message = 'Товар удален из избранного'
+        message = 'Изделие удалено из избранного'
     else:
         is_favorite = True
-        message = 'Товар добавлен в избранное'
+        message = 'Изделие добавлено в избранное'
     
     # Возвращаем JSON с результатом
     return JsonResponse({
@@ -217,7 +217,7 @@ def toggle_favorite(request, product_id):
     })
 
 def check_favorite(request, product_id):
-    """Проверка, находится ли товар в избранном у пользователя"""
+    """Проверка, находится ли изделие в избранном у пользователя"""
     if not request.user.is_authenticated:
         return JsonResponse({'is_favorite': False})
     
@@ -232,12 +232,12 @@ def check_favorite(request, product_id):
 @login_required
 @user_passes_test(master_check)
 def master_products_list(request):
-    """Список товаров мастера"""
+    """Список изделий мастера"""
     products = Product.objects.filter(master=request.user).order_by('-created_at')
 
     # Пагинация
     page = request.GET.get('page', 1)
-    paginator = Paginator(products, 12)  # 12 товаров на странице
+    paginator = Paginator(products, 12)  # 12 изделий на странице
 
     try:
         products_page = paginator.page(page)
@@ -248,14 +248,14 @@ def master_products_list(request):
 
     context = {
         'products': products_page,
-        'title': 'Мои товары'
+        'title': 'Мои изделия'
     }
 
     return render(request, 'products/master_products_list.html', context)
 
 @login_required
 def favorites_list(request):
-    """Список избранных товаров пользователя"""
+    """Список избранных изделий пользователя"""
     from .models import Favorite
     favorites = Favorite.objects.filter(user=request.user).select_related('product')
 

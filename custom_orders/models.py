@@ -6,7 +6,7 @@ from cart.models import CartItem
 import json
 
 class ProductTemplate(models.Model):
-    """Шаблон для кастомизации товара"""
+    """Шаблон для кастомизации изделия"""
     PRODUCT_TYPES = [
         ('clothing', 'Одежда'),
         ('accessory', 'Аксессуар'),
@@ -38,8 +38,8 @@ class ProductTemplate(models.Model):
     updated_at = models.DateTimeField('Дата обновления', auto_now=True)
     
     class Meta:
-        verbose_name = 'Шаблон товара'
-        verbose_name_plural = 'Шаблоны товаров'
+        verbose_name = 'Шаблон изделия'
+        verbose_name_plural = 'Шаблоны изделий'
         ordering = ['-is_featured', 'name']
     
     def __str__(self):
@@ -172,7 +172,7 @@ class ProductTemplate(models.Model):
         """Получение опций материалов для шаблона"""
         from materials.models import Material
         
-        # Получаем материалы, связанные с базовым товаром
+        # Получаем материалы, связанные с базовым изделием
         materials = self.product.materials.all()
         
         options = []

@@ -47,7 +47,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='materialrecipe',
             name='auto_consume',
-            field=models.BooleanField(default=True, help_text='Автоматически списывать материал при производстве товара', verbose_name='Автоматическое списание'),
+            field=models.BooleanField(default=True, help_text='Автоматически списывать материал при производстве изделия', verbose_name='Автоматическое списание'),
         ),
         migrations.AddField(
             model_name='materialrecipe',
@@ -123,7 +123,7 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='materialrecipe',
             name='consumption_rate',
-            field=models.DecimalField(decimal_places=3, help_text='Сколько материала требуется для производства одной единицы товара', max_digits=10, validators=[django.core.validators.MinValueValidator(0.001)], verbose_name='Норма расхода'),
+            field=models.DecimalField(decimal_places=3, help_text='Сколько материала требуется для производства одной единицы изделия', max_digits=10, validators=[django.core.validators.MinValueValidator(0.001)], verbose_name='Норма расхода'),
         ),
 
         migrations.AlterField(

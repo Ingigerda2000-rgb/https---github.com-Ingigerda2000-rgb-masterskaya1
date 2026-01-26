@@ -77,7 +77,7 @@ class MaterialManager:
                 )
                 avg_consumption = avg_result['avg']
                 if avg_consumption and avg_consumption > 0:
-                    # Предполагаем 1 товар в день для простоты
+                    # Предполагаем 1 изделие в день для простоты
                     days_left = int(float(material.current_quantity) / float(avg_consumption))
             
             material_data = {
@@ -197,7 +197,7 @@ class MaterialManager:
     @staticmethod
     def get_material_usage_by_product(master_id, product_id=None):
         """
-        Анализ использования материалов по товарам
+        Анализ использования материалов по изделиям
         """
         from products.models import Product
         
@@ -221,7 +221,7 @@ class MaterialManager:
             else:
                 can_produce = 0
             
-            # Рассчитываем стоимость материала на единицу товара
+            # Рассчитываем стоимость материала на единицу изделия
             material_cost_per_product = recipe.consumption_rate * material.price_per_unit
             
             usage_data.append({

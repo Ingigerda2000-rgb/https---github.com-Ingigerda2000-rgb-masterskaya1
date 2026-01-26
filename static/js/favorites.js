@@ -1,4 +1,4 @@
-// favorites.js - Функциональность для работы с избранными товарами
+// favorites.js - Функциональность для работы с избранными изделиями
 
 $(document).ready(function() {
     // Обработка клика по кнопке избранного
@@ -21,10 +21,10 @@ $(document).ready(function() {
                 if (response.success) {
                     if (response.is_favorite) {
                         $icon.removeClass('bi-heart').addClass('bi-heart-fill text-danger');
-                        showToast('Товар добавлен в избранное', 'success');
+                        showToast('Изделие добавлено в избранное', 'success');
                     } else {
                         $icon.removeClass('bi-heart-fill text-danger').addClass('bi-heart');
-                        showToast('Товар удален из избранного', 'info');
+                        showToast('Изделие удалено из избранного', 'info');
                     }
                 } else {
                     if (response.redirect) {

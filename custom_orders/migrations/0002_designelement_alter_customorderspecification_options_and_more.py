@@ -35,7 +35,7 @@ class Migration(migrations.Migration):
         ),
         migrations.AlterModelOptions(
             name='producttemplate',
-            options={'ordering': ['-is_featured', 'name'], 'verbose_name': 'Шаблон товара', 'verbose_name_plural': 'Шаблоны товаров'},
+            options={'ordering': ['-is_featured', 'name'], 'verbose_name': 'Шаблон изделия', 'verbose_name_plural': 'Шаблоны изделий'},
         ),
         migrations.AddField(
             model_name='customorderspecification',

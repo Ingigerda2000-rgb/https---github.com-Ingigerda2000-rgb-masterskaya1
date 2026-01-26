@@ -130,7 +130,7 @@ class Product(models.Model):
             super().save(update_fields=['tags'])
     
     def _update_tags(self):
-        """Обновление тегов для товара"""
+        """Обновление тегов для изделия"""
         tags_parts = [self.name]
         if self.technique:
             tags_parts.append(self.technique)
@@ -139,7 +139,7 @@ class Product(models.Model):
         if self.color:
             tags_parts.append(self.color)
         
-        # Только если товар уже сохранен
+        # Только если изделие уже сохранено
         if self.pk:
             for material in self.materials.all():
                 tags_parts.append(material.name)
@@ -147,7 +147,7 @@ class Product(models.Model):
         self.tags = ', '.join(tags_parts)
     
     def is_available(self):
-        """Проверка доступности товара"""
+        """Проверка доступности изделия"""
         return self.status == 'active' and self.stock_quantity > 0
     
     def get_main_image(self):
@@ -166,7 +166,7 @@ class Product(models.Model):
         return None
     
     def get_related_products(self, limit=4):
-        """Получение похожих товаров"""
+        """Получение похожих изделий"""
         return Product.objects.filter(
             Q(category=self.category) | 
             Q(materials__in=self.materials.all()) |
@@ -174,7 +174,7 @@ class Product(models.Model):
         ).exclude(id=self.id).filter(status='active').distinct()[:limit]
     
     def calculate_material_cost(self, quantity=1):
-        """Расчет стоимости материалов для товара"""
+        """Расчет стоимости материалов для изделия"""
         try:
             from materials.models import MaterialRecipe
             
@@ -253,8 +253,8 @@ class ProductImage(models.Model):
     created_at = models.DateTimeField('Дата создания', auto_now_add=True)
     
     class Meta:
-        verbose_name = 'Изображение товара'
-        verbose_name_plural = 'Изображения товаров'
+        verbose_name = 'Изображение изделия'
+        verbose_name_plural = 'Изображения изделий'
         ordering = ['order']
     
     def __str__(self):
@@ -266,14 +266,14 @@ class ProductAttribute(models.Model):
     value = models.CharField('Значение', max_length=255)
     
     class Meta:
-        verbose_name = 'Атрибут товара'
-        verbose_name_plural = 'Атрибуты товаров'
+        verbose_name = 'Атрибут изделия'
+        verbose_name_plural = 'Атрибуты изделий'
     
     def __str__(self):
         return f"{self.name}: {self.value}"
 
 class Favorite(models.Model):
-    """Модель для избранных товаров пользователя"""
+    """Модель для избранных изделий пользователя"""
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='favorites')
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='favorited_by')
     added_at = models.DateTimeField('Дата добавления', auto_now_add=True)
@@ -281,7 +281,7 @@ class Favorite(models.Model):
     class Meta:
         verbose_name = 'Избранное'
         verbose_name_plural = 'Избранное'
-        unique_together = ['user', 'product']  # Пользователь может добавить товар в избранное только один раз
+        unique_together = ['user', 'product']  # Пользователь может добавить изделие в избранное только один раз
     
     def __str__(self):
         return f"{self.user.email} - {self.product.name}"

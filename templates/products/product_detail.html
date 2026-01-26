@@ -349,7 +349,7 @@
                 <div class="col-md-6 d-none d-md-block">
                     <form action="{% url 'home' %}" method="get" class="d-flex">
                         <div class="input-group">
-                            <input type="text" name="search" class="form-control" placeholder="Поиск товаров..."
+                            <input type="text" name="search" class="form-control" placeholder="Поиск изделий..."
                                    value="{{ search_query|default:'' }}" style="border-radius: 20px 0 0 20px;">
                             <button class="btn btn-outline-secondary" type="submit" style="border-radius: 0 20px 20px 0;">
                                 <i class="bi bi-search"></i>
@@ -458,7 +458,7 @@
                 <div class="col-12">
                     <form action="{% url 'home' %}" method="get" class="d-flex">
                         <div class="input-group">
-                            <input type="text" name="search" class="form-control" placeholder="Поиск товаров..."
+                            <input type="text" name="search" class="form-control" placeholder="Поиск изделий..."
                                    value="{{ search_query|default:'' }}" style="border-radius: 20px 0 0 20px;">
                             <button class="btn btn-outline-secondary" type="submit" style="border-radius: 0 20px 20px 0;">
                                 <i class="bi bi-search"></i>
@@ -497,7 +497,7 @@
                 </div>
             </div>
             
-            <!-- Информация о товаре -->
+            <!-- Информация о изделии -->
             <div class="col-lg-6">
                 <div class="product-info">
                     <div class="product-category">{{ product.category.name|default:"Без категории" }}</div>
@@ -606,7 +606,7 @@
                                     <i class="bi bi-plus-circle me-1"></i>Управление рецептами материалов
                                 </a>
 <a href="{% url 'products:update_product' product.id %}" class="btn btn-outline-secondary btn-sm ms-2">
-                                    <i class="bi bi-pencil me-1"></i>Редактировать товар
+                                    <i class="bi bi-pencil me-1"></i>Редактировать изделие
                                 </a>
                             </div>
                             {% endif %}
@@ -673,10 +673,10 @@
             </div>
         </div>
         
-        <!-- Похожие товары -->
+        <!-- Похожие изделиеы -->
         {% if similar_products %}
         <div class="similar-products">
-            <h3 class="similar-title">Похожие товары</h3>
+            <h3 class="similar-title">Похожие изделия</h3>
             <div class="row row-cols-1 row-cols-md-2 row-cols-lg-4 g-4">
                 {% for similar in similar_products %}
                 <div class="col">
@@ -788,7 +788,7 @@
             }
         }
 
-        // Функция для добавления товара в корзину через AJAX
+        // Функция для добавления изделия в корзину через AJAX
         function addToCart() {
             const form = document.getElementById('add-to-cart-form');
             const formData = new FormData(form);
@@ -818,12 +818,12 @@
                     toast.show();
                 } else {
                     // Если есть ошибка, показываем сообщение
-                    alert(data.message || 'Произошла ошибка при добавлении товара в корзину');
+                    alert(data.message || 'Произошла ошибка при добавлении изделиеа в корзину');
                 }
             })
             .catch(error => {
-                console.error('Ошибка при добавлении товара в корзину:', error);
-                alert('Произошла ошибка при добавлении товара в корзину');
+                console.error('Ошибка при добавлении изделия в корзину:', error);
+                alert('Произошла ошибка при добавлении изделия в корзину');
             });
         }
         

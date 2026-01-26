@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}Управление рецептами товаров :: HandMadeShop{% endblock %}
+{% block title %}Управление рецептами изделий :: Masterskaya{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -68,13 +68,13 @@
                 <ol class="breadcrumb mb-2">
                     <li class="breadcrumb-item"><a href="{% url 'home' %}">Главная</a></li>
                     <li class="breadcrumb-item"><a href="{% url 'materials:material_list' %}">Материалы</a></li>
-                    <li class="breadcrumb-item active">Рецепты товаров</li>
+                    <li class="breadcrumb-item active">Рецепты изделий</li>
                 </ol>
             </nav>
             <h1 class="h2 mb-0">
-                <i class="bi bi-file-earmark-text text-primary me-2"></i>Управление рецептами товаров
+                <i class="bi bi-file-earmark-text text-primary me-2"></i>Управление рецептами изделий
             </h1>
-            <p class="text-muted mb-0">Управление рецептами расхода материалов для производства товаров</p>
+            <p class="text-muted mb-0">Управление рецептами расхода материалов для производства изделий</p>
         </div>
         <div class="d-flex flex-wrap gap-2">
             <a href="{% url 'materials:material_list' %}" class="btn btn-outline-secondary">
@@ -158,7 +158,7 @@
                     <table class="table table-hover mb-0">
                         <thead class="table-light">
                             <tr>
-                                <th width="20%">Товар</th>
+                                <th width="20%">Изделие</th>
                                 <th width="20%">Материал</th>
                                 <th width="15%" class="text-center">Норма расхода</th>
                                 <th width="10%" class="text-center">Отходы</th>
@@ -308,11 +308,11 @@
                 </div>
                 <h4 class="mb-3">Рецепты не найдены</h4>
                 <p class="text-muted mb-4">
-                    У вас пока нет рецептов материалов для товаров.
-                    Добавьте рецепты через страницу товара.
+                    У вас пока нет рецептов материалов для изделий.
+                    Добавьте рецепты через страницу изделий.
                 </p>
                 <a href="{% url 'products:master_products_list' %}" class="btn btn-primary">
-                    <i class="bi bi-box-seam me-1"></i>Перейти к товарам
+                    <i class="bi bi-box-seam me-1"></i>Перейти к изделиям
                 </a>
             </div>
             {% endif %}
@@ -362,7 +362,7 @@
                 <div class="d-flex justify-content-between pt-2 border-top">
                     <a href="{% url 'products:product_detail' recipe.product.id %}"
                        class="btn btn-sm btn-outline-primary">
-                        <i class="bi bi-eye"></i> К товару
+                        <i class="bi bi-eye"></i> К изделию
                     </a>
                     <div class="btn-group btn-group-sm">
                         <a href="{% url 'materials:materialrecipe_update' recipe.id %}"
@@ -412,10 +412,10 @@
             </div>
             <h4 class="mb-3">Рецепты не найдены</h4>
             <p class="text-muted mb-4">
-                У вас пока нет рецептов материалов для товаров
+                У вас пока нет рецептов материалов для изделий
             </p>
             <a href="{% url 'products:master_products_list' %}" class="btn btn-primary">
-                <i class="bi bi-box-seam me-1"></i>Перейти к товарам
+                <i class="bi bi-box-seam me-1"></i>Перейти к изделиям
             </a>
         </div>
         {% endif %}

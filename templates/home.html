@@ -265,7 +265,7 @@
             color: #495057;
         }
         
-        /* Заголовок товаров */
+        /* Заголовок изделий */
         .products-title {
             font-weight: 700;
             color: #333;
@@ -585,7 +585,7 @@
                             type="text" 
                             class="search-input" 
                             name="search" 
-                            placeholder="Поиск товаров..." 
+                            placeholder="Поиск изделий..." 
                             value="{{ search_query|default:'' }}"
                         >
                         <button type="submit" class="search-button">
@@ -687,7 +687,7 @@
     <nav class="categories-menu">
         <div class="container">
             <div class="categories-nav">
-                <a href="/?{% for key,value in request.GET.items %}{% if key != 'category' %}{{ key }}={{ value }}&{% endif %}{% endfor %}" class="category-link {% if not request.GET.category %}active{% endif %}">Все товары</a>
+                <a href="/?{% for key,value in request.GET.items %}{% if key != 'category' %}{{ key }}={{ value }}&{% endif %}{% endfor %}" class="category-link {% if not request.GET.category %}active{% endif %}">Все изделия</a>
                 {% for category in categories %}
                 <a href="?{% for key,value in request.GET.items %}{% if key != 'category' %}{{ key }}={{ value }}&{% endif %}{% endfor %}category={{ category.id }}" class="category-link {% if request.GET.category == category.id|stringformat:'i' %}active{% endif %}">
                     {{ category.name }}
@@ -764,7 +764,7 @@
             </button>
         </div>
 
-        <!-- Заголовок товаров -->
+        <!-- Заголовок изделий -->
         <h3 class="products-title">
             {% if search_query %}
                 Результаты поиска: "{{ search_query }}" ({{ products.paginator.count }})
@@ -775,7 +775,7 @@
                     {% endif %}
                 {% endfor %}
             {% else %}
-                Все товары ({{ products.paginator.count }})
+                Все изделия ({{ products.paginator.count }})
             {% endif %}
         </h3>
         
@@ -866,7 +866,7 @@
         {% else %}
             <div class="text-center py-5">
                 <i class="bi bi-search" style="font-size: 80px; color: #ddd;"></i>
-                <h4 class="mt-3">Товары не найдены</h4>
+                <h4 class="mt-3">Изделия не найдены</h4>
                 <p>Попробуйте изменить параметры поиска или фильтров</p>
                 <a href="/" class="btn-cart" style="display: inline-block; padding: 10px 30px;">
                     <i class="bi bi-arrow-counterclockwise me-1"></i>Сбросить фильтры
@@ -880,7 +880,7 @@
         <div class="container">
             <div class="row">
                 <div class="col-md-4 mb-4">
-                    <h5>Рукодельная мастерская</h5>
+                    <h5>Мастерская</h5>
                     <p>Уникальные изделия ручной работы с душой и вниманием к деталям.</p>
                 </div>
                 
@@ -899,7 +899,7 @@
             </div>
             
             <div class="text-center pt-3 border-top border-secondary">
-                <p class="mb-0">© 2025 Рукодельная мастерская. Все права защищены.</p>
+                <p class="mb-0">© 2025 Мастерская. Все права защищены.</p>
             </div>
         </div>
     </footer>
@@ -968,7 +968,7 @@
             });
         });
 
-        // Анимация карточек товаров при наведении
+        // Анимация карточек изделий при наведении
         document.querySelectorAll('.product-card').forEach(card => {
             card.addEventListener('mouseenter', function() {
                 this.style.transform = 'translateY(-5px)';

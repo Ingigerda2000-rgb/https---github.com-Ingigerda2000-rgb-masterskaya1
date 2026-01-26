@@ -28,7 +28,7 @@
         <div class="col-lg-8">
             <div class="card shadow-sm">
                 <div class="card-header bg-white">
-                    <h5 class="mb-0">Ваши товары</h5>
+                    <h5 class="mb-0">Ваши изделия</h5>
                 </div>
                 <div class="card-body p-0">
                     <div class="table-responsive">
@@ -36,7 +36,7 @@
                             <thead class="table-light">
                                 <tr>
                                     <th width="60" class="text-center"></th>
-                                    <th>ID товара</th>
+                                    <th>ID изделия</th>
                                     <th>Товар</th>
                                     <th class="text-center">Количество</th>
                                     <th class="text-center">Остаток</th>
@@ -93,7 +93,7 @@
                                                        min="1" max="{{ item.product.stock_quantity }}"
                                                        class="form-control text-center">
                                                 <button type="button" class="btn btn-outline-secondary"
-                                                        onclick="const input = this.parentNode.querySelector('input'); if (parseInt(input.value) >= parseInt(input.max)) { showNotification('Нельзя увеличить количество. Достигнуто максимальное доступное количество товара.'); } else { input.stepUp(); this.form.submit(); }">+</button>
+                                                        onclick="const input = this.parentNode.querySelector('input'); if (parseInt(input.value) >= parseInt(input.max)) { showNotification('Нельзя увеличить количество. Достигнуто максимальное доступное количество изделий.'); } else { input.stepUp(); this.form.submit(); }">+</button>
                                             </div>
                                         </form>
                                     </td>
@@ -136,8 +136,8 @@
                 <div class="d-flex">
                     <i class="bi bi-exclamation-triangle me-2 flex-shrink-0" style="font-size: 1.5rem;"></i>
                     <div>
-                        <strong>Внимание!</strong> Некоторые товары в корзине недоступны в указанном количестве. 
-                        Пожалуйста, скорректируйте количество или удалите эти товары перед оформлением заказа.
+                        <strong>Внимание!</strong> Некоторые изделия в корзине недоступны в указанном количестве. 
+                        Пожалуйста, скорректируйте количество или удалите эти изделия перед оформлением заказа.
                         <div class="mt-2">
                             <small>
                                 <i class="bi bi-dot"></i>
@@ -180,7 +180,7 @@
                         Есть проблемы с заказом
                     </button>
                     <p class="text-muted small mt-2 text-center">
-                        Для оформления заказа исправьте проблемные товары в корзине
+                        Для оформления заказа исправьте проблемные изделия в корзине
                     </p>
                     {% else %}
                     <a href="{% url 'cart:checkout' %}" class="btn btn-primary w-100 btn-lg mb-3">
@@ -210,7 +210,7 @@
             <i class="bi bi-cart-x" style="font-size: 80px; color: #ddd;"></i>
         </div>
         <h3 class="mb-3">Ваша корзина пуста</h3>
-        <p class="text-muted mb-4">Добавьте товары, чтобы сделать заказ</p>
+        <p class="text-muted mb-4">Добавьте изделия, чтобы сделать заказ</p>
         <div class="d-flex justify-content-center gap-3">
             <a href="{% url 'home' %}" class="btn btn-primary btn-lg">
                 <i class="bi bi-shop me-2"></i>
@@ -247,10 +247,10 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
-    // Подтверждение удаления товара
+    // Подтверждение удаления изделия
     document.querySelectorAll('form[action*="remove"]').forEach(form => {
         form.addEventListener('submit', function(e) {
-            if (!confirm('Удалить товар из корзины?')) {
+            if (!confirm('Удалить изделие из корзины?')) {
                 e.preventDefault();
             }
         });

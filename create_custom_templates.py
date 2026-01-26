@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-Скрипт для создания шаблонов товаров для кастомизации
+Скрипт для создания шаблонов изделий для кастомизации
 """
 import os
 import django
@@ -15,10 +15,10 @@ from products.models import Product
 from custom_orders.models import ProductTemplate
 
 def create_templates():
-    """Создание шаблонов для товаров с кастомизацией"""
+    """Создание шаблонов для изделий с кастомизацией"""
     customizable_products = Product.objects.filter(can_be_customized=True, status='active')
 
-    print(f"Найдено товаров с кастомизацией: {customizable_products.count()}")
+    print(f"Найдено изделий с кастомизацией: {customizable_products.count()}")
 
     for product in customizable_products:
         # Проверяем, есть ли уже шаблон
@@ -81,10 +81,10 @@ def create_templates():
         )
 
         if created:
-            print(f"✓ Создан шаблон для товара: {product.name}")
+            print(f"✓ Создан шаблон для изделия: {product.name}")
         else:
-            print(f"✓ Шаблон уже существует для товара: {product.name}")
+            print(f"✓ Шаблон уже существует для изделия: {product.name}")
 
 if __name__ == '__main__':
     create_templates()
-    print("\nГотово! Шаблоны товаров созданы.")
+    print("\nГотово! Шаблоны изделий созданы.")

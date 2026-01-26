@@ -29,14 +29,14 @@ def checkout(request):
         messages.error(request, 'Ваша корзина пуста!')
         return redirect('cart:cart_view')
     
-    # Проверяем доступность всех товаров
+    # Проверяем доступность всех изделий
     unavailable_items = []
     for item in cart.items.all():
         if not item.is_available():
             unavailable_items.append(item)
     
     if unavailable_items:
-        messages.error(request, 'Некоторые товары в корзине недоступны. Пожалуйста, проверьте корзину.')
+        messages.error(request, 'Некоторые изделия в корзине недоступны. Пожалуйста, проверьте корзину.')
         return redirect('cart:cart_view')
     
     if request.method == 'POST':
@@ -55,7 +55,7 @@ def checkout(request):
                 status='pending'
             )
             
-            # Создаем OrderItem для каждого товара в корзине
+            # Создаем OrderItem для каждого изделия в корзине
             for cart_item in cart.items.all():
                 OrderItem.objects.create(
                     order=order,
@@ -220,7 +220,7 @@ class MasterOrdersView(ListView):
     paginate_by = 20
     
     def get_queryset(self):
-        # Мастер видит только заказы со своими товарами
+        # Мастер видит только заказы со своими изделиями
         queryset = Order.objects.filter(
             items__product__master=self.request.user
         ).distinct()

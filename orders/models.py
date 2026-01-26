@@ -237,7 +237,7 @@ class Order(models.Model):
     
     def is_master_order(self, user):
         """Проверяет, является ли пользователь мастером для этого заказа"""
-        # Проверяем, есть ли товары от этого мастера в заказе
+        # Проверяем, есть ли изделия от этого мастера в заказе
         return self.items.filter(product__master=user).exists()
     
     def update_status(self, new_status, user=None, comment="", photo=None):
@@ -448,7 +448,7 @@ class Order(models.Model):
 
 
 class OrderItem(models.Model):
-    """Элемент заказа - товар в заказе"""
+    """Элемент заказа - изделие в заказе"""
     order = models.ForeignKey(
         Order,
         on_delete=models.CASCADE,
@@ -471,7 +471,7 @@ class OrderItem(models.Model):
     )
     product_name = models.CharField(
         max_length=200,
-        verbose_name='Название товара'
+        verbose_name='Название изделия'
     )
 
     # Поля для кастомных заказов
@@ -491,7 +491,7 @@ class OrderItem(models.Model):
     class Meta:
         verbose_name = 'Элемент заказа'
         verbose_name_plural = 'Элементы заказа'
-        unique_together = ['order', 'product']  # Один товар может быть только один раз в заказе
+        unique_together = ['order', 'product']  # Одно изделие может быть только один раз в заказе
 
     def __str__(self):
         return f"{self.product_name} x{self.quantity} в заказе #{self.order.id}"

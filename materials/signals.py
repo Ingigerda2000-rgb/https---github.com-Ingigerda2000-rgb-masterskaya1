@@ -76,7 +76,7 @@ def handle_order_item_update(sender, instance, **kwargs):
     try:
         old_item = OrderItem.objects.get(pk=instance.pk)
         
-        # Если изменилось количество товара
+        # Если изменилось количество изделий
         if old_item.quantity != instance.quantity and instance.order.status == 'pending':
             # Освобождаем старые резервирования
             old_item.release_materials()

@@ -83,7 +83,7 @@ test_product, created = Product.objects.get_or_create(
 )
 
 if created:
-    print(f"\n✅ Создан тестовый товар: {test_product.name}")
+    print(f"\n✅ Создано тестовое изделие: {test_product.name}")
     
     # Создаём рецепт
     recipe = MaterialRecipe.objects.create(

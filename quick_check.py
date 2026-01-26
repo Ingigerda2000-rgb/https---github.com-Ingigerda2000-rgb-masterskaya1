@@ -83,7 +83,7 @@ if not tables:
     print("1. ❗ База данных пуста. Выполните:")
     print("   python manage.py migrate")
 elif 'products_product' not in tables:
-    print("2. ❗ Таблица товаров не создана. Выполните:")
+    print("2. ❗ Таблица изделий не создана. Выполните:")
     print("   python manage.py makemigrations")
     print("   python manage.py migrate products")
 else:

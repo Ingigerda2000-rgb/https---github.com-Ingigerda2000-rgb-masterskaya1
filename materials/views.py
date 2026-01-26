@@ -228,10 +228,10 @@ class MaterialRecipeListView(LoginRequiredMixin, ListView):
 
 @login_required
 def material_recipe_create(request, product_id):
-    """Добавление рецептов к товару (несколько материалов)"""
+    """Добавление рецептов к изделию (несколько материалов)"""
     product = get_object_or_404(Product, pk=product_id)
     if product.master != request.user:
-        messages.error(request, '❌ У вас нет доступа к этому товару')
+        messages.error(request, '❌ У вас нет доступа к этому изделию')
         return redirect('home')
 
     from django.forms import modelformset_factory
@@ -273,7 +273,7 @@ def material_recipe_create(request, product_id):
     context = {
         'product': product,
         'formset': formset,
-        'title': f'Добавление рецептов для товара: {product.name}',
+        'title': f'Добавление рецептов для изделия: {product.name}',
         'existing_recipes': product.material_recipes.select_related('material'),
         'submit_text': 'Сохранить рецепты',
     }

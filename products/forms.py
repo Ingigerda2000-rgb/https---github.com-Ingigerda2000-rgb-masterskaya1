@@ -22,8 +22,8 @@ class ProductForm(forms.ModelForm):
             'can_be_customized', 'base_cost'
         ]
         widgets = {
-            'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Название товара'}),
-            'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 4, 'placeholder': 'Описание товара'}),
+            'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Название изделия'}),
+            'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 4, 'placeholder': 'Описание изделия'}),
             'price': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
             'category': forms.Select(attrs={'class': 'form-control'}),
             'stock_quantity': forms.NumberInput(attrs={'class': 'form-control'}),

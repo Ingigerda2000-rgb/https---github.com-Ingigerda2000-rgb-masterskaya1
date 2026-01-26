@@ -50,7 +50,7 @@ class Migration(migrations.Migration):
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('quantity', models.IntegerField(verbose_name='Количество')),
                 ('price', models.DecimalField(decimal_places=2, max_digits=10, verbose_name='Цена за единицу')),
-                ('product_name', models.CharField(max_length=200, verbose_name='Название товара')),
+                ('product_name', models.CharField(max_length=200, verbose_name='Название изделия')),
                 ('order', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='items', to='orders.order')),
                 ('product', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='order_items', to='products.product')),
             ],

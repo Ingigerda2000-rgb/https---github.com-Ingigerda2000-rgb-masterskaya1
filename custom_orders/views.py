@@ -34,7 +34,7 @@ def constructor_step(request, step, template_id=None):
     """Обработка шага конструктора"""
     steps = [
         'category',      # Шаг 1: Выбор категории
-        'product',       # Шаг 2: Выбор товара
+        'product',       # Шаг 2: Выбор изделия
         'configuration', # Шаг 3: Настройка
         'description',   # Шаг 4: Описание идеи
         'options',       # Шаг 5: Дополнительно
@@ -299,7 +299,7 @@ def finalize_custom_order(request):
         constructor_data = request.session.get('constructor_data', {})
         
         if not constructor_data.get('template_id'):
-            return JsonResponse({'success': False, 'error': 'Не выбран товар'}, status=400)
+            return JsonResponse({'success': False, 'error': 'Не выбрано изделие'}, status=400)
         
         template = get_object_or_404(ProductTemplate, id=constructor_data['template_id'])
         if not template.is_active:
@@ -574,7 +574,7 @@ def master_custom_orders(request):
         messages.error(request, 'У вас нет прав для просмотра этой страницы')
         return redirect('home')
     
-    # Получаем заказы на товары мастера
+    # Получаем заказы на изделия мастера
     specifications = CustomOrderSpecification.objects.filter(
         template__product__master=request.user
     ).select_related(

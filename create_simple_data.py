@@ -26,7 +26,7 @@ def create_simple_data():
         Product.objects.all().delete()
         print("   ✓ Товары удалены")
     except Exception as e:
-        print(f"   ⚠ Не удалось удалить товары: {e}")
+        print(f"   ⚠ Не удалось удалить изделия: {e}")
         # Пропускаем ошибку, продолжаем
     
     try:
@@ -111,8 +111,8 @@ def create_simple_data():
         traceback.print_exc()
         return
     
-    # 4. Создаем товары (БЕЗ связей с материалами)
-    print("\n4. Создание товаров...")
+    # 4. Создаем изделиеы (БЕЗ связей с материалами)
+    print("\n4. Создание изделий...")
     
     try:
         products_data = [
@@ -159,7 +159,7 @@ def create_simple_data():
             print(f"   ✓ Товар: {product.name} - {product.price} руб.")
             
     except Exception as e:
-        print(f"   ✗ Ошибка создания товаров: {e}")
+        print(f"   ✗ Ошибка создания изделий: {e}")
         import traceback
         traceback.print_exc()
         return
@@ -178,7 +178,7 @@ def create_simple_data():
     
     print("\n🌐 ССЫЛКИ ДЛЯ ПРОВЕРКИ:")
     print("1. Админка: http://localhost:8000/admin/")
-    print("2. Каталог товаров: http://localhost:8000/products/")
+    print("2. Каталог изделий: http://localhost:8000/products/")
     print("=" * 60)
 
 if __name__ == '__main__':

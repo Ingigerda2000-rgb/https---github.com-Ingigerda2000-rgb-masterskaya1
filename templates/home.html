@@ -4,7 +4,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Рукодельная мастерская - Магазин ручной работы</title>
+    <meta name="csrf-token" content="{{ csrf_token }}">
+    <title> Мастерская авторских изделий</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     <style>
@@ -196,6 +197,7 @@
             margin-bottom: 20px;
             border: 1px solid #eee;
             box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            display: none;
         }
         
         .filter-row {
@@ -263,7 +265,7 @@
             color: #495057;
         }
         
-        /* Заголовок товаров */
+        /* Заголовок изделий */
         .products-title {
             font-weight: 700;
             color: #333;
@@ -312,7 +314,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            object-fit: cover;
+            object-fit: contain;
             transition: transform 0.5s ease;
         }
         
@@ -525,9 +527,44 @@
             justify-content: space-between;
             align-items: center;
         }
-        
+
         .user-section {
             white-space: nowrap;
+            display: flex;
+            align-items: center;
+            flex-wrap: nowrap;
+        }
+        
+        /* Стили для иконки избранного */
+        .favorite-icon-container {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 10;
+        }
+        
+        .favorite-icon {
+            font-size: 24px;
+            color: #ccc;
+            cursor: pointer;
+            transition: all 0.3s;
+            background-color: rgba(255, 255, 255, 0.7);
+            border-radius: 50%;
+            padding: 5px;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .favorite-icon:hover {
+            transform: scale(1.1);
+            color: #ff0000;
+        }
+        
+        .favorite-icon.bi-heart-fill {
+            color: #ff0000;
         }
     </style>
 </head>
@@ -538,7 +575,7 @@
             <div class="header-content">
                 <!-- Логотип -->
                 <a href="/" class="logo">
-                    <i class="bi bi-heart-fill me-2"></i>Рукодельная мастерская
+                    <i class="bi bi-gem me-2"></i>Мастерская
                 </a>
                 
                 <!-- Центрированная поисковая строка -->
@@ -548,7 +585,7 @@
                             type="text" 
                             class="search-input" 
                             name="search" 
-                            placeholder="Поиск товаров..." 
+                            placeholder="Поиск изделий..." 
                             value="{{ search_query|default:'' }}"
                         >
                         <button type="submit" class="search-button">
@@ -559,23 +596,66 @@
                 
                 <!-- Кнопка профиля/входа -->
                 <div class="user-section">
+                    <!-- Корзина с всплывающим окном -->
+                    <div class="dropdown d-inline-block">
+                        <a href="#" class="login-btn me-2 position-relative dropdown-toggle" 
+                           style="color: var(--primary-color);" 
+                           id="cartDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-cart"></i>
+                            <span id="cart-count" class="badge bg-danger rounded-pill position-absolute top-0 start-100 translate-middle" 
+                                  style="font-size: 0.65rem; padding: 0.25rem 0.4rem;">
+                                0
+                            </span>
+                        </a>
+                        
+                        <!-- Всплывающее окно корзины -->
+                        <div class="dropdown-menu dropdown-menu-end p-0" aria-labelledby="cartDropdown" style="width: 400px; max-height: 600px; overflow-y: auto;">
+                            <div class="card border-0">
+                                <div class="card-header bg-primary text-white py-2">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span><i class="bi bi-cart me-2"></i>Корзина</span>
+                                        <span id="cart-total-badge" class="badge bg-light text-primary">0 ₽</span>
+                                    </div>
+                                </div>
+                                <div class="card-body p-0" id="cart-preview-items">
+                                    <!-- Здесь будут элементы корзины -->
+                                    <div class="text-center py-4 text-muted" id="empty-cart-message">
+                                        <i class="bi bi-cart-x" style="font-size: 2rem;"></i>
+                                        <p class="mt-2">Ваша корзина пуста</p>
+                                    </div>
+                                </div>
+                                <div class="card-footer p-2">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <span class="fw-bold">Итого:</span>
+                                        <span class="fw-bold" id="cart-total">0 ₽</span>
+                                    </div>
+                                    <div class="d-grid">
+                                        <a href="{% url 'cart:cart_view' %}" class="btn btn-primary">
+                                            <i class="bi bi-cart-check me-2"></i>Перейти в корзину
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
                     {% if user.is_authenticated %}
-                    <div class="dropdown">
+                    <div class="dropdown d-inline-block">
                         <button class="login-btn dropdown-toggle d-flex align-items-center" type="button" data-bs-toggle="dropdown">
                             <i class="bi bi-person me-2"></i>
                             <span>{{ user.email|truncatechars:10 }}</span>
                         </button>
                         <ul class="dropdown-menu dropdown-menu-end">
-                            <li><a class="dropdown-item" href="{% url 'profile' %}">
+                            <li><a class="dropdown-item" href="{% url 'accounts:profile' %}">
                                 <i class="bi bi-person me-2"></i>Профиль
                             </a></li>
                             
                             {% if user.is_master %}
-                            <li><a class="dropdown-item" href="{% url 'master_dashboard' %}">
+                            <li><a class="dropdown-item" href="{% url 'accounts:master_dashboard' %}">
                                 <i class="bi bi-tools me-2"></i>Панель мастера
                             </a></li>
                             {% else %}
-                            <li><a class="dropdown-item" href="{% url 'become_master' %}">
+                            <li><a class="dropdown-item" href="{% url 'accounts:become_master' %}">
                                 <i class="bi bi-palette me-2"></i>Стать мастером
                             </a></li>
                             {% endif %}
@@ -583,7 +663,7 @@
                             <li><hr class="dropdown-divider"></li>
                             
                             <li>
-                                <form method="post" action="{% url 'logout' %}">
+                                <form method="post" action="{% url 'accounts:logout' %}">
                                     {% csrf_token %}
                                     <button type="submit" class="dropdown-item">
                                         <i class="bi bi-box-arrow-right me-2"></i>Выйти
@@ -593,7 +673,7 @@
                         </ul>
                     </div>
                     {% else %}
-                    <a href="{% url 'login' %}" class="login-btn d-flex align-items-center">
+                    <a href="{% url 'accounts:login' %}" class="login-btn d-flex align-items-center">
                         <i class="bi bi-person me-2"></i>
                         <span>Войти</span>
                     </a>
@@ -607,9 +687,9 @@
     <nav class="categories-menu">
         <div class="container">
             <div class="categories-nav">
-                <a href="/" class="category-link {% if not request.GET.category %}active{% endif %}">Все товары</a>
+                <a href="/?{% for key,value in request.GET.items %}{% if key != 'category' %}{{ key }}={{ value }}&{% endif %}{% endfor %}" class="category-link {% if not request.GET.category %}active{% endif %}">Все изделия</a>
                 {% for category in categories %}
-                <a href="?category={{ category.id }}" class="category-link {% if request.GET.category == category.id|stringformat:'i' %}active{% endif %}">
+                <a href="?{% for key,value in request.GET.items %}{% if key != 'category' %}{{ key }}={{ value }}&{% endif %}{% endfor %}category={{ category.id }}" class="category-link {% if request.GET.category == category.id|stringformat:'i' %}active{% endif %}">
                     {{ category.name }}
                 </a>
                 {% endfor %}
@@ -684,7 +764,7 @@
             </button>
         </div>
 
-        <!-- Заголовок товаров -->
+        <!-- Заголовок изделий -->
         <h3 class="products-title">
             {% if search_query %}
                 Результаты поиска: "{{ search_query }}" ({{ products.paginator.count }})
@@ -695,7 +775,7 @@
                     {% endif %}
                 {% endfor %}
             {% else %}
-                Все товары ({{ products.paginator.count }})
+                Все изделия ({{ products.paginator.count }})
             {% endif %}
         </h3>
         
@@ -712,6 +792,10 @@
                                 <i class="bi bi-image" style="font-size: 70px; color: var(--accent-color);"></i>
                             </div>
                         {% endif %}
+                        <!-- Иконка избранного -->
+                        <div class="favorite-icon-container">
+                            <i id="favorite-icon-{{ product.id }}" class="bi bi-heart favorite-icon"></i>
+                        </div>
                     </div>
                     
                     <div class="product-info">
@@ -731,11 +815,12 @@
                         <div class="product-price">{{ product.price }} ₽</div>
                         
                         <div class="product-actions">
-                            <a href="{% url 'product_detail' product.id %}" class="btn-details">
+                            <a href="{% url 'products:product_detail' product.id %}" class="btn-details">
                                 <i class="bi bi-eye me-1"></i>Подробнее
                             </a>
-                            <button class="btn-cart" onclick="addToCart({{ product.id }})">
-                                <i class="bi bi-cart-plus"></i>
+                            <button class="btn-cart" onclick="addToCart({{ product.id }})" id="cart-btn-{{ product.id }}">
+                                <i class="bi bi-cart-plus" id="cart-icon-{{ product.id }}"></i>
+                                <span class="cart-qty" id="cart-qty-{{ product.id }}" style="display: none;">0</span>
                             </button>
                         </div>
                     </div>
@@ -781,7 +866,7 @@
         {% else %}
             <div class="text-center py-5">
                 <i class="bi bi-search" style="font-size: 80px; color: #ddd;"></i>
-                <h4 class="mt-3">Товары не найдены</h4>
+                <h4 class="mt-3">Изделия не найдены</h4>
                 <p>Попробуйте изменить параметры поиска или фильтров</p>
                 <a href="/" class="btn-cart" style="display: inline-block; padding: 10px 30px;">
                     <i class="bi bi-arrow-counterclockwise me-1"></i>Сбросить фильтры
@@ -795,7 +880,7 @@
         <div class="container">
             <div class="row">
                 <div class="col-md-4 mb-4">
-                    <h5>Рукодельная мастерская</h5>
+                    <h5>Мастерская</h5>
                     <p>Уникальные изделия ручной работы с душой и вниманием к деталям.</p>
                 </div>
                 
@@ -814,7 +899,7 @@
             </div>
             
             <div class="text-center pt-3 border-top border-secondary">
-                <p class="mb-0">© 2025 Рукодельная мастерская. Все права защищены.</p>
+                <p class="mb-0">© 2025 Мастерская. Все права защищены.</p>
             </div>
         </div>
     </footer>
@@ -822,26 +907,56 @@
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
+    <!-- Скрипт для работы с корзиной -->
+    <script src="{% static 'js/cart.js' %}"></script>
+    
+    <!-- Скрипт для работы с избранным -->
+    <script src="{% static 'js/favorites.js' %}"></script>
+    
     <script>
-        // Функция добавления в корзину
-        function addToCart(productId) {
-            alert('Товар добавлен в корзину! ID: ' + productId);
-            // Здесь будет AJAX запрос к корзине
-        }
-        
         // Баннер индивидуального заказа
         document.getElementById('customOrderBtn').addEventListener('click', function() {
-            alert('Переход к созданию индивидуального заказа');
-            // window.location.href = '/custom_orders/';
-        });
-        
+    window.location.href = '/custom_orders/constructor/';
+});
+
+        // Handle search input to show/hide filters
+        const searchInput = document.querySelector('.search-input');
+        const filtersForm = document.querySelector('.filters-form');
+
+        function toggleFilters() {
+            const hasSearch = searchInput.value.trim().length > 0;
+            const hasFilters = Array.from(document.querySelectorAll('.filter-input')).some(input => input.value.trim() !== '');
+            if (hasSearch || hasFilters) {
+                filtersForm.style.display = 'block';
+            } else {
+                filtersForm.style.display = 'none';
+            }
+        }
+
+        searchInput.addEventListener('input', toggleFilters);
+
+        // Check on load
+        document.addEventListener('DOMContentLoaded', toggleFilters);
+
         // Автоотправка формы при изменении некоторых фильтров
         document.querySelectorAll('select.filter-input').forEach(select => {
             select.addEventListener('change', function() {
+                const form = this.form;
+                const searchInput = document.querySelector('.search-input');
+                if (searchInput && searchInput.value.trim()) {
+                    let hidden = form.querySelector('input[name="search"]');
+                    if (!hidden) {
+                        hidden = document.createElement('input');
+                        hidden.type = 'hidden';
+                        hidden.name = 'search';
+                        form.appendChild(hidden);
+                    }
+                    hidden.value = searchInput.value.trim();
+                }
                 this.form.submit();
             });
         });
-        
+
         // Подсветка активной категории в меню
         const categoryLinks = document.querySelectorAll('.category-link');
         categoryLinks.forEach(link => {
@@ -852,13 +967,13 @@
                 this.classList.add('active');
             });
         });
-        
-        // Анимация карточек товаров при наведении
+
+        // Анимация карточек изделий при наведении
         document.querySelectorAll('.product-card').forEach(card => {
             card.addEventListener('mouseenter', function() {
                 this.style.transform = 'translateY(-5px)';
             });
-            
+
             card.addEventListener('mouseleave', function() {
                 this.style.transform = 'translateY(0)';
             });

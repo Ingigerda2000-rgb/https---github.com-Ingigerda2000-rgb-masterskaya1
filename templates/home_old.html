@@ -170,7 +170,7 @@
             box-shadow: 0 5px 15px rgba(121, 85, 72, 0.2);
         }
         
-        /* Заголовок товаров */
+        /* Заголовок изделий */
         .products-title {
             font-weight: 700;
             color: #333;
@@ -179,7 +179,7 @@
             border-bottom: 2px solid var(--secondary-color);
         }
         
-        /* Карточки товаров */
+        /* Карточки изделий */
         .product-card {
             border: none;
             border-radius: 12px;
@@ -328,7 +328,7 @@
                 
                 <div class="col-md-6 d-none d-md-block">
                     <div class="search-container">
-                        <input type="text" class="search-input" placeholder="Поиск товаров...">
+                        <input type="text" class="search-input" placeholder="Поиск изделий...">
                     </div>
                 </div>
                 
@@ -375,7 +375,7 @@
                 <!-- Мобильный поиск -->
                 <div class="col-12 d-md-none mt-3">
                     <div class="search-container">
-                        <input type="text" class="search-input" placeholder="Поиск товаров...">
+                        <input type="text" class="search-input" placeholder="Поиск изделий...">
                     </div>
                 </div>
             </div>
@@ -398,7 +398,7 @@
     <nav class="categories-menu">
         <div class="container">
             <div class="categories-nav">
-                <a href="#" class="category-link active">Все товары</a>
+                <a href="#" class="category-link active">Все изделия</a>
                 <a href="#" class="category-link">Шапки/Шарфы</a>
                 <a href="#" class="category-link">Кофты</a>
                 <a href="#" class="category-link">Худи</a>
@@ -424,8 +424,8 @@
             </button>
         </div>
 
-        <!-- Секция "Все товары" -->
-        <h3 class="products-title">Все товары</h3>
+        <!-- Секция "Все изделия" -->
+        <h3 class="products-title">Все изделия</h3>
         
         <div class="row row-cols-1 row-cols-md-3 row-cols-lg-4 g-4">
             <!-- Товар 1 -->
@@ -584,22 +584,22 @@
                 });
                 this.classList.add('active');
                 
-                // Фильтрация товаров по категории
+                // Фильтрация изделий по категории
                 const category = this.textContent.toLowerCase();
                 filterProducts(category);
             });
         });
         
-        // Функция фильтрации товаров
+        // Функция фильтрации изделий
         function filterProducts(category) {
             const allProducts = document.querySelectorAll('.product-card');
             const productsTitle = document.querySelector('.products-title');
             
-            if (category === 'все товары') {
+            if (category === 'все изделия') {
                 allProducts.forEach(product => {
                     product.style.display = 'block';
                 });
-                productsTitle.textContent = 'Все товары';
+                productsTitle.textContent = 'Все изделия';
                 return;
             }
             
@@ -618,7 +618,7 @@
             
             // Обновляем заголовок
             const activeCategory = document.querySelector('.category-link.active').textContent;
-            productsTitle.textContent = activeCategory + ` (${visibleCount} товаров)`;
+            productsTitle.textContent = activeCategory + ` (${visibleCount} изделий)`;
         }
         
         // Кнопка индивидуального заказа
@@ -627,7 +627,7 @@
             // window.location.href = 'custom-order.html';
         });
         
-        // Клик по товару
+        // Клик по изделию
         document.querySelectorAll('.product-card').forEach(card => {
             card.addEventListener('click', function() {
                 const productName = this.querySelector('.product-name').textContent;
@@ -637,15 +637,15 @@
             });
         });
         
-        // Поиск товаров
+        // Поиск изделий
         const searchInput = document.querySelector('.search-input');
         searchInput.addEventListener('input', function() {
             const searchTerm = this.value.toLowerCase();
             const allProducts = document.querySelectorAll('.product-card');
             
             if (searchTerm === '') {
-                // Показываем все товары при пустом поиске
-                filterProducts('все товары');
+                // Показываем все изделия при пустом поиске
+                filterProducts('все изделия');
                 return;
             }
             

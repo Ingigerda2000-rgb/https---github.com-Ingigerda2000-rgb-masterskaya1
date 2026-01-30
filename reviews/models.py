@@ -37,15 +37,15 @@ class Review(models.Model):
         verbose_name = 'Отзыв'
         verbose_name_plural = 'Отзывы'
         ordering = ['-created_at']
-        unique_together = ['product', 'user']  # Один отзыв на товар от пользователя
+        unique_together = ['product', 'user']  # Один отзыв на изделие от пользователя
     
     def __str__(self):
         return f"Отзыв на {self.product.name} от {self.user.email}"
     
     def verify_purchase(self):
-        """Проверка факта покупки товара"""
+        """Проверка факта покупки изделия"""
         if self.order:
-            # Проверяем, что товар есть в заказе
+            # Проверяем, что изделие есть в заказе
             order_items = self.order.items.filter(product=self.product)
             self.purchase_verified = order_items.exists()
             self.save()

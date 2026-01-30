@@ -1,0 +1,597 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ title|default:'Добавление рецепта' }} :: Masterskaya{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Хлебные крошки -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'home' %}">Главная</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'materials:material_list' %}">Материалы</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'products:product_detail' product.id %}">{{ product.name }}</a></li>
+            <li class="breadcrumb-item active">{{ title|default:'Новый рецепт' }}</li>
+        </ol>
+    </nav>
+    
+    <!-- Заголовок -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h2 mb-1">
+                <i class="bi bi-file-earmark-text text-primary me-2"></i>
+                {{ title|default:'Добавление рецепта материала' }}
+            </h1>
+            <p class="text-muted mb-0">
+                Товар: <strong>{{ product.name }}</strong>
+            </p>
+        </div>
+        <a href="{% url 'products:product_detail' product.id %}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i>Назад к изделию
+        </a>
+    </div>
+    
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- Форма -->
+            <div class="card">
+                <div class="card-body">
+                    <form method="post" id="recipeForm">
+                        {% csrf_token %}
+                        {{ formset.management_form }}
+
+                        <!-- Материалы -->
+                        <div class="mb-4">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="border-bottom pb-2 mb-3">Материалы для производства</h5>
+                                <button type="button" class="btn btn-outline-primary btn-sm" id="addMaterialBtn">
+                                    <i class="bi bi-plus-circle me-1"></i>Добавить материал
+                                </button>
+                            </div>
+
+                            <div id="materialsContainer">
+                                {% for form in formset %}
+                                <div class="material-row border rounded p-3 mb-3" data-form-index="{{ forloop.counter0 }}">
+                                    {% if formset.can_delete %}
+                                    <div class="d-flex justify-content-end mb-2">
+                                        <button type="button" class="btn btn-outline-danger btn-sm remove-material" title="Удалить материал">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </div>
+                                    {% endif %}
+
+                                    <div class="row g-3">
+                                        <!-- Выбор материала -->
+                                        <div class="col-md-4">
+                                            <label class="form-label required-field">Материал</label>
+                                            {{ form.material }}
+                                            {% if form.material.errors %}
+                                            <div class="invalid-feedback d-block">{{ form.material.errors }}</div>
+                                            {% endif %}
+                                            <div class="form-text">Выберите материал</div>
+                                        </div>
+
+                                        <!-- Норма расхода -->
+                                        <div class="col-md-3">
+                                            <label class="form-label required-field">Норма расхода</label>
+                                            <div class="input-group">
+                                                {{ form.consumption_rate }}
+                                                <span class="input-group-text consumption-unit">ед.</span>
+                                            </div>
+                                            {% if form.consumption_rate.errors %}
+                                            <div class="invalid-feedback d-block">{{ form.consumption_rate.errors }}</div>
+                                            {% endif %}
+                                            <div class="form-text">На 1 единицу изделия</div>
+                                        </div>
+
+                                        <!-- Коэффициент отходов -->
+                                        <div class="col-md-3">
+                                            <label class="form-label">Отходы (%)</label>
+                                            <div class="input-group">
+                                                {{ form.waste_factor }}
+                                                <span class="input-group-text">%</span>
+                                            </div>
+                                            {% if form.waste_factor.errors %}
+                                            <div class="invalid-feedback d-block">{{ form.waste_factor.errors }}</div>
+                                            {% endif %}
+                                            <div class="form-text">0.1 = 10%</div>
+                                        </div>
+
+                                        <!-- Автоматическое списание -->
+                                        <div class="col-md-2">
+                                            <label class="form-label">Авто-списание</label>
+                                            <div class="form-check form-switch d-flex justify-content-center">
+                                                {{ form.auto_consume }}
+                                            </div>
+                                            <div class="form-text text-center">Да/Нет</div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Информация о материале -->
+                                    <div class="row g-3 mt-2">
+                                        <div class="col-md-6">
+                                            <div class="card bg-light">
+                                                <div class="card-body p-2">
+                                                    <small class="text-muted material-info" id="materialInfo-{{ forloop.counter0 }}">
+                                                        Выберите материал, чтобы увидеть информацию
+                                                    </small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="card bg-light">
+                                                <div class="card-body p-2">
+                                                    <small class="text-muted availability-info" id="availabilityInfo-{{ forloop.counter0 }}">
+                                                        Доступность появится после выбора материала
+                                                    </small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Примечания -->
+                                    <div class="mt-2">
+                                        <label class="form-label">Примечания</label>
+                                        <textarea class="form-control" name="{{ form.notes.name }}" rows="2" placeholder="Дополнительная информация о материале...">{{ form.notes.value|default_if_none:"" }}</textarea>
+                                    </div>
+
+                                    {{ form.DELETE }}
+                                </div>
+                                {% endfor %}
+                            </div>
+
+                            <!-- Кнопка быстрого добавления материала -->
+                            <div class="text-center mt-3">
+                                <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#quickAddMaterialModal">
+                                    <i class="bi bi-plus-circle me-1"></i>Создать новый материал
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Кнопки формы -->
+                        <div class="d-flex justify-content-between pt-3 border-top">
+                            <a href="{% url 'products:product_detail' product.id %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-x-circle me-1"></i>Отмена
+                            </a>
+                            <div class="btn-group">
+                                <button type="submit" name="save_and_add" value="1" class="btn btn-outline-primary">
+                                    <i class="bi bi-plus-circle me-1"></i>Сохранить и добавить ещё
+                                </button>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-check-circle me-1"></i>{{ submit_text|default:'Сохранить рецепт' }}
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Боковая панель -->
+        <div class="col-lg-4">
+            <div class="sticky-top" style="top: 1rem;">
+                <!-- Существующие рецепты -->
+                {% if existing_recipes %}
+                <div class="card mb-3">
+                    <div class="card-header bg-light">
+                        <h6 class="mb-0"><i class="bi bi-list-check me-2"></i>Существующие рецепты</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="list-group list-group-flush">
+                            {% for recipe in existing_recipes %}
+                            <div class="list-group-item px-0 py-2">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="mb-0">{{ recipe.material.name }}</h6>
+                                        <small class="text-muted">
+                                            {{ recipe.consumption_rate }} {{ recipe.material.get_unit_display }}/шт.
+                                        </small>
+                                    </div>
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="{% url 'materials:materialrecipe_update' recipe.id %}" 
+                                           class="btn btn-outline-secondary" title="Редактировать">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        <a href="{% url 'materials:materialrecipe_delete' recipe.id %}" 
+                                           class="btn btn-outline-danger" title="Удалить">
+                                            <i class="bi bi-trash"></i>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- Информация о изделии -->
+                <div class="card">
+                    <div class="card-header bg-light">
+                        <h6 class="mb-0"><i class="bi bi-box me-2"></i>Информация о изделии</h6>
+                    </div>
+                    <div class="card-body">
+                        <h6 class="mb-2">{{ product.name }}</h6>
+                        <p class="text-muted small mb-3">{{ product.description|truncatechars:100 }}</p>
+                        
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <small class="text-muted d-block">Цена</small>
+                                <div class="fw-bold">{{ product.price }} ₽</div>
+                            </div>
+                            <div class="col-6">
+                                <small class="text-muted d-block">На складе</small>
+                                <div>{{ product.stock_quantity }} шт.</div>
+                            </div>
+                        </div>
+                        
+                        <hr class="my-3">
+                        
+                        <div class="d-grid">
+                            <a href="{% url 'products:product_detail' product.id %}" class="btn btn-outline-primary btn-sm">
+                                <i class="bi bi-eye me-1"></i>Просмотреть изделие
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Подсказки -->
+                <div class="card mt-3">
+                    <div class="card-header bg-light">
+                        <h6 class="mb-0"><i class="bi bi-lightbulb me-2"></i>Подсказки</h6>
+                    </div>
+                    <div class="card-body">
+                        <ul class="list-unstyled mb-0">
+                            <li class="mb-2">
+                                <small class="text-muted">
+                                    <i class="bi bi-rulers text-primary me-1"></i>
+                                    Норма расхода должна быть точной для правильного учёта материалов
+                                </small>
+                            </li>
+                            <li class="mb-2">
+                                <small class="text-muted">
+                                    <i class="bi bi-recycle text-success me-1"></i>
+                                    Коэффициент отходов учитывает обрезки, брак и другие потери
+                                </small>
+                            </li>
+                            <li>
+                                <small class="text-muted">
+                                    <i class="bi bi-robot text-info me-1"></i>
+                                    Автоматическое списание упрощает управление запасами
+                                </small>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal for Quick Add Material -->
+<div class="modal fade" id="quickAddMaterialModal" tabindex="-1" aria-labelledby="quickAddMaterialModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="quickAddMaterialModalLabel">Быстрое добавление материала</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="quickAddMaterialForm">
+                <div class="modal-body">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="quickName" class="form-label">Название материала</label>
+                        <input type="text" class="form-control" id="quickName" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="quickQuantity" class="form-label">Количество</label>
+                        <input type="number" class="form-control" id="quickQuantity" step="0.001" min="0" value="0">
+                    </div>
+                    <div class="mb-3">
+                        <label for="quickUnit" class="form-label">Единица измерения</label>
+                        <select class="form-select" id="quickUnit">
+                            <option value="pcs">Штуки</option>
+                            <option value="m">Метры</option>
+                            <option value="cm">Сантиметры</option>
+                            <option value="g">Граммы</option>
+                            <option value="kg">Килограммы</option>
+                            <option value="ml">Милилитры</option>
+                            <option value="l">Литры</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="submit" class="btn btn-primary">Добавить материал</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Обновление информации о выбранном материале
+function updateMaterialInfo(materialSelect, formIndex) {
+    var materialId = materialSelect.value;
+    var materialInfoDiv = document.getElementById('materialInfo-' + formIndex);
+    var availabilityInfoDiv = document.getElementById('availabilityInfo-' + formIndex);
+    var consumptionUnit = materialSelect.closest('.material-row').querySelector('.consumption-unit');
+
+    if (materialId) {
+        // Обновляем информацию о материале
+        var selectedOption = materialSelect.options[materialSelect.selectedIndex];
+        var materialName = selectedOption.text;
+
+        materialInfoDiv.innerHTML = `
+            <div class="mb-1"><strong>Название:</strong> ${materialName}</div>
+            <div class="mb-1"><strong>Ед. изм.:</strong> Загрузка...</div>
+            <div><strong>ID:</strong> ${materialId}</div>
+        `;
+
+        availabilityInfoDiv.innerHTML = 'Загрузка информации...';
+
+        // Запрашиваем детальную информацию через AJAX
+        fetch(`/materials/api/${materialId}/info/`, {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    materialInfoDiv.innerHTML = `
+                        <div class="mb-1"><strong>Название:</strong> ${data.name}</div>
+                        <div class="mb-1"><strong>Ед. изм.:</strong> ${data.unit}</div>
+                        <div><strong>Цвет:</strong> ${data.color || 'Не указан'}</div>
+                    `;
+
+                    availabilityInfoDiv.innerHTML = `
+                        <div class="mb-1"><strong>На складе:</strong> ${data.current_quantity} ${data.unit}</div>
+                        <div class="mb-1"><strong>Доступно:</strong> ${data.available_quantity} ${data.unit}</div>
+                        <div><strong>Цена:</strong> ${data.price_per_unit} ₽/${data.unit}</div>
+                    `;
+
+                    // Обновляем единицу измерения
+                    consumptionUnit.textContent = data.unit;
+                } else {
+                    materialInfoDiv.innerHTML = 'Ошибка загрузки информации';
+                    availabilityInfoDiv.innerHTML = data.error || 'Ошибка';
+                }
+            })
+            .catch(error => {
+                console.error('Ошибка загрузки информации о материале:', error);
+                materialInfoDiv.innerHTML = 'Ошибка загрузки информации';
+                availabilityInfoDiv.innerHTML = 'Ошибка загрузки информации';
+            });
+    } else {
+        materialInfoDiv.innerHTML = 'Выберите материал, чтобы увидеть информацию';
+        availabilityInfoDiv.innerHTML = 'Доступность появится после выбора материала';
+        consumptionUnit.textContent = 'ед.';
+    }
+}
+
+// Добавление нового материала
+function addMaterialForm() {
+    var container = document.getElementById('materialsContainer');
+    var formIndex = container.children.length;
+    var newForm = document.createElement('div');
+    newForm.className = 'material-row border rounded p-3 mb-3';
+    newForm.setAttribute('data-form-index', formIndex);
+    newForm.innerHTML = `
+        <div class="d-flex justify-content-end mb-2">
+            <button type="button" class="btn btn-outline-danger btn-sm remove-material" title="Удалить материал">
+                <i class="bi bi-trash"></i>
+            </button>
+        </div>
+        <div class="row g-3">
+            <div class="col-md-4">
+                <label class="form-label required-field">Материал</label>
+                <select class="form-select material-select" name="form-${formIndex}-material" required>
+                    <option value="">Выберите материал</option>
+                    <!-- Options will be populated via JS -->
+                </select>
+                <div class="form-text">Выберите материал</div>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label required-field">Норма расхода</label>
+                <div class="input-group">
+                    <input type="number" class="form-control" name="form-${formIndex}-consumption_rate" step="0.001" min="0.001" required>
+                    <span class="input-group-text consumption-unit">ед.</span>
+                </div>
+                <div class="form-text">На 1 единицу изделия</div>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Отходы (%)</label>
+                <div class="input-group">
+                    <input type="number" class="form-control" name="form-${formIndex}-waste_factor" step="0.01" min="0" max="1" value="0.10">
+                    <span class="input-group-text">%</span>
+                </div>
+                <div class="form-text">0.1 = 10%</div>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Авто-списание</label>
+                <div class="form-check form-switch d-flex justify-content-center">
+                    <input class="form-check-input" type="checkbox" name="form-${formIndex}-auto_consume" checked>
+                </div>
+                <div class="form-text text-center">Да/Нет</div>
+            </div>
+        </div>
+        <div class="row g-3 mt-2">
+            <div class="col-md-6">
+                <div class="card bg-light">
+                    <div class="card-body p-2">
+                        <small class="text-muted material-info" id="materialInfo-${formIndex}">
+                            Выберите материал, чтобы увидеть информацию
+                        </small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card bg-light">
+                    <div class="card-body p-2">
+                        <small class="text-muted availability-info" id="availabilityInfo-${formIndex}">
+                            Доступность появится после выбора материала
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="mt-2">
+            <label class="form-label">Примечания</label>
+            <textarea class="form-control" name="form-${formIndex}-notes" rows="2" placeholder="Дополнительная информация о материале..."></textarea>
+        </div>
+        <input type="hidden" name="form-${formIndex}-DELETE" value="false">
+    `;
+    container.appendChild(newForm);
+
+    // Update management form
+    var totalForms = document.querySelector('input[name$="-TOTAL_FORMS"]');
+    totalForms.value = parseInt(totalForms.value) + 1;
+
+    // Add event listeners
+    var materialSelect = newForm.querySelector('.material-select');
+    materialSelect.addEventListener('change', function() {
+        updateMaterialInfo(this, formIndex);
+    });
+
+    var removeBtn = newForm.querySelector('.remove-material');
+    removeBtn.addEventListener('click', function() {
+        removeMaterialForm(newForm);
+    });
+
+    // Populate material options
+    populateMaterialOptions(materialSelect);
+}
+
+// Удаление материала
+function removeMaterialForm(formElement) {
+    var deleteInput = formElement.querySelector('input[name$="-DELETE"]');
+    if (deleteInput) {
+        deleteInput.value = 'true';
+        formElement.style.display = 'none';
+    } else {
+        formElement.remove();
+        // Update management form
+        var totalForms = document.querySelector('input[name$="-TOTAL_FORMS"]');
+        totalForms.value = parseInt(totalForms.value) - 1;
+    }
+}
+
+// Заполнение опций материалов
+function populateMaterialOptions(selectElement) {
+    // Загружаем материалы через AJAX
+    fetch('/materials/api/materials/list/', {
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            selectElement.innerHTML = '<option value="">Выберите материал</option>';
+            data.materials.forEach(function(material) {
+                var option = document.createElement('option');
+                option.value = material.id;
+                option.textContent = material.name;
+                selectElement.appendChild(option);
+            });
+        } else {
+            selectElement.innerHTML = '<option value="">Ошибка загрузки материалов</option>';
+        }
+    })
+    .catch(error => {
+        console.error('Ошибка загрузки материалов:', error);
+        selectElement.innerHTML = '<option value="">Ошибка загрузки материалов</option>';
+    });
+}
+
+// Быстрое добавление материала
+document.getElementById('quickAddMaterialForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    var name = document.getElementById('quickName').value;
+    var quantity = document.getElementById('quickQuantity').value;
+    var unit = document.getElementById('quickUnit').value;
+
+    fetch('/materials/quick-add/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: JSON.stringify({
+            name: name,
+            current_quantity: quantity,
+            unit: unit
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Закрываем модальное окно
+            var modal = bootstrap.Modal.getInstance(document.getElementById('quickAddMaterialModal'));
+            modal.hide();
+
+            // Очищаем форму
+            document.getElementById('quickAddMaterialForm').reset();
+
+            // Обновляем все селекты материалов
+            document.querySelectorAll('.material-select').forEach(function(select) {
+                var option = document.createElement('option');
+                option.value = data.id;
+                option.text = data.name;
+                select.appendChild(option);
+            });
+
+            // Показываем сообщение
+            alert('Материал успешно добавлен!');
+        } else {
+            alert('Ошибка: ' + (data.errors ? JSON.stringify(data.errors) : 'Неизвестная ошибка'));
+        }
+    })
+    .catch(error => {
+        console.error('Ошибка:', error);
+        alert('Произошла ошибка при добавлении материала');
+    });
+});
+
+// Инициализация
+document.addEventListener('DOMContentLoaded', function() {
+    // Добавление материала
+    document.getElementById('addMaterialBtn').addEventListener('click', addMaterialForm);
+
+    // Удаление материалов
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('remove-material') || e.target.closest('.remove-material')) {
+            var formElement = e.target.closest('.material-row');
+            removeMaterialForm(formElement);
+        }
+    });
+
+    // Обновление информации о материалах
+    document.addEventListener('change', function(e) {
+        if (e.target.classList.contains('material-select')) {
+            var formIndex = e.target.closest('.material-row').getAttribute('data-form-index');
+            updateMaterialInfo(e.target, formIndex);
+        }
+    });
+
+    // Заполняем все селекты материалов
+    document.querySelectorAll('.material-select').forEach(function(select) {
+        populateMaterialOptions(select);
+    });
+
+    // Инициализация существующих форм
+    document.querySelectorAll('.material-row').forEach(function(row, index) {
+        var materialSelect = row.querySelector('.material-select');
+        if (materialSelect && materialSelect.value) {
+            updateMaterialInfo(materialSelect, index);
+        }
+    });
+});
+</script>
+{% endblock %}

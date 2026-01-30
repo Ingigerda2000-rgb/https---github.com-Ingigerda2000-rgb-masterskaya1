@@ -1,0 +1,108 @@
+{% extends 'base.html' %}
+
+{% block title %}Удаление материала :: HandMadeShop{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h4 class="mb-0">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        Подтверждение удаления
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-4">
+                        <div class="avatar avatar-xl bg-danger bg-opacity-10 text-danger rounded-circle d-inline-flex align-items-center justify-content-center mb-3">
+                            <i class="bi bi-trash fs-2"></i>
+                        </div>
+                        <h5>Вы уверены, что хотите удалить материал?</h5>
+                        <p class="text-muted">
+                            Материал: <strong>{{ object.name }}</strong>
+                        </p>
+                    </div>
+                    
+                    <div class="alert alert-warning">
+                        <div class="d-flex">
+                            <i class="bi bi-exclamation-triangle fs-4 me-3 flex-shrink-0"></i>
+                            <div>
+                                <h6 class="alert-heading">Внимание!</h6>
+                                <p class="mb-2">При удалении материала:</p>
+                                <ul class="mb-0">
+                                    <li>Материал будет помечен как неактивный</li>
+                                    <li>Он больше не будет отображаться в основном списке</li>
+                                    <li>Рецепты с этим материалом станут неактивными</li>
+                                    <li>История резервирований сохранится</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card mb-3">
+                        <div class="card-header bg-light">
+                            <h6 class="mb-0">Информация о материале</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-2">
+                                <div class="col-6">
+                                    <small class="text-muted d-block">Название</small>
+                                    <div class="fw-bold">{{ object.name }}</div>
+                                </div>
+                                <div class="col-6">
+                                    <small class="text-muted d-block">Количество</small>
+                                    <div>{{ object.current_quantity }} {{ object.get_unit_display }}</div>
+                                </div>
+                                <div class="col-6">
+                                    <small class="text-muted d-block">Цена за ед.</small>
+                                    <div>{{ object.price_per_unit }} ₽</div>
+                                </div>
+                                <div class="col-6">
+                                    <small class="text-muted d-block">Стоимость запаса</small>
+                                    <div class="fw-bold">{{ object.stock_value }} ₽</div>
+                                </div>
+                                {% if object.color %}
+                                <div class="col-12">
+                                    <small class="text-muted d-block">Цвет</small>
+                                    <div>{{ object.color }}</div>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'materials:material_list' %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left me-1"></i>Отмена
+                            </a>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="bi bi-trash me-1"></i>Да, удалить материал
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Альтернативные действия -->
+            <div class="card mt-3">
+                <div class="card-header bg-light">
+                    <h6 class="mb-0">Альтернативные действия</h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'materials:material_update' object.id %}" class="btn btn-outline-primary">
+                            <i class="bi bi-pencil me-1"></i>Редактировать материал
+                        </a>
+                        <a href="{% url 'materials:material_list' %}" class="btn btn-outline-secondary">
+                            <i class="bi bi-list-ul me-1"></i>Вернуться к списку материалов
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

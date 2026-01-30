@@ -62,8 +62,8 @@ for mat in materials_data:
     else:
         print(f"  → Материал уже есть: {material.name}")
 
-# 3. Добавляем материалы к товарам
-print("\n3. Добавление материалов к товарам...")
+# 3. Добавляем материалы к изделиям
+print("\n3. Добавление материалов к изделиям...")
 
 products = Product.objects.all()
 for product in products:
@@ -72,7 +72,7 @@ for product in products:
     # Очищаем старые связи (если есть)
     product.materials.clear()
     
-    # Добавляем материалы в зависимости от названия товара
+    # Добавляем материалы в зависимости от названия изделия
     if 'шапка' in product.name.lower():
         product.materials.add(materials['Шерсть'])
         print(f"    ✓ Добавлена шерсть")
@@ -95,7 +95,7 @@ for product in products:
         )
         
     else:
-        # Для остальных товаров добавляем оба материала
+        # Для остальных изделий добавляем оба материала
         product.materials.add(materials['Шерсть'], materials['Пряжа'])
         print(f"    ✓ Добавлены шерсть и пряжа")
         

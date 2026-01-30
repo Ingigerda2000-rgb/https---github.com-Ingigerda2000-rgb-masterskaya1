@@ -2,7 +2,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Тест товаров</title>
+    <title>Тест изделий</title>
     <style>
         body { font-family: Arial, sans-serif; padding: 20px; }
         .product { border: 1px solid #ddd; padding: 15px; margin: 10px 0; }
@@ -10,13 +10,13 @@
     </style>
 </head>
 <body>
-    <h1>ТЕСТ: Список товаров</h1>
+    <h1>ТЕСТ: Список изделий</h1>
     
-    <p>Всего товаров в базе: {{ products.count }}</p>
-    <p>Активных товаров: {{ products|length }}</p>
+    <p>Всего изделий в базе: {{ products.count }}</p>
+    <p>Активных изделий: {{ products|length }}</p>
     
     {% if products %}
-        <h2>Список активных товаров:</h2>
+        <h2>Список активных изделий:</h2>
         {% for product in products %}
         <div class="product">
             <h3>{{ product.name }}</h3>
@@ -30,11 +30,11 @@
     {% else %}
         <div style="color: red; padding: 20px; border: 2px solid red;">
             <h3>ВНИМАНИЕ!</h3>
-            <p>Нет активных товаров для отображения.</p>
+            <p>Нет активных изделий для отображения.</p>
             <p>Проверьте:</p>
             <ul>
-                <li>Есть ли товары в базе данных</li>
-                <li>Установлен ли статус "active" у товаров</li>
+                <li>Есть ли изделия в базе данных</li>
+                <li>Установлен ли статус "active" у изделий</li>
                 <li>Не фильтрует ли view по другим условиям</li>
             </ul>
         </div>

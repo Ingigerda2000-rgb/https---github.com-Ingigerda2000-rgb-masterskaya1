@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+
+{% block title %}Конструктор - Выбор категории{% endblock %}
+
+{% block extra_css %}
+<style>
+.category-option.active {
+    border-color: var(--primary-color) !important;
+    background-color: rgba(179, 29, 196, 0.05) !important;
+    color: var(--primary-color) !important;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 800px; margin: 40px auto;">
+
+    <h1 class="mb-4" style="color: #8a2be2; font-weight: bold;">Конструктор индивидуальных вещей</h1>
+    <p>Создайте уникальную вещь по вашему вкусу</p>
+
+    <form method="post" id="categoryForm">
+        {% csrf_token %}
+        <div class="row g-3 my-4">
+            {% for category in categories %}
+            <div class="col-6 col-md-4">
+                <label class="category-option btn btn-outline-primary w-100 p-4 text-center"
+                       style="cursor: pointer; border-radius: 12px; user-select: none;"
+                       data-category-id="{{ category.id }}">
+                    <input type="radio" name="category" value="{{ category.id }}" required style="display:none;">
+                    <i class="bi bi-box-seam fs-2 d-block mb-2"></i>
+                    {{ category.name }}
+                </label>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="d-flex justify-content-between">
+            <button type="button" class="btn btn-secondary" disabled>Назад</button>
+            <button type="submit" class="btn btn-primary">Далее</button>
+        </div>
+    </form>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const categoryOptions = document.querySelectorAll('.category-option');
+
+    categoryOptions.forEach(option => {
+        option.addEventListener('click', function() {
+            // Remove selected class from all options
+            categoryOptions.forEach(opt => opt.classList.remove('active'));
+            // Add selected class to clicked option
+            this.classList.add('active');
+            // Check the radio button
+            const radio = this.querySelector('input[type="radio"]');
+            radio.checked = true;
+            // Auto-submit the form
+            document.getElementById('categoryForm').submit();
+        });
+    });
+});
+</script>
+{% endblock %}

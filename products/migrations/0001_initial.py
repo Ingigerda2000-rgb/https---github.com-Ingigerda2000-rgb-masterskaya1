@@ -61,8 +61,8 @@ class Migration(migrations.Migration):
                 ('product', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='attributes', to='products.product')),
             ],
             options={
-                'verbose_name': 'Атрибут товара',
-                'verbose_name_plural': 'Атрибуты товаров',
+                'verbose_name': 'Атрибут изделия',
+                'verbose_name_plural': 'Атрибуты изделий',
             },
         ),
         migrations.CreateModel(
@@ -76,8 +76,8 @@ class Migration(migrations.Migration):
                 ('product', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='images', to='products.product')),
             ],
             options={
-                'verbose_name': 'Изображение товара',
-                'verbose_name_plural': 'Изображения товаров',
+                'verbose_name': 'Изображение изделия',
+                'verbose_name_plural': 'Изображения изделий',
                 'ordering': ['order'],
             },
         ),

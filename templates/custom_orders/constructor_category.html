@@ -1,0 +1,290 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Шаг 1: Выберите категорию{% endblock %}
+
+{% block extra_css %}
+<style>
+    .step-container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 40px 20px;
+    }
+    
+    .step-header {
+        margin-bottom: 40px;
+    }
+    
+    .step-title {
+        font-size: 28px;
+        font-weight: 700;
+        color: #333;
+        margin-bottom: 10px;
+    }
+    
+    .step-subtitle {
+        color: #666;
+        font-size: 16px;
+    }
+    
+    .categories-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 20px;
+        margin-bottom: 40px;
+    }
+    
+    .category-card {
+        background: white;
+        border-radius: 12px;
+        padding: 25px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s;
+        border: 2px solid #eee;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .category-card:hover {
+        border-color: #667eea;
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(102, 126, 234, 0.1);
+    }
+    
+    .category-card.selected {
+        border-color: #667eea;
+        background-color: rgba(102, 126, 234, 0.05);
+    }
+    
+    .category-icon {
+        font-size: 40px;
+        color: #667eea;
+        margin-bottom: 15px;
+    }
+    
+    .category-name {
+        font-size: 18px;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 5px;
+    }
+    
+    .category-count {
+        color: #999;
+        font-size: 14px;
+    }
+    
+    .step-navigation {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 40px;
+        padding-top: 20px;
+        border-top: 1px solid #eee;
+    }
+    
+    .nav-btn {
+        padding: 12px 30px;
+        border-radius: 50px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .btn-back {
+        background: #f8f5f2;
+        color: #333;
+        border: 1px solid #ddd;
+    }
+    
+    .btn-back:hover {
+        background: #eee;
+    }
+    
+    .btn-next {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+    }
+    
+    .btn-next:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+    }
+    
+    .btn-next:disabled {
+        background: #ccc;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+    }
+    
+    .step-progress {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        margin-bottom: 30px;
+    }
+    
+    .step-progress-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .step-progress-number {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        background: #f5f5f5;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+        font-weight: 600;
+        color: #999;
+    }
+    
+    .step-progress-number.active {
+        background: #667eea;
+        color: white;
+    }
+    
+    .step-progress-label {
+        font-size: 14px;
+        color: #666;
+        display: none;
+    }
+    
+    @media (min-width: 768px) {
+        .step-progress-label {
+            display: block;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="step-container">
+    <!-- Индикатор прогресса -->
+    <div class="step-progress">
+        {% for i in "123456" %}
+        <div class="step-progress-item">
+            <div class="step-progress-number {% if i|add:'0' == current_step %}active{% endif %}">
+                {{ i }}
+            </div>
+            {% if i|add:'0' == current_step %}
+            <div class="step-progress-label">{{ step_display_name }}</div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    
+    <!-- Заголовок шага -->
+    <div class="step-header">
+        <h1 class="step-title">Выберите категорию</h1>
+        <p class="step-subtitle">Начнем с выбора того, что вы хотите создать</p>
+    </div>
+    
+    <!-- Выбор категории -->
+    <div class="categories-grid" id="categoriesGrid">
+        {% for category in categories %}
+        <div class="category-card" 
+             data-category-id="{{ category.id }}"
+             data-category-name="{{ category.name }}"
+             onclick="selectCategory(this)">
+            <div class="category-icon">
+                {% if category.name == 'Шапки/шарфы' %}<i class="bi bi-scarf"></i>
+                {% elif category.name == 'Кофты' %}<i class="bi bi-jacket"></i>
+                {% elif category.name == 'Худи' %}<i class="bi bi-hoodie"></i>
+                {% elif category.name == 'Куклы и игрушки' %}<i class="bi bi-teddy-bear"></i>
+                {% elif category.name == 'Сумки' %}<i class="bi bi-bag"></i>
+                {% elif category.name == 'Украшения и аксессуары' %}<i class="bi bi-gem"></i>
+                {% elif category.name == 'Для дома' %}<i class="bi bi-house-door"></i>
+                {% else %}<i class="bi bi-box"></i>{% endif %}
+            </div>
+            <h3 class="category-name">{{ category.name }}</h3>
+            <div class="category-count">
+                {{ category.products.count }} изделий
+            </div>
+        </div>
+        {% empty %}
+        <p class="text-center">Нет доступных категорий</p>
+        {% endfor %}
+    </div>
+    
+    <!-- Навигация -->
+    <div class="step-navigation">
+        <a href="{% if current_step > 1 %}{% url 'custom_orders:constructor_step' step=current_step|add:'-1' %}{% else %}{% url 'custom_orders:constructor_main' %}{% endif %}" 
+           class="nav-btn btn-back">
+            <i class="bi bi-arrow-left"></i>Назад
+        </a>
+        
+        <button class="nav-btn btn-next" id="nextBtn" onclick="goToNextStep()" disabled>
+            Далее <i class="bi bi-arrow-right"></i>
+        </button>
+    </div>
+</div>
+
+<script>
+let selectedCategoryId = null;
+
+function selectCategory(card) {
+    // Снимаем выделение со всех карточек
+    document.querySelectorAll('.category-card').forEach(c => {
+        c.classList.remove('selected');
+    });
+    
+    // Выделяем выбранную
+    card.classList.add('selected');
+    selectedCategoryId = card.dataset.categoryId;
+    
+    // Активируем кнопку "Далее"
+    document.getElementById('nextBtn').disabled = false;
+}
+
+function goToNextStep() {
+    if (!selectedCategoryId) return;
+    
+    const categoryCard = document.querySelector(`[data-category-id="${selectedCategoryId}"]`);
+    const categoryName = categoryCard.dataset.categoryName;
+    
+    // Сохраняем данные
+    fetch("{% url 'custom_orders:save_constructor_step' %}", {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: JSON.stringify({
+            step: 'category',
+            data: {
+                category_id: selectedCategoryId,
+                category_name: categoryName
+            }
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Переходим к следующему шагу
+            window.location.href = "{% url 'custom_orders:constructor_step' step=current_step|add:1 %}";
+        } else {
+            alert('Ошибка сохранения: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Произошла ошибка');
+    });
+}
+</script>
+{% endblock %}

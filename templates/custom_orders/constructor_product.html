@@ -1,0 +1,346 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Шаг 2: Выберите изделие{% endblock %}
+
+{% block extra_css %}
+<style>
+    .step-container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 40px 20px;
+    }
+
+    .step-header {
+        margin-bottom: 40px;
+    }
+
+    .step-title {
+        font-size: 28px;
+        font-weight: 700;
+        color: #333;
+        margin-bottom: 10px;
+    }
+
+    .step-subtitle {
+        color: #666;
+        font-size: 16px;
+    }
+
+    .step-navigation {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 40px;
+        padding-top: 20px;
+        border-top: 1px solid #eee;
+    }
+
+    .nav-btn {
+        padding: 12px 30px;
+        border-radius: 50px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .btn-back {
+        background: #f8f5f2;
+        color: #333;
+        border: 1px solid #ddd;
+    }
+
+    .btn-back:hover {
+        background: #eee;
+    }
+
+    .btn-next {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+    }
+
+    .btn-next:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+    }
+
+    .btn-next:disabled {
+        background: #ccc;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+    }
+
+    .step-progress {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        margin-bottom: 30px;
+    }
+
+    .step-progress-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .step-progress-number {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        background: #f5f5f5;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+        font-weight: 600;
+        color: #999;
+    }
+
+    .step-progress-number.active {
+        background: #667eea;
+        color: white;
+    }
+
+    .step-progress-label {
+        font-size: 14px;
+        color: #666;
+        display: none;
+    }
+
+    @media (min-width: 768px) {
+        .step-progress-label {
+            display: block;
+        }
+    }
+
+    /* Стили аналогичные предыдущему шагу, но для изделий */
+    .products-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 25px;
+    }
+    
+    .product-card {
+        background: white;
+        border-radius: 12px;
+        overflow: hidden;
+        border: 2px solid #eee;
+        transition: all 0.3s;
+        cursor: pointer;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .product-card:hover {
+        border-color: #667eea;
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(102, 126, 234, 0.1);
+    }
+    
+    .product-card.selected {
+        border-color: #667eea;
+        background-color: rgba(102, 126, 234, 0.05);
+    }
+    
+    .product-image {
+        height: 180px;
+        background: #f8f5f2;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+    }
+    
+    .product-image img {
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: cover;
+    }
+    
+    .product-content {
+        padding: 20px;
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .product-name {
+        font-size: 18px;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 10px;
+    }
+    
+    .product-description {
+        color: #666;
+        font-size: 14px;
+        margin-bottom: 15px;
+        line-height: 1.5;
+        flex-grow: 1;
+    }
+    
+    .product-price {
+        font-size: 20px;
+        font-weight: 700;
+        color: #667eea;
+        margin-bottom: 5px;
+    }
+    
+    .product-time {
+        color: #999;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+    
+    .category-badge {
+        display: inline-block;
+        padding: 4px 10px;
+        background: #f0f7ff;
+        color: #667eea;
+        border-radius: 20px;
+        font-size: 12px;
+        margin-bottom: 10px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="step-container">
+    <!-- Индикатор прогресса -->
+    <div class="step-progress">
+        {% for i in "123456" %}
+        <div class="step-progress-item">
+            <div class="step-progress-number {% if i|add:'0' == current_step %}active{% endif %}">
+                {{ i }}
+            </div>
+            {% if i|add:'0' == current_step %}
+            <div class="step-progress-label">{{ step_display_name }}</div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    
+    <!-- Заголовок шага -->
+    <div class="step-header">
+        <h1 class="step-title">Выберите конкретное изделие</h1>
+        <p class="step-subtitle">Выберите базовую модель для кастомизации</p>
+        
+        {% if constructor_data.category_name %}
+        <div class="category-badge">
+            Категория: {{ constructor_data.category_name }}
+        </div>
+        {% endif %}
+    </div>
+    
+    <!-- Выбор изделия -->
+    <div class="products-grid" id="productsGrid">
+        {% for template in templates %}
+        <div class="product-card" 
+             data-template-id="{{ template.id }}"
+             data-product-name="{{ template.name }}"
+             data-base-price="{{ template.base_price }}"
+             data-base-days="{{ template.base_production_days }}"
+             onclick="selectProduct(this)">
+            <div class="product-image">
+                {% if template.product.get_main_image %}
+                <img src="{{ template.product.get_main_image.url }}" alt="{{ template.name }}">
+                {% else %}
+                <i class="bi bi-image" style="font-size: 50px; color: #ddd;"></i>
+                {% endif %}
+            </div>
+            <div class="product-content">
+                <h3 class="product-name">{{ template.name }}</h3>
+                <p class="product-description">{{ template.description|truncatewords:20 }}</p>
+                <div class="product-price">от {{ template.base_price }} ₽</div>
+                <div class="product-time">
+                    <i class="bi bi-clock"></i>
+                    {{ template.base_production_days }} дней
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="text-center py-5">
+            <p>Нет доступных изделий в этой категории</p>
+            <a href="{% url 'custom_orders:constructor_step' step=1 %}" class="btn btn-primary">
+                Вернуться к выбору категории
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <!-- Навигация -->
+    <div class="step-navigation">
+        <a href="{% url 'custom_orders:constructor_step' step=current_step|add:'-1' %}" 
+           class="nav-btn btn-back">
+            <i class="bi bi-arrow-left"></i>Назад
+        </a>
+        
+        <button class="nav-btn btn-next" id="nextBtn" onclick="goToNextStep()" disabled>
+            Далее <i class="bi bi-arrow-right"></i>
+        </button>
+    </div>
+</div>
+
+<script>
+let selectedTemplateId = null;
+
+function selectProduct(card) {
+    // Снимаем выделение со всех карточек
+    document.querySelectorAll('.product-card').forEach(c => {
+        c.classList.remove('selected');
+    });
+    
+    // Выделяем выбранную
+    card.classList.add('selected');
+    selectedTemplateId = card.dataset.templateId;
+    
+    // Активируем кнопку "Далее"
+    document.getElementById('nextBtn').disabled = false;
+}
+
+function goToNextStep() {
+    if (!selectedTemplateId) return;
+    
+    const productCard = document.querySelector(`[data-template-id="${selectedTemplateId}"]`);
+    
+    // Сохраняем данные
+    fetch("{% url 'custom_orders:save_constructor_step' %}", {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: JSON.stringify({
+            step: 'product',
+            data: {
+                template_id: selectedTemplateId,
+                product_name: productCard.dataset.productName,
+                base_price: productCard.dataset.basePrice,
+                base_days: productCard.dataset.baseDays
+            }
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Переходим к следующему шагу
+            window.location.href = `/custom_orders/constructor/step/{{ current_step|add:1 }}/${selectedTemplateId}/`;
+        } else {
+            alert('Ошибка сохранения: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Произошла ошибка');
+    });
+}
+</script>
+{% endblock %}

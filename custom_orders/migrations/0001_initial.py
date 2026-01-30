@@ -30,8 +30,8 @@ class Migration(migrations.Migration):
                 ('product', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='templates', to='products.product')),
             ],
             options={
-                'verbose_name': 'Шаблон товара',
-                'verbose_name_plural': 'Шаблоны товаров',
+                'verbose_name': 'Шаблон изделия',
+                'verbose_name_plural': 'Шаблоны изделий',
             },
         ),
         migrations.CreateModel(

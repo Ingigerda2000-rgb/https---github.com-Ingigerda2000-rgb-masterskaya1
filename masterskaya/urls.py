@@ -5,14 +5,16 @@ from django.conf.urls.static import static
 from accounts.views import home_view
 
 urlpatterns = [
-       path('admin/', admin.site.urls),
-    path('', home_view, name='home'),  # Главная страница = список товаров
+    path('admin/', admin.site.urls),
+    path('', home_view, name='home'),  # Главная страница = список изделий
     path('accounts/', include('accounts.urls')),
     path('products/', include('products.urls')),  # Для URL /products/
     path('cart/', include('cart.urls')),
     path('materials/', include('materials.urls')),
     path('orders/', include('orders.urls')),
     path('reviews/', include('reviews.urls')),
+    path('custom_orders/', include('custom_orders.urls')),
+    path('discounts/', include('discounts.urls')),
 ]
 
 if settings.DEBUG:

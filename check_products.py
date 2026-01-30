@@ -11,7 +11,7 @@ print("=" * 60)
 print("ПРОВЕРКА ТОВАРОВ И КАТЕГОРИЙ")
 print("=" * 60)
 
-# Все товары
+# Все изделия
 print("\n1. ВСЕ ТОВАРЫ:")
 products = Product.objects.all()
 for p in products:
@@ -21,7 +21,7 @@ for p in products:
     print(f"    Мастер: {p.master.email}")
     print()
 
-# Активные товары
+# Активные изделия
 print("\n2. АКТИВНЫЕ ТОВАРЫ:")
 active_products = Product.objects.filter(status='active')
 print(f"  Всего активных: {active_products.count()}")
@@ -33,14 +33,14 @@ print("\n3. КАТЕГОРИИ:")
 categories = Category.objects.all()
 for cat in categories:
     product_count = cat.products.count()
-    print(f"  - {cat.name}: {product_count} товаров")
+    print(f"  - {cat.name}: {product_count} изделий")
 
 print("\n" + "=" * 60)
 print("РЕКОМЕНДАЦИИ:")
 print("=" * 60)
 if active_products.count() == 0:
-    print("❌ Нет активных товаров!")
-    print("   В админке измените статус товаров на 'Активен'")
+    print("❌ Нет активных изделий!")
+    print("   В админке измените статус изделий на 'Активен'")
 else:
-    print(f"✅ Есть {active_products.count()} активных товаров")
+    print(f"✅ Есть {active_products.count()} активных изделий")
     print("   Проверьте views.py и шаблоны")

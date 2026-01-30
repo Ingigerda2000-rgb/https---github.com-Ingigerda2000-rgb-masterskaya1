@@ -1,0 +1,103 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white">
+                    <h1 class="h4 mb-0">{{ title }}</h1>
+                </div>
+                <div class="card-body">
+                    <!-- Информация о заказе -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h6>Информация о заказе:</h6>
+                            <p><strong>Заказ:</strong> #{{ specification.order_item.order.order_number }}</p>
+                            <p><strong>Товар:</strong> {{ specification.template.product.name }}</p>
+                            <p><strong>Покупатель:</strong> {{ specification.user.email }}</p>
+                            <p><strong>Дата создания:</strong> {{ specification.created_at|date:"d.m.Y H:i" }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Текущие параметры:</h6>
+                            <p><strong>Цена:</strong> {{ specification.total_price }} ₽</p>
+                            <p><strong>Срок:</strong> {{ specification.production_days }} дней</p>
+                            <p><strong>Статус:</strong>
+                                {% if specification.is_approved %}
+                                    <span class="badge bg-success">Согласован</span>
+                                {% elif specification.approval_notes %}
+                                    <span class="badge bg-danger">Отклонён</span>
+                                {% else %}
+                                    <span class="badge bg-warning">Ожидает</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Форма редактирования -->
+                    <form method="post">
+                        {% csrf_token %}
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.total_price.id_for_label }}" class="form-label">
+                                        Цена (₽) <span class="text-danger">*</span>
+                                    </label>
+                                    {{ form.total_price }}
+                                    {% if form.total_price.errors %}
+                                        <div class="text-danger small">{{ form.total_price.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.production_days.id_for_label }}" class="form-label">
+                                        Срок изготовления (дни) <span class="text-danger">*</span>
+                                    </label>
+                                    {{ form.production_days }}
+                                    {% if form.production_days.errors %}
+                                        <div class="text-danger small">{{ form.production_days.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.customer_notes.id_for_label }}" class="form-label">
+                                Примечания покупателя
+                            </label>
+                            {{ form.customer_notes }}
+                            {% if form.customer_notes.errors %}
+                                <div class="text-danger small">{{ form.customer_notes.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.approval_notes.id_for_label }}" class="form-label">
+                                Ваши примечания
+                            </label>
+                            {{ form.approval_notes }}
+                            {% if form.approval_notes.errors %}
+                                <div class="text-danger small">{{ form.approval_notes.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-lg"></i> Сохранить изменения
+                            </button>
+                            <a href="{% url 'master_custom_orders' %}" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> Назад
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

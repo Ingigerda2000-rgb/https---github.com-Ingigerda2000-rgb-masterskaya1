@@ -138,8 +138,8 @@ def create_test_data():
     
     print(f"   → Создано материалов: {materials_created}/{len(materials_data)}")
     
-    # Создаем товары
-    print("\n4. Создание товаров...")
+    # Создаем изделия
+    print("\n4. Создание изделий...")
     products_data = [
         {
             'name': 'Вязаная шапка из шерсти мериноса',
@@ -220,7 +220,7 @@ def create_test_data():
     recipes_created = 0
     
     for prod_data in products_data:
-    # Сначала создаем товар без сохранения в базе
+    # Сначала создаем изделие без сохранения в базе
      product, created = Product.objects.get_or_create(
         name=prod_data['name'],
         master=master,
@@ -240,7 +240,7 @@ def create_test_data():
     if created:
         products_created += 1
         
-        # Сначала сохраняем товар
+        # Сначала сохраняем изделие
         product.save()
         
         # Теперь создаем рецепты материалов
@@ -257,7 +257,7 @@ def create_test_data():
             if recipe_created:
                 recipes_created += 1
             
-            # Добавляем материал к товару
+            # Добавляем материал к изделию
             product.materials.add(material)
             
             # Рассчитываем базовую стоимость материалов
@@ -270,7 +270,7 @@ def create_test_data():
             print(f"     Материалы: {material_cost:.2f} руб.")
             print(f"     Маржа: {product.price - material_cost:.2f} руб.")
     
-    print(f"   → Создано товаров: {products_created}/{len(products_data)}")
+    print(f"   → Создано изделий: {products_created}/{len(products_data)}")
     print(f"   → Создано рецептов: {recipes_created}")
     
     print("\n" + "=" * 60)

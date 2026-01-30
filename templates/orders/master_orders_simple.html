@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+
+{% block title %}Мои заказы - Панель мастера{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-12">
+            <h1>Мои заказы</h1>
+            <p>Заказы на ваши изделия</p>
+
+            <a href="{% url 'accounts:master_dashboard' %}" class="btn btn-outline-primary">
+                На панель
+            </a>
+
+            <div class="mt-4">
+                <h3>Заказы:</h3>
+                {% if orders %}
+                <ul>
+                    {% for order in orders %}
+                    <li>Заказ #{{ order.id }} - {{ order.customer_name }} - {{ order.get_status_display }}</li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p>Заказов пока нет</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
